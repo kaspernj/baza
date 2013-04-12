@@ -17,8 +17,8 @@ Jeweler::Tasks.new do |gem|
   gem.name = "baza"
   gem.homepage = "http://github.com/kaspernj/baza"
   gem.license = "MIT"
-  gem.summary = %Q{TODO: one-line summary of your gem}
-  gem.description = %Q{TODO: longer description of your gem}
+  gem.summary = %Q{A database abstraction layer, model framework and database framework.}
+  gem.description = %Q{A database abstraction layer, model framework and database framework.}
   gem.email = "kj@gfish.com"
   gem.authors = ["Kasper Johansen"]
   # dependencies defined in Gemfile
