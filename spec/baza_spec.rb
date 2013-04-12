@@ -100,19 +100,24 @@ describe "Baza" do
     
     
     #Test upserting.
-    data = {:name => "Kasper Johansen"}
-    sel = {:nickname => "kaspernj"}
+    data = {:name => "upsert - Kasper Johansen"}
+    data2 = {:name => "upsert - Kasper Nielsen Johansen"}
+    sel = {:nickname => "upsert - kaspernj"}
     
     table = db.tables[:test_table]
     table.reload
     rows_count = table.rows_count
     
     db.upsert(:test_table, sel, data)
+    row = db.select(:test_table, sel).fetch
+    row[:name].should eql("upsert - Kasper Johansen")
     
     table.reload
     table.rows_count.should eql(rows_count + 1)
     
-    db.upsert(:test_table, sel, data)
+    db.upsert(:test_table, sel, data2)
+    row = db.select(:test_table, sel).fetch
+    row[:name].should eql("upsert - Kasper Nielsen Johansen")
     
     table.reload
     table.rows_count.should eql(rows_count + 1)

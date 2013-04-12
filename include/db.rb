@@ -366,7 +366,7 @@ class Baza::Db
     row = self.select(table, selector, "limit" => 1).fetch
     
     if row
-      self.update(table, data, row)
+      self.update(table, data, selector)
     else
       self.insert(table, selector.merge(data))
     end
