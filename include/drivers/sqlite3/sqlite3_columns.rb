@@ -7,37 +7,39 @@ class Baza::Driver::Sqlite3::Columns
     @args = args
   end
   
+  DATA_SQL_ALLOWED_KEYS = [:name, :type, :maxlength, :autoincr, :primarykey, :null, :default, :default_func, :renames]
   #Returns SQL for a knjdb-compatible hash.
   def data_sql(data)
-    raise "No type given." if !data["type"]
-    type = data["type"].to_s
-    
-    if type == "enum"
-      type = "varchar"
-      data.delete("maxlength")
+    data.each do |key, val|
+      raise "Invalid key: '#{key}' (#{key.class.name})." unless DATA_SQL_ALLOWED_KEYS.include?(key)
     end
     
-    data["maxlength"] = 255 if type == "varchar" and !data.key?("maxlength")
-    data["maxlength"] = 11 if type == "int" and !data.key?("maxlength") and !data["autoincr"] and !data["primarykey"]
-    type = "integer" if @args[:db].int_types.index(type) and (data["autoincr"] or data["primarykey"])
+    raise "No type given." if !data[:type]
+    type = data[:type].to_sym
     
-    sql = "`#{data["name"]}` #{type}"
-    sql << "(#{data["maxlength"]})" if data["maxlength"] and !data["autoincr"]
-    sql << " PRIMARY KEY" if data["primarykey"]
-    sql << " AUTOINCREMENT" if data["autoincr"]
+    if type == :enum
+      type = :varchar
+      data.delete(:maxlength)
+    end
     
-    if !data["null"] and data.key?("null")
+    data[:maxlength] = 255 if type == :varchar and !data.key?(:maxlength)
+    data[:maxlength] = 11 if type == :int and !data.key?(:maxlength) and !data[:autoincr] and !data[:primarykey]
+    type = :integer if @args[:db].int_types.index(type) and (data[:autoincr] or data[:primarykey])
+    
+    sql = "`#{data[:name]}` #{type}"
+    sql << "(#{data[:maxlength]})" if data[:maxlength] and !data[:autoincr]
+    sql << " PRIMARY KEY" if data[:primarykey]
+    sql << " AUTOINCREMENT" if data[:autoincr]
+    
+    if !data[:null] and data.key?(:null)
       sql << " NOT NULL"
-      
-      if !data.key?("default") or !data["default"]
-        data["default"] = 0 if type == "int"
-      end
+      data[:default] = 0 if type == :int if !data.key?(:default) or !data[:default]
     end
     
-    if data.key?("default_func")
-      sql << " DEFAULT #{data["default_func"]}"
-    elsif data.key?("default") and data["default"] != false
-      sql << " DEFAULT '#{@args[:db].escape(data["default"])}'"
+    if data.key?(:default_func)
+      sql << " DEFAULT #{data[:default_func]}"
+    elsif data.key?(:default) and data[:default] != false
+      sql << " DEFAULT '#{@args[:db].escape(data[:default])}'"
     end
     
     return sql
@@ -67,13 +69,13 @@ class Baza::Driver::Sqlite3::Columns::Column
   #Returns the data of the column as a hash in knjdb-format.
   def data
     return {
-      "type" => self.type,
-      "name" => self.name,
-      "null" => self.null?,
-      "maxlength" => self.maxlength,
-      "default" => self.default,
-      "primarykey" => self.primarykey?,
-      "autoincr" => self.autoincr?
+      :type => self.type,
+      :name => self.name,
+      :null => self.null?,
+      :maxlength => self.maxlength,
+      :default => self.default,
+      :primarykey => self.primarykey?,
+      :autoincr => self.autoincr?
     }
   end
   
@@ -133,7 +135,7 @@ class Baza::Driver::Sqlite3::Columns::Column
       def_val = def_val.to_s.slice(0, def_val.length - 1)
     end
     
-    return false if @args[:data][:dflt_value].to_s.length == 0
+    return false if @args[:data][:dflt_value].to_s.empty?
     return def_val
   end
   
@@ -145,32 +147,32 @@ class Baza::Driver::Sqlite3::Columns::Column
   
   #Returns true if the column is auto-increasing.
   def autoincr?
-    return true if @args[:data][:pk].to_i == 1 and @args[:data][:type].to_s == "integer"
+    return true if @args[:data][:pk].to_i == 1 and @args[:data][:type].to_sym == :integer
     return false
   end
   
   #Drops the column from the table.
   def drop
-    self.table.copy("drops" => self.name)
+    self.table.copy(:drops => self.name)
   end
   
   #Changes data on the column. Like the name, type, maxlength or whatever.
   def change(data)
     newdata = data.clone
     
-    newdata["name"] = self.name if !newdata.key?("name")
-    newdata["type"] = self.type if !newdata.key?("type")
-    newdata["maxlength"] = self.maxlength if !newdata.key?("maxlength") and self.maxlength
-    newdata["null"] = self.null? if !newdata.key?("null")
-    newdata["default"] = self.default if !newdata.key?("default")
-    newdata["primarykey"] = self.primarykey? if !newdata.key?("primarykey")
+    newdata[:name] = self.name if !newdata.key?(:name)
+    newdata[:type] = self.type if !newdata.key?(:type)
+    newdata[:maxlength] = self.maxlength if !newdata.key?(:maxlength) and self.maxlength
+    newdata[:null] = self.null? if !newdata.key?(:null)
+    newdata[:default] = self.default if !newdata.key?(:default)
+    newdata[:primarykey] = self.primarykey? if !newdata.key?(:primarykey)
     
     @type = nil
     @maxlength = nil
     
     new_table = self.table.copy(
-      "alter_columns" => {
-        self.name.to_s => newdata
+      :alter_columns => {
+        self.name.to_sym => newdata
       }
     )
   end

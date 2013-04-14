@@ -18,6 +18,7 @@ GEM
       ruby_process
       tsafe
       wref
+    mysql2 (0.3.11)
     php4r (0.0.4)
       datet
       http2
@@ -49,6 +50,7 @@ DEPENDENCIES
   datet
   jeweler (~> 1.8.4)
   knjrbfw
+  mysql2
   rdoc (~> 3.12)
   rspec (~> 2.8.0)
   sqlite3

@@ -22,8 +22,8 @@ class Baza::Driver::Sqlite3::Indexes::Index
   
   def data
     return {
-      "name" => name,
-      "columns" => @columns
+      :name => name,
+      :columns => @columns
     }
   end
 end

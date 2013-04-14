@@ -48,3 +48,4 @@ pkg
 # For rubinius:
 #*.rbc
 
+spec/mysql_info.rb

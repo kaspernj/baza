@@ -21,7 +21,7 @@ class Baza::Driver::Mysql::Tables
   
   #Returns a table by the given table-name.
   def [](table_name)
-    table_name = table_name.to_s
+    table_name = table_name.to_sym
     
     begin
       return @list[table_name]
@@ -45,20 +45,21 @@ class Baza::Driver::Mysql::Tables
     
     @list_mutex.synchronize do
       @db.q(sql) do |d_tables|
-        obj = @list.get!(d_tables[:Name])
+        name = d_tables[:Name].to_sym
+        obj = @list.get!(name)
         
         if !obj
           obj = Baza::Driver::Mysql::Tables::Table.new(
             :db => @db,
             :data => d_tables
           )
-          @list[d_tables[:Name]] = obj
+          @list[name] = obj
         end
         
         if block_given?
           yield(obj)
         else
-          ret[d_tables[:Name]] = obj
+          ret[name] = obj
         end
       end
     end
@@ -70,25 +71,26 @@ class Baza::Driver::Mysql::Tables
     end
   end
   
+  CREATE_ALLOWED_KEYS = [:columns, :indexes, :temp, :return_sql]
   #Creates a new table by the given name and data.
   def create(name, data, args = nil)
-    raise "No columns was given for '#{name}'." if !data["columns"] or data["columns"].empty?
+    raise "No columns was given for '#{name}'." if !data[:columns] or data[:columns].empty?
     
     sql = "CREATE"
-    sql << " TEMPORARY" if data["temp"]
+    sql << " TEMPORARY" if data[:temp]
     sql << " TABLE `#{name}` ("
     
     first = true
-    data["columns"].each do |col_data|
+    data[:columns].each do |col_data|
       sql << ", " if !first
       first = false if first
-      col_data.delete("after") if col_data["after"]
+      col_data.delete(:after) if col_data[:after]
       sql << @db.cols.data_sql(col_data)
     end
     
-    if data["indexes"] and !data["indexes"].empty?
+    if data[:indexes] and !data[:indexes].empty?
       sql << ", "
-      sql << Baza::Driver::Mysql::Tables::Table.create_indexes(data["indexes"], {
+      sql << Baza::Driver::Mysql::Tables::Table.create_indexes(data[:indexes], {
         :db => @db,
         :return_sql => true,
         :create => false,
@@ -105,7 +107,7 @@ class Baza::Driver::Mysql::Tables
 end
 
 class Baza::Driver::Mysql::Tables::Table
-  attr_reader :list
+  attr_reader :list, :name
   
   def initialize(args)
     @args = args
@@ -114,6 +116,7 @@ class Baza::Driver::Mysql::Tables::Table
     @subtype = @db.opts[:subtype]
     @list = Wref_map.new
     @indexes_list = Wref_map.new
+    @name = @data[:Name].to_sym
     
     raise "Could not figure out name from: '#{@data}'." if @data[:Name].to_s.strip.length <= 0
   end
@@ -124,10 +127,6 @@ class Baza::Driver::Mysql::Tables::Table
   
   #Used to validate in Knj::Wrap_map.
   def __object_unique_id__
-    return @data[:Name]
-  end
-  
-  def name
     return @data[:Name]
   end
   
@@ -152,7 +151,7 @@ class Baza::Driver::Mysql::Tables::Table
   end
   
   def column(name)
-    name = name.to_s
+    name = name.to_sym
     
     if col = @list.get!(name)
       return @list[name]
@@ -276,11 +275,11 @@ class Baza::Driver::Mysql::Tables::Table
       end
       
       if index_data.is_a?(String)
-        index_data = {"name" => index_data, "columns" => [index_data]}
+        index_data = {:name => index_data, :columns => [index_data]}
       end
       
-      raise "No name was given." if !index_data.key?("name") or index_data["name"].strip.length <= 0
-      raise "No columns was given on index: '#{index_data["name"]}'." if !index_data["columns"] or index_data["columns"].empty?
+      raise "No name was given." if !index_data.key?(:name) or index_data[:name].strip.empty?
+      raise "No columns was given on index: '#{index_data[:name]}'." if !index_data[:columns] or index_data[:columns].empty?
       
       if args[:return_sql]
         if first
@@ -290,8 +289,8 @@ class Baza::Driver::Mysql::Tables::Table
         end
       end
       
-      sql << " UNIQUE" if index_data["unique"]
-      sql << " INDEX `#{db.esc_col(index_data["name"])}`"
+      sql << " UNIQUE" if index_data[:unique]
+      sql << " INDEX `#{db.esc_col(index_data[name])}`"
       
       if args[:on_table] or !args.key?(:on_table)
         sql << " ON `#{db.esc_table(args[:table_name])}`"
@@ -300,7 +299,7 @@ class Baza::Driver::Mysql::Tables::Table
       sql << " ("
       
       first = true
-      index_data["columns"].each do |col_name|
+      index_data[:columns].each do |col_name|
         sql << ", " if !first
         first = false if first
         
@@ -336,17 +335,17 @@ class Baza::Driver::Mysql::Tables::Table
   
   def data
     ret = {
-      "name" => self.name,
-      "columns" => [],
-      "indexes" => []
+      :name => self.name,
+      :columns => [],
+      :indexes => []
     }
     
     columns.each do |name, column|
-      ret["columns"] << column.data
+      ret[:columns] << column.data
     end
     
     indexes.each do |name, index|
-      ret["indexes"] << index.data if name != "PRIMARY"
+      ret[:indexes] << index.data if name != "PRIMARY"
     end
     
     return ret
@@ -374,19 +373,19 @@ class Baza::Driver::Mysql::Tables::Table
       first = false if first
       
       col_data = col.data
-      pkey_found = true if !pkey_found and col_data["primarykey"] and args[:force_single_pkey]
+      pkey_found = true if !pkey_found and col_data[:primarykey] and args[:force_single_pkey]
       
-      if args[:no_pkey] or (pkey_found and col_data["primarykey"] and args[:force_single_pkey])
-				col_data["primarykey"] = false
+      if args[:no_pkey] or (pkey_found and col_data[:primarykey] and args[:force_single_pkey])
+				col_data[:primarykey] = false
 			end
 			
-			if col_data["primarykey"]
-				pkeys << col_data["name"]
-				col_data.delete("primarykey")
+			if col_data[:primarykey]
+				pkeys << col_data[:name]
+				col_data.delete(:primarykey)
 			end
 			
 			if args[:all_cols_storage]
-				col_data["storage"] = args[:all_cols_storage]
+				col_data[:storage] = args[:all_cols_storage]
 			end
 			
       sql << @db.cols.data_sql(col_data)

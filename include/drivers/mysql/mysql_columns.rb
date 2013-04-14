@@ -6,27 +6,32 @@ class Baza::Driver::Mysql::Columns
   end
   
   #Returns the SQL for this column.
+  DATA_SQL_ALLOWED_KEYS = [:type, :maxlength, :name, :primarykey, :autoincr, :default, :comment, :after, :first, :storage]
   def data_sql(data)
-    raise "No type given." if !data["type"]
-    
-    data["maxlength"] = 255 if data["type"] == "varchar" and !data.key?("maxlength")
-    
-    sql = "`#{data["name"]}` #{data["type"]}"
-    sql << "(#{data["maxlength"]})" if data["maxlength"]
-    sql << " PRIMARY KEY" if data["primarykey"]
-    sql << " AUTO_INCREMENT" if data["autoincr"]
-    sql << " NOT NULL" if !data["null"]
-    
-    if data.key?("default_func")
-      sql << " DEFAULT #{data["default_func"]}"
-    elsif data.key?("default") and data["default"] != false
-      sql << " DEFAULT '#{@args[:db].escape(data["default"])}'"
+    data.each do |key, val|
+      raise "Invalid key: '#{key}' (#{key.class.name})." if !DATA_SQL_ALLOWED_KEYS.include?(key)
     end
     
-    sql << " COMMENT '#{@args[:db].escape(data["comment"])}'" if data.key?("comment")
-    sql << " AFTER `#{@args[:db].esc_col(data["after"])}`" if data["after"] and !data["first"]
-    sql << " FIRST" if data["first"]
-    sql << " STORAGE #{data["storage"].to_s.upcase}" if data["storage"]
+    raise "No type given." if !data[:type]
+    
+    data["maxlength"] = 255 if data[:type] == "varchar" and !data.key?(:maxlength)
+    
+    sql = "`#{data[:name]}` #{data[:type]}"
+    sql << "(#{data[:maxlength]})" if data[:maxlength]
+    sql << " PRIMARY KEY" if data[:primarykey]
+    sql << " AUTO_INCREMENT" if data[:autoincr]
+    sql << " NOT NULL" if !data[:null]
+    
+    if data.key?(:default_func)
+      sql << " DEFAULT #{data[:default_func]}"
+    elsif data.key?(:default) and data[:default] != false
+      sql << " DEFAULT '#{@args[:db].escape(data[:default])}'"
+    end
+    
+    sql << " COMMENT '#{@args[:db].escape(data[:comment])}'" if data.key?(:comment)
+    sql << " AFTER `#{@args[:db].esc_col(data[:after])}`" if data[:after] and !data[:first]
+    sql << " FIRST" if data[:first]
+    sql << " STORAGE #{data[:storage].to_s.upcase}" if data[:storage]
     
     return sql
   end
@@ -34,21 +39,17 @@ end
 
 #This class handels every MySQL-column, that can be returned from a table-object.
 class Baza::Driver::Mysql::Columns::Column
-  attr_reader :args
+  attr_reader :args, :name
   
   #Constructor. Should not be called manually.
   def initialize(args)
     @args = args
+    @name = @args[:data][:Field].to_sym
   end
   
   #Used to validate in Knj::Wrap_map.
   def __object_unique_id__
-    return @args[:data][:Field]
-  end
-  
-  #Returns the name of the column.
-  def name
-    return @args[:data][:Field]
+    return @name
   end
   
   #Returns the table-object that this column belongs to.
@@ -59,13 +60,13 @@ class Baza::Driver::Mysql::Columns::Column
   #Returns all data of the column in the knjdb-format.
   def data
     return {
-      "type" => self.type,
-      "name" => self.name,
-      "null" => self.null?,
-      "maxlength" => self.maxlength,
-      "default" => self.default,
-      "primarykey" => self.primarykey?,
-      "autoincr" => self.autoincr?
+      :type => self.type,
+      :name => self.name,
+      :null => self.null?,
+      :maxlength => self.maxlength,
+      :default => self.default,
+      :primarykey => self.primarykey?,
+      :autoincr => self.autoincr?
     }
   end
   
@@ -86,7 +87,7 @@ class Baza::Driver::Mysql::Columns::Column
         @type = match[1].to_sym
       end
       
-      raise "Still not type from: '#{@args[:data][:Type]}'." if @type.to_s.strip.length <= 0
+      raise "Still not type from: '#{@args[:data][:Type]}'." if @type.to_s.strip.empty?
     end
     
     return @type
@@ -107,8 +108,8 @@ class Baza::Driver::Mysql::Columns::Column
   
   #Returns the default value for the column.
   def default
-    return false if (self.type == "datetime" or self.type == "date") and @args[:data][:Default].to_s.strip.length <= 0
-    return false if (self.type == "int" or self.type == "bigint") and @args[:data][:Default].to_s.strip.length <= 0
+    return false if (self.type == :datetime or self.type == :date) and @args[:data][:Default].to_s.strip.length <= 0
+    return false if (self.type == :int or self.type == :bigint) and @args[:data][:Default].to_s.strip.length <= 0
     return false if !@args[:data][:Default]
     return @args[:data][:Default]
   end

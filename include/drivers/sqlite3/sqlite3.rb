@@ -3,6 +3,21 @@ class Baza::Driver::Sqlite3
   attr_reader :knjdb, :conn, :sep_table, :sep_col, :sep_val, :symbolize
   attr_accessor :tables, :cols, :indexes
   
+  #Helper to enable automatic registering of database using Baza::Db.from_object
+  def self.from_object(args)
+    if args[:object].class.name == "SQLite3::Database"
+      return {
+        :type => :success,
+        :args => {
+          :type => "sqlite3",
+          :conn => args[:object]
+        }
+      }
+    end
+    
+    return nil
+  end
+  
   #Constructor. This should not be called manually.
   def initialize(knjdb_ob)
     @sep_table = "`"
@@ -12,28 +27,32 @@ class Baza::Driver::Sqlite3
     @knjdb = knjdb_ob
     @path = @knjdb.opts[:path] if @knjdb.opts[:path]
     @path = @knjdb.opts["path"] if @knjdb.opts["path"]
-    @symbolize = true if !@knjdb.opts.key?(:return_keys) or @knjdb.opts[:return_keys] == "symbols"
     
     @knjdb.opts[:subtype] = "java" if !@knjdb.opts.key?(:subtype) and RUBY_ENGINE == "jruby"
-    raise "No path was given." if !@path
     
-    if @knjdb.opts[:subtype] == "java"
-      if @knjdb.opts[:sqlite_driver]
-        require @knjdb.opts[:sqlite_driver]
-      else
-        require "#{File.dirname(__FILE__)}/../../../jruby/sqlitejdbc-v056.jar"
-      end
-      
-      require "java"
-      import "org.sqlite.JDBC"
-      @conn = java.sql.DriverManager::getConnection("jdbc:sqlite:#{@knjdb.opts[:path]}")
-      @stat = @conn.createStatement
-    elsif @knjdb.opts[:subtype] == "rhodes"
-      @conn = SQLite3::Database.new(@path, @path)
+    if @knjdb.opts[:conn]
+      @conn = @knjdb.opts[:conn]
     else
-      @conn = SQLite3::Database.open(@path)
-      @conn.results_as_hash = true
-      @conn.type_translation = false
+      raise "No path was given." if !@path
+      
+      if @knjdb.opts[:subtype] == "java"
+        if @knjdb.opts[:sqlite_driver]
+          require @knjdb.opts[:sqlite_driver]
+        else
+          require "#{File.dirname(__FILE__)}/../../../jruby/sqlitejdbc-v056.jar"
+        end
+        
+        require "java"
+        import "org.sqlite.JDBC"
+        @conn = java.sql.DriverManager::getConnection("jdbc:sqlite:#{@knjdb.opts[:path]}")
+        @stat = @conn.createStatement
+      elsif @knjdb.opts[:subtype] == "rhodes"
+        @conn = SQLite3::Database.new(@path, @path)
+      else
+        @conn = SQLite3::Database.open(@path)
+        @conn.results_as_hash = true
+        @conn.type_translation = false
+      end
     end
   end
   
@@ -41,22 +60,22 @@ class Baza::Driver::Sqlite3
   def query(string)
     begin
       if @knjdb.opts[:subtype] == "rhodes"
-        return Baza::Driver::Sqlite3_result.new(self, @conn.execute(string, string))
+        return Baza::Driver::Sqlite3::Result.new(self, @conn.execute(string, string))
       elsif @knjdb.opts[:subtype] == "java"
         begin
-          return Baza::Driver::Sqlite3_result_java.new(self, @stat.executeQuery(string))
+          return Baza::Driver::Sqlite3::ResultJava.new(self, @stat.executeQuery(string))
         rescue java.sql.SQLException => e
           if e.message.to_s.index("query does not return ResultSet") != nil
-            return Baza::Driver::Sqlite3_result_java.new(self, nil)
+            return Baza::Driver::Sqlite3::ResultJava.new(self, nil)
           else
             raise e
           end
         end
       else
-        return Baza::Driver::Sqlite3_result.new(self, @conn.execute(string))
+        return Baza::Driver::Sqlite3::Result.new(self, @conn.execute(string))
       end
     rescue => e
-      #Add SQL to the error message.
+      #Add SQL to the error message to make it easier to debug.
       raise e.class, "#{e.message} (SQL: #{string})"
     end
   end
@@ -101,7 +120,7 @@ class Baza::Driver::Sqlite3
 end
 
 #This class handels results when running in JRuby.
-class Baza::Driver::Sqlite3_result_java
+class Baza::Driver::Sqlite3::ResultJava
   def initialize(driver, rs)
     @index = 0
     retkeys = driver.knjdb.opts[:return_keys]
@@ -114,8 +133,7 @@ class Baza::Driver::Sqlite3_result_java
       while rs.next
         row_data = {}
         for i in (1..columns_count)
-          col_name = metadata.getColumnName(i)
-          col_name = col_name.to_s.to_sym if retkeys == "symbols"
+          col_name = metadata.getColumnName(i).to_sym
           row_data[col_name] = rs.getString(i)
         end
         
@@ -142,17 +160,11 @@ class Baza::Driver::Sqlite3_result_java
 end
 
 #This class handels the result when running MRI (or others).
-class Baza::Driver::Sqlite3_result
+class Baza::Driver::Sqlite3::Result
   #Constructor. This should not be called manually.
   def initialize(driver, result_array)
     @result_array = result_array
     @index = 0
-    
-    if driver.knjdb.opts[:return_keys] == "symbols"
-      @symbols = true
-    else
-      @symbols = false
-    end
   end
   
   #Returns a single result.
@@ -165,7 +177,7 @@ class Baza::Driver::Sqlite3_result
     result_hash.each do |key, val|
       if (Float(key) rescue false)
         #do nothing.
-      elsif @symbols and !key.is_a?(Symbol)
+      elsif !key.is_a?(Symbol)
         ret[key.to_sym] = val
       else
         ret[key] = val

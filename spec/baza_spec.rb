@@ -1,8 +1,11 @@
 require File.expand_path(File.dirname(__FILE__) + '/spec_helper')
 
 describe "Baza" do
+  MYSQL_CONF_FILE = "#{File.dirname(__FILE__)}/mysql_info.rb"
+  
   it "should be able to handle various encodings" do
     #I never got this test to actually fail... :-(
+    debug = false
     
     require "baza"
     require "knjrbfw"
@@ -21,9 +24,9 @@ describe "Baza" do
     )
     
     db.tables.create("test", {
-      "columns" => [
-        {"name" => "id", "type" => "int", "autoincr" => true, "primarykey" => true},
-        {"name" => "text", "type" => "varchar"}
+      :columns => [
+        {:name => "id", :type => :int, :autoincr => true, :primarykey => true},
+        {:name => "text", :type => :varchar}
       ]
     })
     
@@ -31,27 +34,28 @@ describe "Baza" do
     
     #Get a list of tables and check the list for errors.
     list = db.tables.list
-    raise "Table not found: 'test'." if !list.key?("test")
-    raise "Table-name expected to be 'test' but wasnt: '#{list["test"].name}'." if list["test"].name != "test"
+    raise "Table not found: 'test'." if !list.key?(:test)
+    
+    list[:test].name.should eql(:test)
     
     
     #Test revision to create tables, indexes and insert rows.
     schema = {
-      "tables" => {
-        "test_table" => {
-          "columns" => [
-            {"name" => "id", "type" => "int", "autoincr" => true, "primarykey" => true},
-            {"name" => "name", "type" => "varchar"},
-            {"name" => "age", "type" => "int"},
-            {"name" => "nickname", "type" => "varchar"}
+      :tables => {
+        :test_table => {
+          :columns => [
+            {:name => "id", :type => :int, :autoincr => true, :primarykey => true},
+            {:name => "name", :type => :varchar},
+            {:name => "age", :type => :int},
+            {:name => "nickname", :type => :varchar}
           ],
-          "indexes" => [
+          :indexes => [
             "name"
           ],
-          "rows" => [
+          :rows => [
             {
-              "find_by" => {"id" => 1},
-              "data" => {"id" => 1, "name" => "trala"}
+              :find_by => {"id" => 1},
+              :data => {"id" => 1, "name" => "trala"}
             }
           ]
         }
@@ -59,7 +63,9 @@ describe "Baza" do
     }
     
     rev = Baza::Revision.new
-    rev.init_db("schema" => schema, "db" => db)
+    rev.init_db(:schema => schema, :debug => debug, :db => db)
+    
+    test_table = db.tables[:test_table]
     
     
     #Test wrong encoding.
@@ -85,7 +91,7 @@ describe "Baza" do
     end
     
     block_ran = 0
-    idq = Baza::Idquery.new(:db => db, :debug => false, :table => :test_table, :query => "SELECT id FROM test_table") do |data|
+    idq = Baza::Idquery.new(:db => db, :debug => debug, :table => :test_table, :query => "SELECT id FROM test_table") do |data|
       block_ran += 1
     end
     
@@ -154,31 +160,31 @@ describe "Baza" do
     
     
     #Test revision table renaming.
-    Baza::Revision.new.init_db("db" => db, "schema" => {
-      "tables" => {
-        "new_test_table" => {
-          "renames" => ["test_table"]
+    Baza::Revision.new.init_db(:db => db, :debug => debug, :schema => {
+      :tables => {
+        :new_test_table => {
+          :renames => [:test_table]
         }
       }
     })
     tables = db.tables.list
-    raise "Didnt expect table 'test_table' to exist but it did." if tables.key?("test_table")
-    raise "Expected 'new_test_table' to exist but it didnt." if !tables.key?("new_test_table")
+    raise "Didnt expect table 'test_table' to exist but it did." if tables.key?(:test_table)
+    raise "Expected 'new_test_table' to exist but it didnt." if !tables.key?(:new_test_table)
     
     
     #Test revision for column renaming.
-    Baza::Revision.new.init_db("db" => db, "schema" => {
-      "tables" => {
-        "new_test_table" => {
-          "columns" => [
-            {"name" => "new_name", "type" => "varchar", "renames" => ["name"]}
+    Baza::Revision.new.init_db(:db => db, :debug => debug, :schema => {
+      :tables => {
+        :new_test_table => {
+          :columns => [
+            {:name => :new_name, :type => :varchar, :renames => [:name]}
           ]
         }
       }
     })
-    columns = db.tables["new_test_table"].columns
-    raise "Didnt expect 'name' to exist but it did." if columns.key?("name")
-    raise "Expected 'new_name'-column to exist but it didnt." if !columns.key?("new_name")
+    columns = db.tables[:new_test_table].columns
+    raise "Didnt expect 'name' to exist but it did." if columns.key?(:name)
+    raise "Expected 'new_name'-column to exist but it didnt." if !columns.key?(:new_name)
     
     
     #Delete test-database if everything went well.
@@ -228,11 +234,11 @@ describe "Baza" do
     )
     
     db1.tables.create(:test_table, {
-      "columns" => [
-        {"name" => "id", "type" => "int", "autoincr" => true, "primarykey" => true},
-        {"name" => "testname", "type" => "varchar"}
+      :columns => [
+        {:name => "id", :type => :int, :autoincr => true, :primarykey => true},
+        {:name => "testname", :type => :varchar}
       ],
-      "indexes" => [
+      :indexes => [
         "testname"
       ]
     })
@@ -282,5 +288,70 @@ describe "Baza" do
     
     table1.indexes.length.should eql(1)
     table2.indexes.length.should eql(table1.indexes.length)
+  end
+  
+  it "should be able to make new connections based on given objects" do
+    path = "#{Knj::Os.tmpdir}/baza_db_from_conn"
+    
+    db = Baza::Db.new(
+      :type => "sqlite3",
+      :path => path
+    )
+    
+    sqlite_conn = db.conn.conn
+    
+    db2 = Baza::Db.from_object(:object => sqlite_conn)
+  end
+  
+  it "should be able to connect to mysql and do various stuff" do
+    require MYSQL_CONF_FILE
+    db1 = Baza::Db.new($mysql_info.merge(
+      :type => "mysql",
+      :subtype => "mysql2",
+    ))
+    
+    begin
+      test_table = db1.tables[:test_table]
+      test_table.drop
+    rescue Errno::ENOENT
+      #ignore
+    end
+    
+    #create table.
+    db1.tables.create(:test_table, {
+      :columns => [
+        {:name => :id, :type => :int, :autoincr => true, :primarykey => true},
+        {:name => :name, :type => :varchar, :maxlength => 100}
+      ]
+    })
+    
+    test_table = db1.tables[:test_table]
+    
+    col_id = test_table.column(:id)
+    col_name = test_table.column(:name)
+    
+    #Test various operations actually work.
+    test_table.optimize
+    
+    #object_from test
+    db2 = Baza::Db.from_object(db1.conn.conn)
+    
+    #Test dumping to SQLite.
+    path = "#{Dir.tmpdir}/baza_mysql_dump_to_sqlite.sqlite3"
+    File.unlink(path) if File.exists?(path)
+    db3 = Baza::Db.new(:type => :sqlite3, :path => path)
+    db2.copy_to(db3)
+    
+    table_sqlite = db3.tables[:test_table]
+    table_sqlite.columns.length.should eql(test_table.columns.length)
+    
+    col_id_sqlite = table_sqlite.column(:id)
+    col_id_sqlite.type.should eql(:int)
+    col_id_sqlite.autoincr?.should eql(true)
+    col_id_sqlite.primarykey?.should eql(true)
+    
+    col_name_sqlite = table_sqlite.column(:name)
+    col_name_sqlite.type.should eql(:varchar)
+    col_name_sqlite.maxlength.to_i.should eql(100)
   end
 end

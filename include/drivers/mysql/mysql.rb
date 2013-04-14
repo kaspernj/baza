@@ -2,6 +2,22 @@ class Baza::Driver::Mysql
   attr_reader :knjdb, :conn, :conns, :sep_table, :sep_col, :sep_val
   attr_accessor :tables, :cols, :indexes
   
+  #Helper to enable automatic registering of database using Baza::Db.from_object
+  def self.from_object(args)
+    if args[:object].class.name == "Mysql2::Client"
+      return {
+        :type => :success,
+        :args => {
+          :type => "mysql",
+          :subtype => "mysql2",
+          :conn => args[:object]
+        }
+      }
+    end
+    
+    return nil
+  end
+  
   def initialize(knjdb_ob)
     @knjdb = knjdb_ob
     @opts = @knjdb.opts
@@ -26,7 +42,7 @@ class Baza::Driver::Mysql
     
     @java_rs_data = {}
     @subtype = @knjdb.opts[:subtype]
-    @subtype = "mysql" if @subtype.to_s.length <= 0
+    @subtype = "mysql" if @subtype.to_s.empty?
     self.reconnect
   end
   
@@ -79,7 +95,11 @@ class Baza::Driver::Mysql
           tries = 0
           begin
             tries += 1
-            @conn = Mysql2::Client.new(args)
+            if @knjdb.opts[:conn]
+              @conn = @knjdb.opts[:conn]
+            else
+              @conn = Mysql2::Client.new(args)
+            end
           rescue => e
             if tries <= 3
               if e.message == "Can't connect to local MySQL server through socket '/var/run/mysqld/mysqld.sock' (111)"
@@ -119,9 +139,9 @@ class Baza::Driver::Mysql
       @mutex.synchronize do
         case @subtype
           when "mysql"
-            return Baza::Driver::Mysql_result.new(self, @conn.query(str))
+            return Baza::Driver::Mysql::Result.new(self, @conn.query(str))
           when "mysql2"
-            return Baza::Driver::Mysql2_result.new(@conn.query(str, @query_args))
+            return Baza::Driver::Mysql::ResultMySQL2.new(@conn.query(str, @query_args))
           when "java"
             stmt = conn.create_statement
             
@@ -138,7 +158,7 @@ class Baza::Driver::Mysql
               
               begin
                 res = stmt.execute_query(str)
-                ret = KnjDB_java_mysql_result.new(@knjdb, @opts, res)
+                ret = Baza::Driver::Mysql::ResultJava.new(@knjdb, @opts, res)
                 id = ret.__id__
                 
                 #If ID is being reused we have to free the result.
@@ -182,9 +202,9 @@ class Baza::Driver::Mysql
       case @subtype
         when "mysql"
           @conn.query_with_result = false
-          return Baza::Driver::Mysql_unbuffered_result.new(@conn, @opts, @conn.query(str))
+          return Baza::Driver::Mysql::ResultUnbuffered.new(@conn, @opts, @conn.query(str))
         when "mysql2"
-          return Baza::Driver::Mysql2_result.new(@conn.query(str, @query_args.merge(:stream => true)))
+          return Baza::Driver::Mysql::ResultMySQL2.new(@conn.query(str, @query_args.merge(:stream => true)))
         when "java"
           if str.match(/^\s*(delete|update|create|drop|insert\s+into)\s+/i)
             stmt = @conn.createStatement
@@ -202,7 +222,7 @@ class Baza::Driver::Mysql
             
             begin
               res = stmt.executeQuery(str)
-              ret = KnjDB_java_mysql_result.new(@knjdb, @opts, res)
+              ret = Baza::Driver::Mysql::ResultJava.new(@knjdb, @opts, res)
               
               #Save reference to result and statement, so we can close them when they are garbage collected.
               @java_rs_data[ret.__id__] = {:res => res, :stmt => stmt}
@@ -384,7 +404,7 @@ class Baza::Driver::Mysql
 end
 
 #This class controls the results for the normal MySQL-driver.
-class Baza::Driver::Mysql_result
+class Baza::Driver::Mysql::Result
   #Constructor. This should not be called manually.
   def initialize(driver, result)
     @driver = driver
@@ -393,28 +413,14 @@ class Baza::Driver::Mysql_result
     
     if @result
       @keys = []
-      keys = @result.fetch_fields
-      keys.each do |key|
+      @result.fetch_fields.each do |key|
         @keys << key.name.to_sym
       end
     end
   end
   
-  #Returns a single result.
-  def fetch
-    return self.fetch_hash_symbols if @driver.knjdb.opts[:return_keys] == "symbols"
-    return self.fetch_hash_strings
-  end
-  
-  #Returns a single result as a hash with strings as keys.
-  def fetch_hash_strings
-    @mutex.synchronize do
-      return @result.fetch_hash
-    end
-  end
-  
   #Returns a single result as a hash with symbols as keys.
-  def fetch_hash_symbols
+  def fetch
     fetched = nil
     @mutex.synchronize do
       fetched = @result.fetch_row
@@ -434,14 +440,14 @@ class Baza::Driver::Mysql_result
   
   #Loops over every result yielding it.
   def each
-    while data = self.fetch_hash_symbols
+    while data = self.fetch
       yield(data)
     end
   end
 end
 
 #This class controls the unbuffered result for the normal MySQL-driver.
-class Baza::Driver::Mysql_unbuffered_result
+class Baza::Driver::Mysql::ResultUnbuffered
   #Constructor. This should not be called manually.
   def initialize(conn, opts, result)
     @conn = conn
@@ -514,7 +520,7 @@ class Baza::Driver::Mysql_unbuffered_result
 end
 
 #This class controls the result for the MySQL2 driver.
-class Baza::Driver::Mysql2_result
+class Baza::Driver::Mysql::ResultMySQL2
   #Constructor. This should not be called manually.
   def initialize(result)
     @result = result
@@ -534,15 +540,14 @@ class Baza::Driver::Mysql2_result
   #Loops over every single result yielding it.
   def each
     @result.each do |res|
-      #This sometimes happens when streaming results...
-      next if !res
+      next if !res #This sometimes happens when streaming results...
       yield(res)
     end
   end
 end
 
 #This class controls the result for the Java-MySQL-driver.
-class KnjDB_java_mysql_result
+class Baza::Driver::Mysql::ResultJava
   #Constructor. This should not be called manually.
   def initialize(knjdb, opts, result)
     @knjdb = knjdb

@@ -17,10 +17,57 @@ Knj.gem_require([:wref, :datet])
 class Baza::Db
   attr_reader :sep_col, :sep_table, :sep_val, :opts, :conn, :conns, :int_types
   
-  def initialize(opts)
-    self.setOpts(opts) if opts != nil
+  #Returns an array containing hashes of information about each registered driver.
+  def self.drivers
+    path = "#{File.dirname(__FILE__)}/drivers"
+    drivers = []
     
-    @int_types = ["int", "bigint", "tinyint", "smallint", "mediumint"]
+    Dir.foreach(path) do |file|
+      next if file.to_s.slice(0, 1) == "."
+      fp = "#{path}/#{file}"
+      next unless File.directory?(fp)
+      
+      driver_file = "#{fp}/#{file}.rb"
+      class_name = "#{file.slice(0, 1).to_s.upcase}#{file.slice(1, file.length)}".to_sym
+      
+      drivers << {
+        :name => file,
+        :driver_path => driver_file,
+        :class_name => class_name
+      }
+    end
+    
+    return drivers
+  end
+  
+  #Tries to create a database-object based on the given object which could be a SQLite3 object or a MySQL 2 object (or other supported).
+  def self.from_object(args)
+    args = {:object => args} if !args.is_a?(Hash)
+    raise "No :object was given." if !args[:object]
+    
+    Baza::Db.drivers.each do |driver|
+      require driver[:driver_path]
+      
+      const = Baza::Driver.const_get(driver[:class_name])
+      next unless const.respond_to?(:from_object)
+      
+      obj = const.from_object(args)
+      if obj.is_a?(Hash) and obj[:type] == :success
+        if obj[:args]
+          return Baza::Db.new(obj[:args])
+        else
+          raise "Didnt know what to do."
+        end
+      end
+    end
+    
+    raise "Could not figure out what to do what object of type: '#{args[:object].class.name}'."
+  end
+  
+  def initialize(opts)
+    @conn = opts.delete(:driver) if opts[:driver]
+    self.opts = opts if opts != nil
+    @int_types = [:int, :bigint, :tinyint, :smallint, :mediumint]
     
     if !@opts[:threadsafe]
       require "monitor"
@@ -41,7 +88,7 @@ class Baza::Db
     return @opts
   end
   
-  def setOpts(arr_opts)
+  def opts=(arr_opts)
     @opts = {}
     arr_opts.each do |key, val|
       @opts[key.to_sym] = val
@@ -163,28 +210,33 @@ class Baza::Db
     end
   end
   
+  COPY_TO_ALLOWED_ARGS = [:tables]
   #Copies the content of the current database to another instance of Baza::Db.
   def copy_to(db, args = {})
-    data["tables"].each do |table|
+    raise "No tables given." if !data[:tables]
+    
+    data[:tables].each do |table|
       table_args = nil
-      table_args = args["tables"][table["name"].to_s] if args and args["tables"] and args["tables"][table["name"].to_s]
-      next if table_args and table_args["skip"]
-      table.delete("indexes") if table.key?("indexes") and args["skip_indexes"]
-      db.tables.create(table["name"], table)
+      table_args = args[:tables][table[:name.to_sym]] if args and args[:tables] and args[:tables][table[:name].to_sym]
+      next if table_args and table_args[:skip]
+      table.delete(:indexes) if table.key?(:indexes) and args[:skip_indexes]
+      
+      table_name = table.delete(:name)
+      db.tables.create(table_name, table)
       
       limit_from = 0
       limit_incr = 1000
       
       loop do
         ins_arr = []
-        q_rows = self.select(table["name"], {}, {"limit_from" => limit_from, "limit_to" => limit_incr})
+        q_rows = self.select(table_name, {}, {:limit_from => limit_from, :limit_to => limit_incr})
         while d_rows = q_rows.fetch
           col_args = nil
           
-          if table_args and table_args["columns"]
+          if table_args and table_args[:columns]
             d_rows.each do |col_name, col_data|
-              col_args = table_args["columns"][col_name.to_s] if table_args and table_args["columns"]
-              d_rows[col_name] = "" if col_args and col_args["empty"]
+              col_args = table_args[:columns][col_name.to_sym] if table_args and table_args[:columns]
+              d_rows[col_name] = "" if col_args and col_args[:empty]
             end
           end
           
@@ -193,7 +245,7 @@ class Baza::Db
         
         break if ins_arr.empty?
         
-        db.insert_multi(table["name"], ins_arr)
+        db.insert_multi(table_name, ins_arr)
         limit_from += limit_incr
       end
     end
@@ -210,7 +262,7 @@ class Baza::Db
     end
     
     return {
-      "tables" => tables_ret
+      :tables => tables_ret
     }
   end
   
@@ -372,6 +424,7 @@ class Baza::Db
     end
   end
   
+  SELECT_ARGS_ALLOWED_KEYS = [:limit, :limit_from, :limit_to]
   #Makes a select from the given arguments: table-name, where-terms and other arguments as limits and orders. Also takes a block to avoid raping of memory.
   def select(tablename, arr_terms = nil, args = nil, &block)
     #Set up vars.
@@ -402,18 +455,18 @@ class Baza::Db
     end
     
     if args != nil
-      if args["orderby"]
-        sql << " ORDER BY #{args["orderby"]}"
+      if args[:orderby]
+        sql << " ORDER BY #{args[:orderby]}"
       end
       
-      if args["limit"]
-        sql << " LIMIT #{args["limit"]}"
+      if args[:limit]
+        sql << " LIMIT #{args[:limit]}"
       end
       
-      if args["limit_from"] and args["limit_to"]
-        raise "'limit_from' was not numeric: '#{args["limit_from"]}'." if !(Float(args["limit_from"]) rescue false)
-        raise "'limit_to' was not numeric: '#{args["limit_to"]}'." if !(Float(args["limit_to"]) rescue false)
-        sql << " LIMIT #{args["limit_from"]}, #{args["limit_to"]}"
+      if args[:limit_from] and args[:limit_to]
+        raise "'limit_from' was not numeric: '#{args[:limit_from]}'." if !(Float(args[:limit_from]) rescue false)
+        raise "'limit_to' was not numeric: '#{args[:limit_to]}'." if !(Float(args[:limit_to]) rescue false)
+        sql << " LIMIT #{args[:limit_from]}, #{args[:limit_to]}"
       end
     end
     
@@ -437,7 +490,7 @@ class Baza::Db
   #===Examples
   # row = db.single(:users, {:lastname => "Doe"})
   def single(tablename, arr_terms = nil, args = {})
-    args["limit"] = 1
+    args[:limit] = 1
     
     #Experienced very weird memory leak if this was not done by block. Maybe bug in Ruby 1.9.2? - knj
     self.select(tablename, arr_terms, args) do |data|
