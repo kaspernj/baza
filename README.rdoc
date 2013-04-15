@@ -1,6 +1,102 @@
 = baza
 
-Description goes here.
+A database abstraction layer for Ruby.
+
+== Installation
+
+Is fairly painless.
+  gem install baza
+
+== Connection to a database.
+
+=== MySQL
+  db = Baza::Db.new(:type => :mysql, :subtype => :mysql2, :host => "localhost", :user => "my_user", :pass => "my_password", :port => 3306, :db => "my_database")
+
+=== SQLite3
+  db = Baza::Db.new(:type => :sqlite3, :path => "/path/to/file.sqlite3")
+
+== Queries
+
+=== Select
+  db.select(:users, {:name => "Kasper"}, {:orderby => "age"}) do |row|
+    puts "Row: #{row}"
+  end
+  
+  name = "Kasper"
+  db.q("SELECT * FROM users WHERE name = '#{db.esc(name)}' ORDER BY age") do |row|
+    puts "Row: #{row}"
+  end
+
+=== Inserting
+  db.insert(:users, {:name => "Kasper", :age => 27})
+
+It can also return the ID at the same time
+  id = db.insert(:users, {:name => "Kasper", :age => 27}, :return_id => true)
+
+Inserting multiple rows in one query is also fairly painless:
+  db.insert_multi(:users, [
+    {:name => "Kasper", :age => 27},
+    {:name => "Christina", :age => 25},
+    {:name => "Charlotte", :age => 23}
+  ])
+
+=== Update
+  db.update(:users, {:name => "Kasper Johansen"}, {:name => "Kasper"})
+
+=== Delete
+  db.delete(:users, {:name => "Kasper"})
+
+== Structure
+
+=== Table creation
+  db.tables.create(:users, {
+    :columns => [
+      {:name => :id, :type => :int, :autoincr => true, :primarykey => true},
+      {:name => :name, :type => :varchar}
+    ],
+    :indexes => [
+      :name
+    ]
+  })
+
+=== Table dropping
+  table = db.tables[:users]
+  table.drop
+
+=== Table listing
+  array_of_tables = db.tables.list
+
+Or you can use blocks:
+  db.tables.list do |table|
+    puts "Table-name: #{table.name}"
+  end
+
+=== Column listing
+  table = db.tables[:users]
+  cols = table.columns
+
+Or a specific column:
+  col = table.column(:id)
+  puts "Column: #{col.name} #{col.type}(#{col.maxlength})"
+
+== Copying databases
+  db_mysql = Baza::Db.new(:type => :mysql, :subtype => :mysql2, ...)
+  db_sqlite = Baza::Db.new(:type => :sqlite3, :path => ...)
+  
+  db_mysql.copy_to(db_sqlite)
+
+== Dumping SQL to an IO
+  db = Baza::Db.new(...)
+  dump = Baza::Dump.new(:db => db)
+  str_io = StringIO.new
+  dump.dump(str_io)
+
+== Transactions
+  db.transaction do
+    1000.times do
+      db.insert(:users, {:name => "Kasper"})
+    end
+  end
 
 == Contributing to baza
  
