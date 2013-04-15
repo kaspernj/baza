@@ -29,6 +29,7 @@ Is fairly painless.
 
 === Inserting
   db.insert(:users, {:name => "Kasper", :age => 27})
+  id = db.last_id
 
 It can also return the ID at the same time
   id = db.insert(:users, {:name => "Kasper", :age => 27}, :return_id => true)
@@ -70,6 +71,10 @@ Or you can use blocks:
   db.tables.list do |table|
     puts "Table-name: #{table.name}"
   end
+
+=== Table renaming
+  table = db.tables[:users]
+  table.rename(:new_table_name)
 
 === Column listing
   table = db.tables[:users]
