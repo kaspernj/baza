@@ -139,9 +139,9 @@ class Baza::Driver::Sqlite3::Tables::Table
   
   #Drops the table from the database.
   def drop
-    @tables.remove_from_list(self)
     raise "Cant drop native table: '#{self.name}'." if self.native?
     @db.query("DROP TABLE `#{self.name}`")
+    @tables.remove_from_list(self)
   end
   
   #Returns true if the table is safe to drop.

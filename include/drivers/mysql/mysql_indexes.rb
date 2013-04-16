@@ -42,8 +42,8 @@ class Baza::Driver::Mysql::Indexes::Index
   
   def data
     return {
-      "name" => name,
-      "columns" => @columns
+      :name => name,
+      :columns => @columns
     }
   end
   

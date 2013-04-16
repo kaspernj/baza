@@ -50,7 +50,7 @@ class Baza::Dump
       
       @table_obj = table_obj
       self.update_status
-      print "Dumping table: '#{table_obj.name}'.\n" if @debug
+      puts "Dumping table: '#{table_obj.name}'." if @debug
       self.dump_table(io, table_obj)
     end
   end

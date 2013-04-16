@@ -71,6 +71,11 @@ class Baza::Revision
           puts "Getting table-object for table: '#{table_name}'." if args[:debug]
           table_obj = db.tables[table_name]
           
+          table_list = db.tables.list
+          table_list.each do |name, table|
+            puts "Table found: #{table.name}"
+          end
+          
           #Cache indexes- and column-objects to avoid constant reloading.
           cols = table_obj.columns
           indexes = table_obj.indexes
@@ -162,7 +167,10 @@ class Baza::Revision
                 end
                 
                 if dochange
-                  col_obj.change(col_data)
+                  col_data_change = col_data.clone
+                  col_data_change.delete(:renames)
+                  
+                  col_obj.change(col_data_change)
                   
                   #Change has been made - update cache.
                   cols = table_obj.columns
@@ -188,7 +196,10 @@ class Baza::Revision
                       col_data[:on_before_rename].call(:db => db, :table => table_obj, :col => col_rename, :col_data => col_data)
                     end
                     
-                    col_rename.change(col_data)
+                    col_data_change = col_data.clone
+                    col_data_change.delete(:renames)
+                    
+                    col_rename.change(col_data_change)
                     
                     #Change has been made - update cache.
                     cols = table_obj.columns

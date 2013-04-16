@@ -8,8 +8,8 @@ class Baza::Driver::Mysql
       return {
         :type => :success,
         :args => {
-          :type => "mysql",
-          :subtype => "mysql2",
+          :type => :mysql,
+          :subtype => :mysql2,
           :conn => args[:object]
         }
       }
@@ -42,7 +42,7 @@ class Baza::Driver::Mysql
     
     @java_rs_data = {}
     @subtype = @knjdb.opts[:subtype]
-    @subtype = "mysql" if @subtype.to_s.empty?
+    @subtype = :mysql if @subtype.to_s.empty?
     self.reconnect
   end
   
@@ -65,9 +65,9 @@ class Baza::Driver::Mysql
   def reconnect
     @mutex.synchronize do
       case @subtype
-        when "mysql"
+        when :mysql
           @conn = Mysql.real_connect(@knjdb.opts[:host], @knjdb.opts[:user], @knjdb.opts[:pass], @knjdb.opts[:db], @port)
-        when "mysql2"
+        when :mysql2
           require "rubygems"
           require "mysql2"
           
@@ -110,7 +110,7 @@ class Baza::Driver::Mysql
             
             raise e
           end
-        when "java"
+        when :java
           if !@jdbc_loaded
             require "java"
             require "/usr/share/java/mysql-connector-java.jar" if File.exists?("/usr/share/java/mysql-connector-java.jar")
@@ -121,7 +121,7 @@ class Baza::Driver::Mysql
           @conn = java.sql::DriverManager.getConnection("jdbc:mysql://#{@knjdb.opts[:host]}:#{@port}/#{@knjdb.opts[:db]}?user=#{@knjdb.opts[:user]}&password=#{@knjdb.opts[:pass]}&populateInsertRowWithDefaultValues=true&zeroDateTimeBehavior=round&characterEncoding=#{@encoding}&holdResultsOpenOverStatementClose=true")
           self.query("SET SQL_MODE = ''")
         else
-          raise "Unknown subtype: #{@subtype}"
+          raise "Unknown subtype: #{@subtype} (#{@subtype.class.name})"
       end
       
       self.query("SET NAMES '#{self.esc(@encoding)}'") if @encoding
@@ -138,11 +138,11 @@ class Baza::Driver::Mysql
       tries += 1
       @mutex.synchronize do
         case @subtype
-          when "mysql"
+          when :mysql
             return Baza::Driver::Mysql::Result.new(self, @conn.query(str))
-          when "mysql2"
+          when :mysql2
             return Baza::Driver::Mysql::ResultMySQL2.new(@conn.query(str, @query_args))
-          when "java"
+          when :java
             stmt = conn.create_statement
             
             if str.match(/^\s*(delete|update|create|drop|insert\s+into|alter)\s+/i)
@@ -200,12 +200,12 @@ class Baza::Driver::Mysql
   def query_ubuf(str)
     @mutex.synchronize do
       case @subtype
-        when "mysql"
+        when :mysql
           @conn.query_with_result = false
           return Baza::Driver::Mysql::ResultUnbuffered.new(@conn, @opts, @conn.query(str))
-        when "mysql2"
+        when :mysql2
           return Baza::Driver::Mysql::ResultMySQL2.new(@conn.query(str, @query_args.merge(:stream => true)))
-        when "java"
+        when :java
           if str.match(/^\s*(delete|update|create|drop|insert\s+into)\s+/i)
             stmt = @conn.createStatement
             
@@ -244,11 +244,11 @@ class Baza::Driver::Mysql
   #Escapes a string to be safe to use in a query.
   def escape_alternative(string)
     case @subtype
-      when "mysql"
+      when :mysql
         return @conn.escape_string(string.to_s)
-      when "mysql2"
+      when :mysql2
         return @conn.escape(string.to_s)
-      when "java"
+      when :java
         return self.escape(string)
       else
         raise "Unknown subtype: '#{@subtype}'."
@@ -281,15 +281,15 @@ class Baza::Driver::Mysql
   #Returns the last inserted ID for the connection.
   def lastID
     case @subtype
-      when "mysql"
+      when :mysql
         @mutex.synchronize do
           return @conn.insert_id.to_i
         end
-      when "mysql2"
+      when :mysql2
         @mutex.synchronize do
           return @conn.last_id.to_i
         end
-      when "java"
+      when :java
         data = self.query("SELECT LAST_INSERT_ID() AS id").fetch
         return data[:id].to_i if data.key?(:id)
         raise "Could not figure out last inserted ID."

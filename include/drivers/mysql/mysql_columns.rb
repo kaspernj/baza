@@ -6,17 +6,18 @@ class Baza::Driver::Mysql::Columns
   end
   
   #Returns the SQL for this column.
-  DATA_SQL_ALLOWED_KEYS = [:type, :maxlength, :name, :primarykey, :autoincr, :default, :comment, :after, :first, :storage]
+  DATA_SQL_ALLOWED_KEYS = [:type, :maxlength, :name, :primarykey, :autoincr, :default, :comment, :after, :first, :storage, :null]
   def data_sql(data)
     data.each do |key, val|
       raise "Invalid key: '#{key}' (#{key.class.name})." if !DATA_SQL_ALLOWED_KEYS.include?(key)
     end
     
     raise "No type given." if !data[:type]
+    type = data[:type].to_sym
     
-    data["maxlength"] = 255 if data[:type] == "varchar" and !data.key?(:maxlength)
+    data[:maxlength] = 255 if type == :varchar and !data.key?(:maxlength)
     
-    sql = "`#{data[:name]}` #{data[:type]}"
+    sql = "`#{data[:name]}` #{type}"
     sql << "(#{data[:maxlength]})" if data[:maxlength]
     sql << " PRIMARY KEY" if data[:primarykey]
     sql << " AUTO_INCREMENT" if data[:autoincr]
@@ -45,6 +46,7 @@ class Baza::Driver::Mysql::Columns::Column
   def initialize(args)
     @args = args
     @name = @args[:data][:Field].to_sym
+    @db = @args[:db]
   end
   
   #Used to validate in Knj::Wrap_map.
@@ -122,7 +124,7 @@ class Baza::Driver::Mysql::Columns::Column
   
   #Returns true if the column is auto-increasing. Otherwise false.
   def autoincr?
-    return true if @args[:data][:Extra].index("auto_increment") != nil
+    return true if @args[:data][:Extra].include?("auto_increment")
     return false
   end
   
@@ -133,7 +135,8 @@ class Baza::Driver::Mysql::Columns::Column
   
   #Drops the column from the table.
   def drop
-    @args[:db].query("ALTER TABLE `#{@args[:table_name]}` DROP COLUMN `#{self.name}`")
+    @args[:db].query("ALTER TABLE `#{@db.esc_table(@args[:table_name])}` DROP COLUMN `#{@db.esc_col(self.name)}`")
+    table = self.table.remove_column_from_list(self)
     return nil
   end
   
@@ -143,14 +146,17 @@ class Baza::Driver::Mysql::Columns::Column
     table_escape = "`#{@args[:db].esc_table(self.table.name)}`"
     newdata = data.clone
     
-    newdata["name"] = self.name if !newdata.key?("name")
-    newdata["type"] = self.type if !newdata.key?("type")
-    newdata["maxlength"] = self.maxlength if !newdata.key?("maxlength") and self.maxlength
-    newdata["null"] = self.null? if !newdata.key?("null")
-    newdata["default"] = self.default if !newdata.key?("default") and self.default
-    newdata.delete("primarykey") if newdata.key?("primarykey")
+    newdata[:name] = self.name if !newdata.key?(:name)
+    newdata[:type] = self.type if !newdata.key?(:type)
+    newdata[:maxlength] = self.maxlength if !newdata.key?(:maxlength) and self.maxlength
+    newdata[:null] = self.null? if !newdata.key?(:null)
+    newdata[:default] = self.default if !newdata.key?(:default) and self.default
+    newdata.delete(:primarykey) if newdata.key?(:primarykey)
     
-    type_s = newdata["type"].to_s
+    drop_add = true if self.name.to_s != newdata[:name].to_s
+    
+    self.table.__send__(:remove_column_from_list, self) if drop_add
     @args[:db].query("ALTER TABLE #{table_escape} CHANGE #{col_escaped} #{@args[:db].cols.data_sql(newdata)}")
+    self.table.__send__(:add_column_to_list, self) if drop_add
   end
 end

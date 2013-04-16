@@ -51,7 +51,8 @@ class Baza::Driver::Mysql::Tables
         if !obj
           obj = Baza::Driver::Mysql::Tables::Table.new(
             :db => @db,
-            :data => d_tables
+            :data => d_tables,
+            :tables => self
           )
           @list[name] = obj
         end
@@ -104,6 +105,18 @@ class Baza::Driver::Mysql::Tables
     return [sql] if args and args[:return_sql]
     @db.query(sql)
   end
+  
+  private
+  
+  def add_to_list(table)
+    raise "Already exists: '#{table.name}'." if @list.key?(table.name) and @list[table.name].__id__ != table.__id__
+    @list[table.name] = table
+  end
+  
+  def remove_from_list(table)
+    raise "Table not in list: '#{table.name}'." if !@list.key?(table.name)
+    @list.delete(table.name)
+  end
 end
 
 class Baza::Driver::Mysql::Tables::Table
@@ -117,6 +130,7 @@ class Baza::Driver::Mysql::Tables::Table
     @list = Wref_map.new
     @indexes_list = Wref_map.new
     @name = @data[:Name].to_sym
+    @tables = args[:tables]
     
     raise "Could not figure out name from: '#{@data}'." if @data[:Name].to_s.strip.length <= 0
   end
@@ -132,7 +146,9 @@ class Baza::Driver::Mysql::Tables::Table
   
   def drop
     raise "Cant drop native table: '#{self.name}'." if self.native?
-    @db.query("DROP TABLE `#{self.name}`")
+    @db.query("DROP TABLE `#{@db.esc_table(self.name)}`")
+    @tables.__send__(:remove_from_list, self)
+    return nil
   end
   
   #Returns true if the table is safe to drop.
@@ -167,11 +183,12 @@ class Baza::Driver::Mysql::Tables::Table
   def columns(args = nil)
     @db.cols
     ret = {}
-    sql = "SHOW FULL COLUMNS FROM `#{self.name}`"
+    sql = "SHOW FULL COLUMNS FROM `#{@db.esc_table(self.name)}`"
     sql << " WHERE `Field` = '#{@db.esc(args[:name])}'" if args and args.key?(:name)
     
     @db.q(sql) do |d_cols|
-      obj = @list.get!(d_cols[:Field].to_s)
+      name = d_cols[:Field].to_sym
+      obj = @list.get!(name)
       
       if !obj
         obj = Baza::Driver::Mysql::Columns::Column.new(
@@ -179,13 +196,13 @@ class Baza::Driver::Mysql::Tables::Table
           :db => @db,
           :data => d_cols
         )
-        @list[d_cols[:Field].to_s] = obj
+        @list[name] = obj
       end
       
       if block_given?
         yield(obj)
       else
-        ret[d_cols[:Field].to_s] = obj
+        ret[name] = obj
       end
     end
     
@@ -200,7 +217,7 @@ class Baza::Driver::Mysql::Tables::Table
     @db.indexes
     ret = {}
     
-    sql = "SHOW INDEX FROM `#{self.name}`"
+    sql = "SHOW INDEX FROM `#{@db.esc_table(self.name)}`"
     sql << " WHERE `Key_name` = '#{@db.esc(args[:name])}'" if args and args.key?(:name)
     
     @db.q(sql) do |d_indexes|
@@ -247,9 +264,11 @@ class Baza::Driver::Mysql::Tables::Table
   end
   
   def create_columns(col_arr)
-    col_arr.each do |col_data|
-      sql = "ALTER TABLE `#{self.name}` ADD COLUMN #{@db.cols.data_sql(col_data)};"
-      @db.query(sql)
+    @db.transaction do
+      col_arr.each do |col_data|
+        sql = "ALTER TABLE `#{self.name}` ADD COLUMN #{@db.cols.data_sql(col_data)};"
+        @db.query(sql)
+      end
     end
   end
   
@@ -274,11 +293,11 @@ class Baza::Driver::Mysql::Tables::Table
         sql << "CREATE"
       end
       
-      if index_data.is_a?(String)
+      if index_data.is_a?(String) or index_data.is_a?(Symbol)
         index_data = {:name => index_data, :columns => [index_data]}
       end
       
-      raise "No name was given." if !index_data.key?(:name) or index_data[:name].strip.empty?
+      raise "No name was given: '#{index_data}'." if !index_data.key?(:name) or index_data[:name].to_s.strip.empty?
       raise "No columns was given on index: '#{index_data[:name]}'." if !index_data[:columns] or index_data[:columns].empty?
       
       if args[:return_sql]
@@ -290,7 +309,7 @@ class Baza::Driver::Mysql::Tables::Table
       end
       
       sql << " UNIQUE" if index_data[:unique]
-      sql << " INDEX `#{db.esc_col(index_data[name])}`"
+      sql << " INDEX `#{db.esc_col(index_data[:name])}`"
       
       if args[:on_table] or !args.key?(:on_table)
         sql << " ON `#{db.esc_table(args[:table_name])}`"
@@ -321,15 +340,19 @@ class Baza::Driver::Mysql::Tables::Table
   end
   
   def rename(newname)
+    newname = newname.to_sym
     oldname = self.name
-    @db.query("ALTER TABLE `#{oldname}` RENAME TO `#{newname}`")
-    @db.tables.list[newname] = self
-    @db.tables.list.delete(oldname)
+    
+    @tables.__send__(:remove_from_list, self)
+    @db.query("ALTER TABLE `#{@db.esc_table(oldname)}` RENAME TO `#{@db.esc_table(newname)}`")
+    
     @data[:Name] = newname
+    @name = newname
+    @tables.__send__(:add_to_list, self)
   end
   
   def truncate
-    @db.query("TRUNCATE `#{self.name}`")
+    @db.query("TRUNCATE `#{@db.esc_table(self.name)}`")
     return self
   end
   
@@ -353,11 +376,6 @@ class Baza::Driver::Mysql::Tables::Table
   
   def insert(data)
     @db.insert(self.name, data)
-  end
-  
-  #Returns the current engine of the table.
-  def engine
-		return @data[:Engine]
   end
   
   def clone(newname, args = {})
@@ -409,14 +427,12 @@ class Baza::Driver::Mysql::Tables::Table
     sql << " ENGINE=#{args[:engine]}" if args[:engine]
     sql << ";"
     
-    puts sql
-    
     #Create table.
     @db.query(sql)
     
     
     #Insert data of previous data in a single query.
-    @db.query("INSERT INTO `#{newname}` SELECT * FROM `#{self.name}`")
+    @db.query("INSERT INTO `#{@db.esc_table(newname)}` SELECT * FROM `#{@db.esc_table(self.name)}`")
     
     
     #Create indexes.
@@ -433,10 +449,27 @@ class Baza::Driver::Mysql::Tables::Table
     return new_table
   end
   
+  #Returns the current engine of the table.
+  def engine
+    return @data[:Engine]
+  end
+  
   #Changes the engine for a table.
   def engine=(newengine)
 		raise "Invalid engine: '#{newengine}'." if !newengine.to_s.match(/^[A-z]+$/)
 		@db.query("ALTER TABLE `#{@db.esc_table(self.name)}` ENGINE = #{newengine}") if self.engine.to_s != newengine.to_s
 		@data[:Engine] = newengine
+  end
+  
+  private
+  
+  def remove_column_from_list(col)
+    raise "Column not found: '#{col.name}'." if !@list.key?(col.name)
+    @list.delete(col.name)
+  end
+  
+  def add_column_to_list(col)
+    raise "Column already exists: '#{col.name}'." if @list.key?(col.name)
+    @list[col.name] = col
   end
 end

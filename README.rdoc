@@ -48,7 +48,7 @@ Inserting multiple rows in one query is also fairly painless:
   db.delete(:users, {:name => "Kasper"})
 
 === Upsert
-row will be inserted with {:name => "Kasper", :age => 27} if it doesnt exist or rows with {:name => "Kasper"} will have their their age updated to 27.
+The following example handels a row that will be inserted with {:name => "Kasper", :age => 27} if it doesnt exist or rows with {:name => "Kasper"} will have their their age updated to 27.
   db.upsert(:users, {:name => "Kasper"}, {:age => 27})
 
 == Structure

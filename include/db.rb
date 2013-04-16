@@ -317,10 +317,20 @@ class Baza::Db
     return sql if args and args[:return_sql]
     
     self.conn_exec do |driver|
-      driver.query(sql)
+      begin
+        driver.query(sql)
+      rescue => e
+        self.add_sql_to_error(e, sql) if @opts[:sql_to_error]
+        raise e
+      end
+      
       return driver.lastID if args and args[:return_id]
       return nil
     end
+  end
+  
+  def add_sql_to_error(error, sql)
+    error.message << " (SQL: #{sql})"
   end
   
   #Returns the correct SQL-value for the given value. If it is a number, then just the raw number as a string will be returned. nil's will be NULL and strings will have quotes and will be escaped.
@@ -602,8 +612,13 @@ class Baza::Db
       end
     end
     
-    self.conn_exec do |driver|
-      return driver.query(string)
+    begin
+      self.conn_exec do |driver|
+        return driver.query(string)
+      end
+    rescue => e
+      e.message << " (SQL: #{string})" if @opts[:sql_to_error]
+      raise e
     end
   end
   
