@@ -229,7 +229,7 @@ describe "Baza" do
           
           db1.copy_to(db2)
           
-          table2 = db2.tables["test_table"]
+          table2 = db2.tables[:test_table]
           
           cols2 = table2.columns
           cols2.length.should eql(cols1.length)

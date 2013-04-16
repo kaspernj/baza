@@ -158,12 +158,12 @@ class Baza::Driver::Mysql::Tables::Table
   end
   
   def optimize
-    @db.query("OPTIMIZE TABLE `#{self.name}`")
+    @db.query("OPTIMIZE TABLE `#{@db.esc_table(self.name)}`")
     return self
   end
   
   def rows_count
-    return @data[:Rows].to_i
+    return @db.q("SELECT COUNT(*) AS count FROM `#{@db.esc_table(self.name)}`").fetch[:count].to_i
   end
   
   def column(name)

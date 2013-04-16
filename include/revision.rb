@@ -71,11 +71,6 @@ class Baza::Revision
           puts "Getting table-object for table: '#{table_name}'." if args[:debug]
           table_obj = db.tables[table_name]
           
-          table_list = db.tables.list
-          table_list.each do |name, table|
-            puts "Table found: #{table.name}"
-          end
-          
           #Cache indexes- and column-objects to avoid constant reloading.
           cols = table_obj.columns
           indexes = table_obj.indexes

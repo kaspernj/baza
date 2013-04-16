@@ -210,9 +210,10 @@ class Baza::Db
     end
   end
   
-  COPY_TO_ALLOWED_ARGS = [:tables]
+  COPY_TO_ALLOWED_ARGS = [:tables, :debug]
   #Copies the content of the current database to another instance of Baza::Db.
   def copy_to(db, args = {})
+    debug = args[:debug]
     raise "No tables given." if !data[:tables]
     
     data[:tables].each do |table|
@@ -222,12 +223,14 @@ class Baza::Db
       table.delete(:indexes) if table.key?(:indexes) and args[:skip_indexes]
       
       table_name = table.delete(:name)
+      puts "Creating table: '#{table_name}'." if debug
       db.tables.create(table_name, table)
       
       limit_from = 0
       limit_incr = 1000
       
       loop do
+        puts "Copying rows (#{limit_from}, #{limit_incr})." if debug
         ins_arr = []
         q_rows = self.select(table_name, {}, {:limit_from => limit_from, :limit_to => limit_incr})
         while d_rows = q_rows.fetch
@@ -245,6 +248,7 @@ class Baza::Db
         
         break if ins_arr.empty?
         
+        puts "Insertering #{ins_arr.length} rows." if debug
         db.insert_multi(table_name, ins_arr)
         limit_from += limit_incr
       end
