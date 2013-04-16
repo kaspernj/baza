@@ -260,6 +260,37 @@ describe "Baza" do
         db2 = Baza::Db.from_object(:object => db.conn.conn)
       end
     end
+    
+    it "should be able to do ID-queries through the select-method" do
+      driver[:const].sample_db do |db|
+        db.tables.create(:test_table, {
+          :columns => [
+            {:name => :idrow, :type => :int, :autoincr => true, :primarykey => true},
+            {:name => :name, :type => :varchar}
+          ]
+        })
+        
+        count = 0
+        100.times do
+          arr = []
+          100.times do
+            count += 1
+            arr << {:name => "Kasper #{count}"}
+          end
+          
+          db.insert_multi(:test_table, arr)
+        end
+        
+        count_found = 0
+        db.select(:test_table, nil, :idquery => :idrow) do |row|
+          count_found += 1
+          
+          row[:name].should eql("Kasper #{count_found}")
+        end
+        
+        count_found.should eql(10000)
+      end
+    end
   end
   
   it "should be able to connect to mysql and do various stuff" do

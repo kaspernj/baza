@@ -58,25 +58,20 @@ class Baza::Driver::Sqlite3
   
   #Executes a query against the driver.
   def query(string)
-    begin
-      if @knjdb.opts[:subtype] == "rhodes"
-        return Baza::Driver::Sqlite3::Result.new(self, @conn.execute(string, string))
-      elsif @knjdb.opts[:subtype] == "java"
-        begin
-          return Baza::Driver::Sqlite3::ResultJava.new(self, @stat.executeQuery(string))
-        rescue java.sql.SQLException => e
-          if e.message.to_s.index("query does not return ResultSet") != nil
-            return Baza::Driver::Sqlite3::ResultJava.new(self, nil)
-          else
-            raise e
-          end
+    if @knjdb.opts[:subtype] == :rhodes
+      return Baza::Driver::Sqlite3::Result.new(self, @conn.execute(string, string))
+    elsif @knjdb.opts[:subtype] == :java
+      begin
+        return Baza::Driver::Sqlite3::ResultJava.new(self, @stat.executeQuery(string))
+      rescue java.sql.SQLException => e
+        if e.message.to_s.index("query does not return ResultSet") != nil
+          return Baza::Driver::Sqlite3::ResultJava.new(self, nil)
+        else
+          raise e
         end
-      else
-        return Baza::Driver::Sqlite3::Result.new(self, @conn.execute(string))
       end
-    rescue => e
-      #Add SQL to the error message to make it easier to debug.
-      raise e.class, "#{e.message} (SQL: #{string})"
+    else
+      return Baza::Driver::Sqlite3::Result.new(self, @conn.execute(string))
     end
   end
   
@@ -116,6 +111,20 @@ class Baza::Driver::Sqlite3
     @conn.transaction do
       yield(@knjdb)
     end
+  end
+  
+  def insert_multi(tablename, arr_hashes, args = nil)
+    sql = [] if args and args[:return_sql]
+    
+    @knjdb.transaction do
+      arr_hashes.each do |hash|
+        res = @knjdb.insert(tablename, hash, args)
+        sql << res if args and args[:return_sql]
+      end
+    end
+    
+    return sql if args and args[:return_sql]
+    return nil
   end
 end
 

@@ -366,14 +366,21 @@ class Baza::Db
     
     if @esc_driver.respond_to?(:insert_multi)
       if args and args[:return_sql]
-        return [@esc_driver.insert_multi(tablename, arr_hashes, args)]
+        res =  @esc_driver.insert_multi(tablename, arr_hashes, args)
+        if res.is_a?(String)
+          return [res]
+        elsif res.is_a?(Array)
+          return res
+        else
+          raise "Unknown result: '#{res.class.name}'."
+        end
       end
       
       self.conn_exec do |driver|
         return driver.insert_multi(tablename, arr_hashes, args)
       end
     else
-      ret = [] if args and (args[:return_id] or args[:return_sql])
+      ret = []
       arr_hashes.each do |hash|
         if ret
           ret << self.insert(tablename, hash, args)
