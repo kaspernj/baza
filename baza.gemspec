@@ -5,11 +5,11 @@
 
 Gem::Specification.new do |s|
   s.name = "baza"
-  s.version = "0.0.0"
+  s.version = "0.0.1"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Kasper Johansen"]
-  s.date = "2013-04-12"
+  s.date = "2013-04-16"
   s.description = "A database abstraction layer, model framework and database framework."
   s.email = "kj@gfish.com"
   s.extra_rdoc_files = [
@@ -25,6 +25,7 @@ Gem::Specification.new do |s|
     "README.rdoc",
     "Rakefile",
     "VERSION",
+    "baza.gemspec",
     "include/db.rb",
     "include/dbtime.rb",
     "include/drivers/.DS_Store",
@@ -53,6 +54,8 @@ Gem::Specification.new do |s|
     "lib/baza.rb",
     "spec/baza_spec.rb",
     "spec/db_spec_encoding_test_file.txt",
+    "spec/info_mysql_example.rb",
+    "spec/info_sqlite3.rb",
     "spec/spec_helper.rb"
   ]
   s.homepage = "http://github.com/kaspernj/baza"
@@ -73,6 +76,7 @@ Gem::Specification.new do |s|
       s.add_development_dependency(%q<bundler>, [">= 1.0.0"])
       s.add_development_dependency(%q<jeweler>, ["~> 1.8.4"])
       s.add_development_dependency(%q<sqlite3>, [">= 0"])
+      s.add_development_dependency(%q<mysql2>, [">= 0"])
     else
       s.add_dependency(%q<datet>, [">= 0"])
       s.add_dependency(%q<wref>, [">= 0"])
@@ -82,6 +86,7 @@ Gem::Specification.new do |s|
       s.add_dependency(%q<bundler>, [">= 1.0.0"])
       s.add_dependency(%q<jeweler>, ["~> 1.8.4"])
       s.add_dependency(%q<sqlite3>, [">= 0"])
+      s.add_dependency(%q<mysql2>, [">= 0"])
     end
   else
     s.add_dependency(%q<datet>, [">= 0"])
@@ -92,6 +97,7 @@ Gem::Specification.new do |s|
     s.add_dependency(%q<bundler>, [">= 1.0.0"])
     s.add_dependency(%q<jeweler>, ["~> 1.8.4"])
     s.add_dependency(%q<sqlite3>, [">= 0"])
+    s.add_dependency(%q<mysql2>, [">= 0"])
   end
 end
 
