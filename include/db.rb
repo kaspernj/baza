@@ -277,7 +277,7 @@ class Baza::Db
   # id = db.insert(:users, {:name => "John", :lastname => "Doe"}, :return_id => true)
   # sql = db.insert(:users, {:name => "John", :lastname => "Doe"}, :return_sql => true) #=> "INSERT INTO `users` (`name`, `lastname`) VALUES ('John', 'Doe')"
   def insert(tablename, arr_insert, args = nil)
-    sql = "INSERT INTO #{@sep_table}#{tablename}#{@sep_table}"
+    sql = "INSERT INTO #{@sep_table}#{self.esc_table(tablename)}#{@sep_table}"
     
     if !arr_insert or arr_insert.empty?
       #This is the correct syntax for inserting a blank row in MySQL.
@@ -299,7 +299,7 @@ class Baza::Db
           sql << ", "
         end
         
-        sql << "#{@sep_col}#{key}#{@sep_col}"
+        sql << "#{@sep_col}#{self.esc_col(key)}#{@sep_col}"
       end
       
       sql << ") VALUES ("
@@ -401,15 +401,15 @@ class Baza::Db
   #
   #===Examples
   # db.update(:users, {:name => "John"}, {:lastname => "Doe"})
-  def update(tablename, arr_update, arr_terms = {}, args = nil)
-    raise "'arr_update' was not a hash." if !arr_update.is_a?(Hash)
-    return false if arr_update.empty?
+  def update(tablename, hash_update, arr_terms = {}, args = nil)
+    raise "'hash_update' was not a hash: '#{hash_update.class.name}'." if !hash_update.is_a?(Hash)
+    return false if hash_update.empty?
     
     sql = ""
     sql << "UPDATE #{@sep_col}#{tablename}#{@sep_col} SET "
     
     first = true
-    arr_update.each do |key, value|
+    hash_update.each do |key, value|
       if first
         first = false
       else
@@ -419,8 +419,8 @@ class Baza::Db
       #Convert dates to valid dbstr.
       value = self.date_out(value) if value.is_a?(Datet) or value.is_a?(Time)
       
-      sql << "#{@sep_col}#{key}#{@sep_col} = "
-      sql << "#{@sep_val}#{@esc_driver.escape(value)}#{@sep_val}"
+      sql << "#{@sep_col}#{self.esc_col(key)}#{@sep_col} = "
+      sql << self.sqlval(value)
     end
     
     if arr_terms and arr_terms.length > 0
@@ -564,7 +564,7 @@ class Baza::Db
       elsif value.is_a?(Hash)
         raise "Dont know how to handle hash."
       else
-        sql << "#{@sep_col}#{key}#{@sep_col} = #{@sep_val}#{@esc_driver.escape(value)}#{@sep_val}"
+        sql << "#{@sep_col}#{key}#{@sep_col} = #{self.sqlval(value)}"
       end
     end
     

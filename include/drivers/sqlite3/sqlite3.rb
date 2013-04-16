@@ -9,7 +9,7 @@ class Baza::Driver::Sqlite3
       return {
         :type => :success,
         :args => {
-          :type => "sqlite3",
+          :type => :sqlite3,
           :conn => args[:object]
         }
       }

@@ -870,4 +870,14 @@ class Baza::Model
       return obj.name(*args)
     end
   end
+  
+  #Returns a hash reflection the current ActiveRecord model and its current values (not like .attributes which reflects the old values).
+  def self.activerecord_to_hash(model)
+    attrs = {}
+    model.attribute_names.each do |name|
+      attrs[name] = model.__send__(name)
+    end
+    
+    return attrs
+  end
 end
