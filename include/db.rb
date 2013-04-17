@@ -435,13 +435,19 @@ class Baza::Db
   end
   
   #Checks if a given selector exists. If it does, updates it to match data. If not inserts the row.
-  def upsert(table, selector, data)
+  def upsert(table, selector, data, args = nil)
     row = self.select(table, selector, "limit" => 1).fetch
     
-    if row
-      self.update(table, data, selector)
+    if args and args[:buffer]
+      obj = args[:buffer]
     else
-      self.insert(table, selector.merge(data))
+      obj = self
+    end
+    
+    if row
+      obj.update(table, data, selector)
+    else
+      obj.insert(table, selector.merge(data))
     end
   end
   

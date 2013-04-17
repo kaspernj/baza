@@ -33,7 +33,7 @@ class Baza::QueryBuffer
   end
   
   #Delete as on a normal Baza::Db.
-  #===Examples
+  #===Example
   # db.q_buffer do |buffer|
   #   buffer.delete(:users, {:id => 5})
   # end
@@ -41,6 +41,16 @@ class Baza::QueryBuffer
     STDOUT.puts "Delete called on table #{table} with arguments: '#{where}'." if @debug
     self.query(@args[:db].delete(table, where, :return_sql => true))
     return nil
+  end
+  
+  #Update as on a normal Baza::Db.
+  #===Example
+  # db.q_buffer do |buffer|
+  #   buffer.update(:users, {:name => "Kasper"}, {:id => 5})
+  # end
+  def update(table, update, terms)
+    STDOUT.puts "Update called on table #{table}." if @debug
+    self.query(@args[:db].update(table, update, terms, :return_sql => true))
   end
   
   #Plans to inset a hash into a table. It will only be inserted when flush is called.

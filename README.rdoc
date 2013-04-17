@@ -107,6 +107,18 @@ Or a specific column:
     end
   end
 
+== Query Buffer
+In order to speed things up, but without using transactions directly, you can use a query buffer. This stores various instructions in memory and flushes them every now and then through transactions or intelligent queries (like multi-insertion). The drawback is that it will not be possible to test the queries for errors before a flush is executed and it wont be possible to read results form any of the queries. It is fairly simple do however:
+  db.q_buffer do |buffer|
+    100_000.times do |count|
+      buffer.insert(:table_name, {:name => "Kasper #{count}"})
+      
+      buffer.query("UPDATE table SET ...")
+      buffer.query("DELETE FROM table WHERE ...")
+    end
+  end
+
+
 == Contributing to baza
  
 * Check out the latest master to make sure the feature hasn't been implemented or the bug hasn't been fixed yet.

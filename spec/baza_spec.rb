@@ -311,6 +311,21 @@ describe "Baza" do
         test_table.rows_count.should eql(10000)
         
         db.q_buffer do |buffer|
+          count = 0
+          db.select(:test_table, {}, :orderby => :id) do |row|
+            row[:name].should eql("Kasper #{count}")
+            buffer.update(:test_table, {:name => "Kasper #{count}-#{count}"}, {:id => row[:id]})
+            count += 1
+          end
+        end
+        
+        count = 0
+        db.select(:test_table, {}, :orderby => :id) do |row|
+          row[:name].should eql("Kasper #{count}-#{count}")
+          count += 1
+        end
+        
+        db.q_buffer do |buffer|
           db.select(:test_table) do |row|
             buffer.delete(:test_table, {:id => row[:id]})
           end
