@@ -47,7 +47,6 @@ class Baza::QueryBuffer
   def update(table, update, terms)
     STDOUT.puts "Update called on table #{table}." if @debug
     self.query(@args[:db].update(table, update, terms, :return_sql => true))
-    self.flush if @queries_count >= 1000
     return nil
   end
   
@@ -56,7 +55,6 @@ class Baza::QueryBuffer
   # buffer.upsert(:users, {:id => 5}, {:name => "Kasper"})
   def upsert(table, data, terms)
     @args[:db].upsert(table, data, terms, :buffer => self)
-    self.flush if @queries_count >= 1000
     return nil
   end
   
@@ -65,7 +63,6 @@ class Baza::QueryBuffer
   # buffer.insert(:users, {:name => "John Doe"})
   def insert(table, data)
     self.query(@args[:db].insert(table, data, :return_sql => true))
-    self.flush if @queries_count >= 1000
     return nil
   end
   
@@ -75,10 +72,12 @@ class Baza::QueryBuffer
     
     @lock.synchronize do
       if !@queries.empty?
-        @args[:db].transaction do
-          @queries.shift(1000).each do |str|
-            STDOUT.print "Executing via buffer: #{str}\n" if @debug
-            @args[:db].q(str)
+        while !@queries.empty?
+          @args[:db].transaction do
+            @queries.shift(1000).each do |str|
+              STDOUT.print "Executing via buffer: #{str}\n" if @debug
+              @args[:db].q(str)
+            end
           end
         end
       end
