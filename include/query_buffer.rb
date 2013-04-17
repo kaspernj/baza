@@ -47,6 +47,8 @@ class Baza::QueryBuffer
   def update(table, update, terms)
     STDOUT.puts "Update called on table #{table}." if @debug
     self.query(@args[:db].update(table, update, terms, :return_sql => true))
+    self.flush if @queries_count >= 1000
+    return nil
   end
   
   #Shortcut to doing upsert through the buffer instead of through the db-object with the buffer as an argument.
@@ -54,18 +56,15 @@ class Baza::QueryBuffer
   # buffer.upsert(:users, {:id => 5}, {:name => "Kasper"})
   def upsert(table, data, terms)
     @args[:db].upsert(table, data, terms, :buffer => self)
+    self.flush if @queries_count >= 1000
+    return nil
   end
   
   #Plans to inset a hash into a table. It will only be inserted when flush is called.
   #===Examples
   # buffer.insert(:users, {:name => "John Doe"})
   def insert(table, data)
-    @lock.synchronize do
-      @inserts[table] = [] if !@inserts.key?(table)
-      @inserts[table] << data
-      @queries_count += 1
-    end
-    
+    self.query(@args[:db].insert(table, data, :return_sql => true))
     self.flush if @queries_count >= 1000
     return nil
   end
