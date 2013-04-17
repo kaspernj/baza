@@ -1,6 +1,7 @@
 GEM
   remote: http://rubygems.org/
   specs:
+    array_enumerator (0.0.3)
     datet (0.0.25)
     diff-lcs (1.1.3)
     git (1.2.5)
@@ -46,6 +47,7 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
+  array_enumerator
   bundler (>= 1.0.0)
   datet
   jeweler (~> 1.8.4)

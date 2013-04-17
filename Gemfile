@@ -6,6 +6,7 @@ source "http://rubygems.org"
 gem "datet"
 gem "wref"
 gem "knjrbfw"
+gem "array_enumerator"
 
 # Add dependencies to develop your gem here.
 # Include everything needed to run rake, tests, features, etc.

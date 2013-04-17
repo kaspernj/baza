@@ -1,3 +1,5 @@
+require "#{File.dirname(__FILE__)}/model_handler_sqlhelper.rb"
+
 class Baza::ModelHandler
   attr_reader :args, :events, :data, :ids_cache, :ids_cache_should
   

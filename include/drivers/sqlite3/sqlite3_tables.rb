@@ -421,11 +421,11 @@ class Baza::Driver::Sqlite3::Tables::Table
     end
     
     index_arr.each do |index_data|
-      if index_data.is_a?(String)
+      if index_data.is_a?(String) or index_data.is_a?(Symbol)
         index_data = {:name => index_data, :columns => [index_data]}
       end
       
-      raise "No name was given in data: '#{index_data}'." if !index_data.key?(:name) or index_data[:name].strip.empty?
+      raise "No name was given in data: '#{index_data}'." if !index_data.key?(:name) or index_data[:name].to_s.strip.empty?
       raise "No columns was given on index #{index_data[:name]}." if index_data[:columns].empty?
       
       name = index_data[:name]
