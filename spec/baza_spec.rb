@@ -291,6 +291,34 @@ describe "Baza" do
         count_found.should eql(10000)
       end
     end
+    
+    it "should be able to use query buffers" do
+      driver[:const].sample_db do |db|
+        db.tables.create(:test_table, {
+          :columns => [
+            {:name => :id, :type => :int, :autoincr => true, :primarykey => true},
+            {:name => :name, :type => :varchar}
+          ]
+        })
+        
+        db.q_buffer do |buffer|
+          10000.times do |count|
+            buffer.insert(:test_table, {:name => "Kasper #{count}"})
+          end
+        end
+        
+        test_table = db.tables[:test_table]
+        test_table.rows_count.should eql(10000)
+        
+        db.q_buffer do |buffer|
+          db.select(:test_table) do |row|
+            buffer.delete(:test_table, {:id => row[:id]})
+          end
+        end
+        
+        test_table.rows_count.should eql(0)
+      end
+    end
   end
   
   it "should be able to connect to mysql and do various stuff" do

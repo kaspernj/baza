@@ -64,17 +64,19 @@ class Baza::QueryBuffer
     return nil if @queries_count <= 0
     
     @lock.synchronize do
-      @args[:db].transaction do
-        @queries.shift(1000).each do |str|
-          STDOUT.print "Executing via buffer: #{str}\n" if @debug
-          @args[:db].q(str)
-        end
-        
-        @inserts.each do |table, datas_arr|
-          while !datas_arr.empty?
-            datas_chunk_arr = datas_arr.shift(1000)
-            @args[:db].insert_multi(table, datas_chunk_arr)
+      if !@queries.empty?
+        @args[:db].transaction do
+          @queries.shift(1000).each do |str|
+            STDOUT.print "Executing via buffer: #{str}\n" if @debug
+            @args[:db].q(str)
           end
+        end
+      end
+      
+      @inserts.each do |table, datas_arr|
+        while !datas_arr.empty?
+          datas_chunk_arr = datas_arr.shift(1000)
+          @args[:db].insert_multi(table, datas_chunk_arr)
         end
       end
       
