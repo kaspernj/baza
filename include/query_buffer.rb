@@ -34,9 +34,7 @@ class Baza::QueryBuffer
   
   #Delete as on a normal Baza::Db.
   #===Example
-  # db.q_buffer do |buffer|
-  #   buffer.delete(:users, {:id => 5})
-  # end
+  # buffer.delete(:users, {:id => 5})
   def delete(table, where)
     STDOUT.puts "Delete called on table #{table} with arguments: '#{where}'." if @debug
     self.query(@args[:db].delete(table, where, :return_sql => true))
@@ -45,19 +43,22 @@ class Baza::QueryBuffer
   
   #Update as on a normal Baza::Db.
   #===Example
-  # db.q_buffer do |buffer|
-  #   buffer.update(:users, {:name => "Kasper"}, {:id => 5})
-  # end
+  # buffer.update(:users, {:name => "Kasper"}, {:id => 5})
   def update(table, update, terms)
     STDOUT.puts "Update called on table #{table}." if @debug
     self.query(@args[:db].update(table, update, terms, :return_sql => true))
   end
   
+  #Shortcut to doing upsert through the buffer instead of through the db-object with the buffer as an argument.
+  #===Example
+  # buffer.upsert(:users, {:id => 5}, {:name => "Kasper"})
+  def upsert(table, data, terms)
+    @args[:db].upsert(table, data, terms, :buffer => self)
+  end
+  
   #Plans to inset a hash into a table. It will only be inserted when flush is called.
   #===Examples
-  # db.q_buffer do |buffer|
-  #   buffer.insert(:users, {:name => "John Doe"})
-  # end
+  # buffer.insert(:users, {:name => "John Doe"})
   def insert(table, data)
     @lock.synchronize do
       @inserts[table] = [] if !@inserts.key?(table)

@@ -116,14 +116,14 @@ describe "Baza" do
         table.reload
         rows_count = table.rows_count
         
-        db.upsert(:test_table, sel, data)
+        db.upsert(:test_table, data, sel)
         row = db.select(:test_table, sel).fetch
         row[:name].should eql("upsert - Kasper Johansen")
         
         table.reload
         table.rows_count.should eql(rows_count + 1)
         
-        db.upsert(:test_table, sel, data2)
+        db.upsert(:test_table, data2, sel)
         row = db.select(:test_table, sel).fetch
         row[:name].should eql("upsert - Kasper Nielsen Johansen")
         
@@ -301,20 +301,37 @@ describe "Baza" do
           ]
         })
         
+        upsert = false
         db.q_buffer do |buffer|
-          10000.times do |count|
-            buffer.insert(:test_table, {:name => "Kasper #{count}"})
+          2500.times do |count|
+            if upsert
+              buffer.upsert(:test_table, {:name => "Kasper #{count}"}, {:name => "Kasper #{count}"})
+              upsert = false
+            else
+              buffer.insert(:test_table, {:name => "Kasper #{count}"})
+              upsert = true
+            end
           end
         end
         
         test_table = db.tables[:test_table]
-        test_table.rows_count.should eql(10000)
+        test_table.rows_count.should eql(2500)
         
         db.q_buffer do |buffer|
           count = 0
+          upsert = false
+          
           db.select(:test_table, {}, :orderby => :id) do |row|
             row[:name].should eql("Kasper #{count}")
-            buffer.update(:test_table, {:name => "Kasper #{count}-#{count}"}, {:id => row[:id]})
+            
+            if upsert
+              buffer.upsert(:test_table, {:name => "Kasper #{count}-#{count}"}, {:id => row[:id]})
+              upsert = false
+            else
+              buffer.update(:test_table, {:name => "Kasper #{count}-#{count}"}, {:id => row[:id]})
+              upsert = true
+            end
+            
             count += 1
           end
         end
