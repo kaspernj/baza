@@ -5,11 +5,11 @@
 
 Gem::Specification.new do |s|
   s.name = "baza"
-  s.version = "0.0.6"
+  s.version = "0.0.7"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Kasper Johansen"]
-  s.date = "2013-04-17"
+  s.date = "2013-04-18"
   s.description = "A database abstraction layer, model framework and database framework."
   s.email = "kj@gfish.com"
   s.extra_rdoc_files = [
