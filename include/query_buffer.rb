@@ -86,7 +86,12 @@ class Baza::QueryBuffer
     thread_async_join
     
     @thread_async = Thread.new do
-      flush_real
+      begin
+        flush_real
+      rescue => e
+        $stderr.puts e.inspect
+        $stderr.pust e.backtrace
+      end
     end
   end
   
