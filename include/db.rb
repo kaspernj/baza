@@ -195,7 +195,7 @@ class Baza::Db
   
   #Clones the current database-connection with possible extra arguments.
   def clone_conn(args = {})
-    conn = Baza::Db.new(@opts.clone.merge(args))
+    conn = Baza::Db.new(opts = @opts.clone.merge(args))
     
     if block_given?
       begin
@@ -609,7 +609,7 @@ class Baza::Db
       end
     end
     
-    raise "Could not figure out how to find a driver to use?"
+    raise "Could not figure out which driver to use?"
   end
   
   #Executes a query and returns the result.
@@ -835,6 +835,8 @@ class Baza::Db
     self.conn_exec do |driver|
       driver.transaction(&block)
     end
+    
+    return nil
   end
   
   #Optimizes all tables in the database.

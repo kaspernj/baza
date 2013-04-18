@@ -397,8 +397,10 @@ class Baza::Driver::Mysql
     
     begin
       yield(@knjdb)
-    ensure
       @knjdb.q("COMMIT")
+    rescue
+      @knjdb.q("ROLLBACK")
+      raise
     end
   end
 end

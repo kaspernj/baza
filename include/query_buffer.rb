@@ -15,12 +15,25 @@ class Baza::QueryBuffer
     STDOUT.puts "Query buffer started." if @debug
     
     if block_given?
-			begin
-				yield(self)
-			ensure
-				self.flush
-        thread_async_join
-			end
+      if @args[:flush_async]
+        @args[:db].clone_conn do |db_flush_async|
+          @db_flush_async = db_flush_async
+          
+          begin
+            yield(self)
+          ensure
+            flush
+            thread_async_join
+          end
+        end
+      else
+        begin
+			    yield(self)
+        ensure
+          flush
+          thread_async_join
+        end
+      end
 		end
   end
   
@@ -32,7 +45,7 @@ class Baza::QueryBuffer
       @queries_count += 1
     end
     
-    self.flush if @queries_count >= 1000
+    flush if @queries_count >= 1000
     return nil
   end
   
@@ -41,7 +54,7 @@ class Baza::QueryBuffer
   # buffer.delete(:users, {:id => 5})
   def delete(table, where)
     STDOUT.puts "Delete called on table #{table} with arguments: '#{where}'." if @debug
-    self.query(@args[:db].delete(table, where, :return_sql => true))
+    query(@args[:db].delete(table, where, :return_sql => true))
     return nil
   end
   
@@ -50,7 +63,7 @@ class Baza::QueryBuffer
   # buffer.update(:users, {:name => "Kasper"}, {:id => 5})
   def update(table, update, terms)
     STDOUT.puts "Update called on table #{table}." if @debug
-    self.query(@args[:db].update(table, update, terms, :return_sql => true))
+    query(@args[:db].update(table, update, terms, :return_sql => true))
     return nil
   end
   
@@ -66,7 +79,7 @@ class Baza::QueryBuffer
   #===Examples
   # buffer.insert(:users, {:name => "John Doe"})
   def insert(table, data)
-    self.query(@args[:db].insert(table, data, :return_sql => true))
+    query(@args[:db].insert(table, data, :return_sql => true))
     return nil
   end
   
@@ -87,10 +100,10 @@ class Baza::QueryBuffer
     
     @thread_async = Thread.new do
       begin
-        flush_real
+        flush_real(@db_flush_async)
       rescue => e
         $stderr.puts e.inspect
-        $stderr.pust e.backtrace
+        $stderr.puts e.backtrace
       end
     end
   end
@@ -102,16 +115,17 @@ class Baza::QueryBuffer
   end
   
   #Flushes the queries for real.
-  def flush_real
+  def flush_real(db = nil)
     return nil if @queries_count <= 0
+    db = @args[:db] if db == nil
     
     @lock.synchronize do
       if !@queries.empty?
         while !@queries.empty?
-          @args[:db].transaction do
+          db.transaction do
             @queries.shift(1000).each do |str|
               STDOUT.print "Executing via buffer: #{str}\n" if @debug
-              @args[:db].q(str)
+              db.q(str)
             end
           end
         end
@@ -120,7 +134,7 @@ class Baza::QueryBuffer
       @inserts.each do |table, datas_arr|
         while !datas_arr.empty?
           datas_chunk_arr = datas_arr.shift(1000)
-          @args[:db].insert_multi(table, datas_chunk_arr)
+          @db.insert_multi(table, datas_chunk_arr)
         end
       end
       
