@@ -717,8 +717,8 @@ class Baza::Db
   end
   
   #Yields a query-buffer and flushes at the end of the block given.
-  def q_buffer(&block)
-    Baza::QueryBuffer.new(:db => self, &block)
+  def q_buffer(args = {}, &block)
+    Baza::QueryBuffer.new(args.merge(:db => self), &block)
     return nil
   end
   

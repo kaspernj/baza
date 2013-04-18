@@ -342,9 +342,24 @@ describe "Baza" do
           count += 1
         end
         
-        db.q_buffer do |buffer|
+        #Test the flush-async which flushes transactions in a thread asyncronous.
+        db.q_buffer(:flush_async => true) do |buffer|
+          count = 0
           db.select(:test_table) do |row|
+            count += 1
+            
+            if count == 1000
+              time_start = Time.now.to_f
+            end
+            
             buffer.delete(:test_table, {:id => row[:id]})
+            
+            if count == 1000
+              time_end = Time.now.to_f
+              
+              time_spent = time_end - time_start
+              raise "Too much time spent: '#{time_spent}'." if time_spent > 0.01
+            end
           end
         end
         

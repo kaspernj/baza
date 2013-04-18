@@ -1,5 +1,8 @@
 #This class buffers a lot of queries and flushes them out via transactions.
 class Baza::QueryBuffer
+  attr_reader :thread_async
+  
+  INITIALIZE_ARGS_ALLOWED = [:db, :debug, :flush_async]
   #Constructor. Takes arguments to be used and a block.
   def initialize(args)
     @args = args
@@ -16,6 +19,7 @@ class Baza::QueryBuffer
 				yield(self)
 			ensure
 				self.flush
+        thread_async_join
 			end
 		end
   end
@@ -68,6 +72,32 @@ class Baza::QueryBuffer
   
   #Flushes all queries out in a transaction. This will automatically be called for every 1000 queries.
   def flush
+    if @args[:flush_async]
+      flush_async
+    else
+      flush_real
+    end
+  end
+  
+  private
+  
+  #Runs the flush in a thread in the background.
+  def flush_async
+    thread_async_join
+    
+    @thread_async = Thread.new do
+      flush_real
+    end
+  end
+  
+  def thread_async_join
+    if thread = @thread_async
+      thread.join
+    end
+  end
+  
+  #Flushes the queries for real.
+  def flush_real
     return nil if @queries_count <= 0
     
     @lock.synchronize do
