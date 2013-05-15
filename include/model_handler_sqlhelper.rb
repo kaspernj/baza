@@ -219,7 +219,7 @@ class Baza::ModelHandler
         
         sql_where << " AND #{table}`#{db.esc_col(key)}` = '#{db.esc(realval)}'"
         found = true
-      elsif args[:cols].key?(key)
+      elsif key.is_a?(Symbol) or args[:cols].key?(key)
         if val.is_a?(Array)
           if val.empty? and db.opts[:type].to_s == "mysql"
             sql_where << " AND false"

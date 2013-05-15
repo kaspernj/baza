@@ -232,8 +232,8 @@ class Baza::ModelHandler
         end
         
         if doreq
-          filename = "#{@args[:class_path]}/#{@args[:class_pre]}#{classname.to_s.downcase}.rb"
-          filename_req = "#{@args[:class_path]}/#{@args[:class_pre]}#{classname.to_s.downcase}"
+          filename = "#{@args[:class_path]}/#{@args[:class_pre]}#{classname.to_s.gsub(/(.)([A-Z])/,'\1_\2').downcase}.rb"
+          filename_req = "#{@args[:class_path]}/#{@args[:class_pre]}#{classname.to_s.gsub(/(.)([A-Z])/,'\1_\2').downcase}"
           raise "Class file could not be found: #{filename}." if !File.exists?(filename)
           require filename_req
         end
@@ -360,13 +360,7 @@ class Baza::ModelHandler
       end
       
       #Spawn object.
-      if @args[:datarow] or @args[:custom]
-        obj = @args[:module].const_get(classname).new(data, args)
-      else
-        pass_args = [data]
-        pass_args = pass_args | @args[:extra_args] if @args[:extra_args]
-        obj = @args[:module].const_get(classname).new(*pass_args)
-      end
+      obj = @args[:module].const_get(classname).new(data, args)
       
       #Save object in cache.
       case @args[:cache]
@@ -414,6 +408,13 @@ class Baza::ModelHandler
     return false
   end
   
+  #Searches for an object with the given data. If not found it creates it. Returns the found or created object in the end.
+  def get_or_add(classname, data, args = nil)
+    obj = self.get_by(classname, data)
+    obj = self.add(classname, data) if !obj
+    return obj
+  end
+  
   def get_try(obj, col_name, obj_name = nil)
     if !obj_name
       if match = col_name.to_s.match(/^(.+)_id$/)
@@ -445,14 +446,7 @@ class Baza::ModelHandler
     classob = @args[:module].const_get(classname)
     
     raise "list-function has not been implemented for '#{classname}'." if !classob.respond_to?("list")
-    
-    if @args[:datarow] or @args[:custom]
-      ret = classob.list(Knj::Hash_methods.new(:args => args, :ob => self, :db => @args[:db]), &block)
-    else
-      realargs = [args]
-      realargs = realargs | @args[:extra_args] if @args[:extra_args]
-      ret = classob.list(*realargs, &block)
-    end
+    ret = classob.list(Knj::Hash_methods.new(:args => args, :ob => self, :db => @args[:db]), &block)
     
     #If 'ret' is an array and a block is given then the list-method didnt return blocks. We emulate it instead with the following code.
     if block and ret.is_a?(Array)
@@ -655,7 +649,13 @@ class Baza::ModelHandler
     classname = classname.to_sym
     self.requireclass(classname)
     
-    if @args[:datarow]
+    if @args[:custom]
+      classobj = @args[:module].const_get(classname)
+      retob = classobj.add(Knj::Hash_methods.new(
+        :ob => self,
+        :data => data
+      ))
+    else
       classobj = @args[:module].const_get(classname)
       
       #Run the class 'add'-method to check various data.
@@ -686,16 +686,6 @@ class Baza::ModelHandler
       
       #Spawn the object.
       retob = self.get(classname, ins_id, {:skip_reload => true})
-    elsif @args[:custom]
-      classobj = @args[:module].const_get(classname)
-      retob = classobj.add(Knj::Hash_methods.new(
-        :ob => self,
-        :data => data
-      ))
-    else
-      args = [data]
-      args = args | @args[:extra_args] if @args[:extra_args]
-      retob = @args[:module].const_get(classname).add(*args)
     end
     
     self.call("object" => retob, "signal" => "add")
@@ -708,23 +698,9 @@ class Baza::ModelHandler
   #===Examples
   # ob.adds(:User, [{:username => "User 1"}, {:username => "User 2"})
   def adds(classname, datas)
-    if !@args[:datarow]
-      datas.each do |data|
-        @args[:module].const_get(classname).add(*args)
-        self.call("object" => retob, "signal" => "add")
-      end
-    else
-      if @args[:module].const_get(classname).respond_to?(:add)
-        datas.each do |data|
-          @args[:module].const_get(classname).add(Knj::Hash_methods.new(
-            :ob => self,
-            :db => self.db,
-            :data => data
-          ))
-        end
-      end
-      
-      db.insert_multi(classname, datas)
+    datas.each do |data|
+      @args[:module].const_get(classname).add(*args)
+      self.call("object" => retob, "signal" => "add")
     end
     
     self.cache_ids(classname)
@@ -732,7 +708,6 @@ class Baza::ModelHandler
   
   #Calls a static method on a class. Passes the d-variable which contains the Objects-object, database-reference and more...
   def static(class_name, method_name, *args, &block)
-    raise "Only available with datarow enabled." if !@args[:datarow] and !@args[:custom]
     class_name = class_name
     method_name = method_name
     
@@ -742,13 +717,7 @@ class Baza::ModelHandler
     #Sometimes this raises the exception but actually responds to the class? Therefore commented out. - knj
     #raise "The class '#{class_obj.name}' has no such method: '#{method_name}' (#{class_obj.methods.sort.join(", ")})." if !class_obj.respond_to?(method_name)
     
-    pass_args = []
-    
-    if @args[:datarow]
-      pass_args << Knj::Hash_methods.new(:ob => self, :db => self.db)
-    else
-      pass_args << Knj::Hash_methods.new(:ob => self)
-    end
+    pass_args = [Knj::Hash_methods.new(:ob => self, :db => self.db)]
     
     args.each do |arg|
       pass_args << arg
@@ -805,50 +774,48 @@ class Baza::ModelHandler
     obj_id = object.id
     object.delete if object.respond_to?(:delete)
     
-    if @args[:datarow]
-      #If autodelete is set by 'has_many'-method, go through it and delete the various objects first.
-      if autodelete_data = object.class.autodelete_data
-        autodelete_data.each do |adel_data|
-          self.list(adel_data[:classname], {adel_data[:colname].to_s => object.id}) do |obj_del|
-            self.delete(obj_del, args)
-          end
+    #If autodelete is set by 'has_many'-method, go through it and delete the various objects first.
+    if autodelete_data = object.class.autodelete_data
+      autodelete_data.each do |adel_data|
+        self.list(adel_data[:classname], {adel_data[:colname].to_s => object.id}) do |obj_del|
+          self.delete(obj_del, args)
         end
       end
-      
-      #If depend is set by 'has_many'-method, check if any objects exists and raise error if so.
-      if dep_datas = object.class.depending_data
-        dep_datas.each do |dep_data|
-          if obj = self.get_by(dep_data[:classname], {dep_data[:colname].to_s => object.id})
-            raise "Cannot delete <#{object.class.name}:#{object.id}> because <#{obj.class.name}:#{obj.id}> depends on it."
-          end
+    end
+    
+    #If depend is set by 'has_many'-method, check if any objects exists and raise error if so.
+    if dep_datas = object.class.depending_data
+      dep_datas.each do |dep_data|
+        if obj = self.get_by(dep_data[:classname], {dep_data[:colname].to_s => object.id})
+          raise "Cannot delete <#{object.class.name}:#{object.id}> because <#{obj.class.name}:#{obj.id}> depends on it."
         end
       end
-      
-      #If autozero is set by 'has_many'-method, check if any objects exists and set the ID to zero.
-      if autozero_datas = object.class.autozero_data
-        autozero_datas.each do |zero_data|
-          self.list(zero_data[:classname], {zero_data[:colname].to_s => object.id}) do |obj_zero|
-            obj_zero[zero_data[:colname].to_sym] = 0
-          end
+    end
+    
+    #If autozero is set by 'has_many'-method, check if any objects exists and set the ID to zero.
+    if autozero_datas = object.class.autozero_data
+      autozero_datas.each do |zero_data|
+        self.list(zero_data[:classname], {zero_data[:colname].to_s => object.id}) do |obj_zero|
+          obj_zero[zero_data[:colname].to_sym] = 0
         end
       end
-      
-      #Delete any translations that has been set on the object by 'has_translation'-method.
-      if object.class.translations
-        begin
-          _hb.trans_del(object)
-        rescue NameError
-          _kas.trans_del(object)
-        end
+    end
+    
+    #Delete any translations that has been set on the object by 'has_translation'-method.
+    if object.class.translations
+      begin
+        _hb.trans_del(object)
+      rescue NameError
+        _kas.trans_del(object)
       end
-      
-      
-      #If a buffer is given in arguments, then use that to delete the object.
-      if args and buffer = args[:db_buffer]
-        buffer.delete(object.table, {:id => obj_id})
-      else
-        @args[:db].delete(object.table, {:id => obj_id})
-      end
+    end
+    
+    
+    #If a buffer is given in arguments, then use that to delete the object.
+    if args and buffer = args[:db_buffer]
+      buffer.delete(object.table, {:id => obj_id})
+    else
+      @args[:db].delete(object.table, {:id => obj_id})
     end
     
     @ids_cache[classname].delete(obj_id.to_i) if @ids_cache_should.key?(classname)
@@ -859,38 +826,32 @@ class Baza::ModelHandler
   
   #Deletes several objects as one. If running datarow-mode it checks all objects before it starts to actually delete them. Its faster than deleting every single object by itself...
   def deletes(objs)
-    if !@args[:datarow]
+    tables = {}
+    
+    begin
       objs.each do |obj|
-        self.delete(obj)
-      end
-    else
-      tables = {}
-      
-      begin
-        objs.each do |obj|
-          next if obj.deleted?
-          tablen = obj.table
-          
-          if !tables.key?(tablen)
-            tables[tablen] = []
-          end
-          
-          tables[tablen] << obj.id
-          obj.delete if obj.respond_to?(:delete)
-          
-          #Remove from ID-cache.
-          classname = obj.class.classname.to_sym
-          @ids_cache[classname].delete(obj.id.to_i) if @ids_cache_should.key?(classname)
-          
-          #Unset any data on the object, so it seems deleted.
-          obj.destroy
+        next if obj.deleted?
+        tablen = obj.table
+        
+        if !tables.key?(tablen)
+          tables[tablen] = []
         end
-      ensure
-        #An exception may occur, and we should make sure, that objects that has gotten 'delete' called also are deleted from their tables.
-        tables.each do |table, ids|
-          ids.each_slice(1000) do |ids_slice|
-            @args[:db].delete(table, {:id => ids_slice})
-          end
+        
+        tables[tablen] << obj.id
+        obj.delete if obj.respond_to?(:delete)
+        
+        #Remove from ID-cache.
+        classname = obj.class.classname.to_sym
+        @ids_cache[classname].delete(obj.id.to_i) if @ids_cache_should.key?(classname)
+        
+        #Unset any data on the object, so it seems deleted.
+        obj.destroy
+      end
+    ensure
+      #An exception may occur, and we should make sure, that objects that has gotten 'delete' called also are deleted from their tables.
+      tables.each do |table, ids|
+        ids.each_slice(1000) do |ids_slice|
+          @args[:db].delete(table, {:id => ids_slice})
         end
       end
     end
