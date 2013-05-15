@@ -242,7 +242,7 @@ class Baza::Revision
           
           if table_data[:indexes]
             table_data[:indexes].each do |index_data|
-              if index_data.is_a?(String)
+              if index_data.is_a?(String) or index_data.is_a?(Symbol)
                 index_data = {:name => index_data, :columns => [index_data]}
               end
               
