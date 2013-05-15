@@ -1,4 +1,5 @@
 require "#{File.dirname(__FILE__)}/model_handler_sqlhelper.rb"
+require "string-cases"
 
 class Baza::ModelHandler
   attr_reader :args, :events, :data, :ids_cache, :ids_cache_should
@@ -32,7 +33,6 @@ class Baza::ModelHandler
     raise "No class path given." if !@args[:class_path] and (@args[:require] or !@args.key?(:require))
     
     if args[:require_all]
-      Knj.gem_require(:Php4r, "php4r")
       loads = []
       
       Dir.foreach(@args[:class_path]) do |file|
@@ -40,7 +40,7 @@ class Baza::ModelHandler
         file_parsed = file
         file_parsed.gsub!(@args[:class_pre], "") if @args.key?(:class_pre)
         file_parsed.gsub!(/\.rb$/, "")
-        file_parsed = Php4r.ucwords(file_parsed)
+        file_parsed = StringCases.snake_to_camel(file_parsed)
         
         loads << file_parsed
         self.requireclass(file_parsed, {:load => false})
@@ -198,9 +198,6 @@ class Baza::ModelHandler
           end
           
           callback["block"].call(*callargs)
-        elsif callback["callback"]
-          require "php4r" if !Kernel.const_defined?(:Php4r)
-          Php4r.call_user_func(callback["callback"], args)
         else
           raise "No valid callback given."
         end
@@ -211,6 +208,7 @@ class Baza::ModelHandler
   def requireclass(classname, args = {})
     classname = classname.to_sym
     return false if @objects.key?(classname)
+    classname_snake = StringCases.camel_to_snake(classname)
     
     @lock_require.synchronize do
       #Maybe the classname got required meanwhile the synchronized wait - check again.
@@ -232,8 +230,8 @@ class Baza::ModelHandler
         end
         
         if doreq
-          filename = "#{@args[:class_path]}/#{@args[:class_pre]}#{StringCases.camel_to_snake(classname)}.rb"
-          filename_req = "#{@args[:class_path]}/#{@args[:class_pre]}#{StringCases.camel_to_snake(classname)}"
+          filename = "#{@args[:class_path]}/#{@args[:class_pre]}#{classname_snake}.rb"
+          filename_req = "#{@args[:class_path]}/#{@args[:class_pre]}#{classname_snake}"
           raise "Class file could not be found: #{filename}." if !File.exists?(filename)
           require filename_req
         end
