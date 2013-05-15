@@ -184,6 +184,8 @@ class Baza::Model
   #    ]
   #  end
   def self.has_one(arr)
+    arr = [arr] if arr.is_a?(Symbol)
+    
     arr.each do |val|
       methodname = nil
       colname = nil
@@ -879,5 +881,15 @@ class Baza::Model
     end
     
     return attrs
+  end
+  
+  private
+  
+  def str_snake_to_camel(str)
+    
+  end
+  
+  def str_camel_to_snake(str)
+    
   end
 end

@@ -7,6 +7,7 @@ gem "datet"
 gem "wref"
 gem "knjrbfw"
 gem "array_enumerator"
+gem "string-cases"
 
 # Add dependencies to develop your gem here.
 # Include everything needed to run rake, tests, features, etc.

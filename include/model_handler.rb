@@ -232,8 +232,8 @@ class Baza::ModelHandler
         end
         
         if doreq
-          filename = "#{@args[:class_path]}/#{@args[:class_pre]}#{classname.to_s.gsub(/(.)([A-Z])/,'\1_\2').downcase}.rb"
-          filename_req = "#{@args[:class_path]}/#{@args[:class_pre]}#{classname.to_s.gsub(/(.)([A-Z])/,'\1_\2').downcase}"
+          filename = "#{@args[:class_path]}/#{@args[:class_pre]}#{StringCases.camel_to_snake(classname)}.rb"
+          filename_req = "#{@args[:class_path]}/#{@args[:class_pre]}#{StringCases.camel_to_snake(classname)}"
           raise "Class file could not be found: #{filename}." if !File.exists?(filename)
           require filename_req
         end
@@ -698,11 +698,17 @@ class Baza::ModelHandler
   #===Examples
   # ob.adds(:User, [{:username => "User 1"}, {:username => "User 2"})
   def adds(classname, datas)
-    datas.each do |data|
-      @args[:module].const_get(classname).add(*args)
-      self.call("object" => retob, "signal" => "add")
+    if @args[:module].const_get(classname).respond_to?(:add)
+      datas.each do |data|
+        @args[:module].const_get(classname).add(Knj::Hash_methods.new(
+          :ob => self,
+          :db => self.db,
+          :data => data
+        ))
+      end
     end
     
+    db.insert_multi(classname, datas)
     self.cache_ids(classname)
   end
   
