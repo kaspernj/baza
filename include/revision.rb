@@ -42,6 +42,7 @@ class Baza::Revision
     
     schema = args[:schema]
     db = args[:db]
+    raise "No 'db' was given." if !db
     
     schema.each do |key, val|
       raise "Invalid key for schema: '#{key}' (#{key.class.name})." unless INIT_DB_SCHEMA_ALLOWED_ARGS.include?(key)
