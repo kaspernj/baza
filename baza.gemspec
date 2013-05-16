@@ -5,11 +5,11 @@
 
 Gem::Specification.new do |s|
   s.name = "baza"
-  s.version = "0.0.8"
+  s.version = "0.0.9"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Kasper Johansen"]
-  s.date = "2013-04-18"
+  s.date = "2013-05-16"
   s.description = "A database abstraction layer, model framework and database framework."
   s.email = "kj@gfish.com"
   s.extra_rdoc_files = [
@@ -62,7 +62,7 @@ Gem::Specification.new do |s|
   s.homepage = "http://github.com/kaspernj/baza"
   s.licenses = ["MIT"]
   s.require_paths = ["lib"]
-  s.rubygems_version = "1.8.25"
+  s.rubygems_version = "1.8.23"
   s.summary = "A database abstraction layer, model framework and database framework."
 
   if s.respond_to? :specification_version then
@@ -73,6 +73,7 @@ Gem::Specification.new do |s|
       s.add_runtime_dependency(%q<wref>, [">= 0"])
       s.add_runtime_dependency(%q<knjrbfw>, [">= 0"])
       s.add_runtime_dependency(%q<array_enumerator>, [">= 0"])
+      s.add_runtime_dependency(%q<string-cases>, [">= 0"])
       s.add_development_dependency(%q<rspec>, ["~> 2.8.0"])
       s.add_development_dependency(%q<rdoc>, ["~> 3.12"])
       s.add_development_dependency(%q<bundler>, [">= 1.0.0"])
@@ -84,6 +85,7 @@ Gem::Specification.new do |s|
       s.add_dependency(%q<wref>, [">= 0"])
       s.add_dependency(%q<knjrbfw>, [">= 0"])
       s.add_dependency(%q<array_enumerator>, [">= 0"])
+      s.add_dependency(%q<string-cases>, [">= 0"])
       s.add_dependency(%q<rspec>, ["~> 2.8.0"])
       s.add_dependency(%q<rdoc>, ["~> 3.12"])
       s.add_dependency(%q<bundler>, [">= 1.0.0"])
@@ -96,6 +98,7 @@ Gem::Specification.new do |s|
     s.add_dependency(%q<wref>, [">= 0"])
     s.add_dependency(%q<knjrbfw>, [">= 0"])
     s.add_dependency(%q<array_enumerator>, [">= 0"])
+    s.add_dependency(%q<string-cases>, [">= 0"])
     s.add_dependency(%q<rspec>, ["~> 2.8.0"])
     s.add_dependency(%q<rdoc>, ["~> 3.12"])
     s.add_dependency(%q<bundler>, [">= 1.0.0"])
