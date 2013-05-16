@@ -408,7 +408,7 @@ class Baza::ModelHandler
   
   #Searches for an object with the given data. If not found it creates it. Returns the found or created object in the end.
   def get_or_add(classname, data, args = nil)
-    obj = self.get_by(classname, data)
+    obj = self.get_by(classname, data.clone)
     obj = self.add(classname, data) if !obj
     return obj
   end

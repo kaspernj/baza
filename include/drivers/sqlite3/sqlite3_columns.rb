@@ -7,7 +7,7 @@ class Baza::Driver::Sqlite3::Columns
     @args = args
   end
   
-  DATA_SQL_ALLOWED_KEYS = [:name, :type, :maxlength, :autoincr, :primarykey, :null, :default, :default_func, :renames, :after]
+  DATA_SQL_ALLOWED_KEYS = [:name, :type, :maxlength, :autoincr, :primarykey, :null, :default, :default_func, :renames, :after, :renames]
   #Returns SQL for a knjdb-compatible hash.
   def data_sql(data)
     data.each do |key, val|

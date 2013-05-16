@@ -6,7 +6,7 @@ class Baza::Driver::Mysql::Columns
   end
   
   #Returns the SQL for this column.
-  DATA_SQL_ALLOWED_KEYS = [:type, :maxlength, :name, :primarykey, :autoincr, :default, :comment, :after, :first, :storage, :null]
+  DATA_SQL_ALLOWED_KEYS = [:type, :maxlength, :name, :primarykey, :autoincr, :default, :comment, :after, :first, :storage, :null, :renames]
   def data_sql(data)
     data.each do |key, val|
       raise "Invalid key: '#{key}' (#{key.class.name})." if !DATA_SQL_ALLOWED_KEYS.include?(key)

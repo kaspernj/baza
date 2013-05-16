@@ -387,6 +387,26 @@ describe "Objects" do
     $ob.delete_ids(:class => :Person, :ids => ids)
   end
   
+  it "get_or_add" do
+    person1 = $ob.add(:Person, {
+      :name => "get_or_add"
+    })
+    
+    person2 = $ob.get_or_add(:Person, {
+      :name => "get_or_add"
+    })
+    
+    person2.id.should eql(person1.id)
+    person2[:name].should eql("get_or_add")
+    
+    person3 = $ob.get_or_add(:Person, {
+      :name => "get_or_add3"
+    })
+    
+    raise "Failure ID was the same" if person3.id == person2.id
+    person3[:name].should eql("get_or_add3")
+  end
+  
   it "should delete the temp database again." do
     db_path = "#{Knj::Os.tmpdir}/knjrbfw_test_sqlite3.sqlite3"
     File.unlink(db_path) if File.exists?(db_path)
