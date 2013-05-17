@@ -151,7 +151,7 @@ class Baza::Model
       end
       
       raise "No classname given." if !classname
-      methodname = "#{classname.to_s.downcase}s".to_sym if !methodname
+      methodname = "#{StringCases.camel_to_snake(classname)}s".to_sym if !methodname
       raise "No column was given for '#{self.name}' regarding has-many-class: '#{classname}'." if !colname
       
       if val.is_a?(Hash) and val.key?(:where)
@@ -226,7 +226,7 @@ class Baza::Model
         raise "Unknown argument-type: '#{arr.class.name}'."
       end
       
-      methodname = classname.to_s.downcase if !methodname
+      methodname = StringCases.camel_to_snake(classname) if !methodname
       colname = "#{classname.to_s.downcase}_id".to_sym if !colname
       self.define_one_methods(classname, methodname, colname)
       
@@ -881,15 +881,5 @@ class Baza::Model
     end
     
     return attrs
-  end
-  
-  private
-  
-  def str_snake_to_camel(str)
-    
-  end
-  
-  def str_camel_to_snake(str)
-    
   end
 end
