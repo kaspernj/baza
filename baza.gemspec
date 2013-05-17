@@ -5,11 +5,11 @@
 
 Gem::Specification.new do |s|
   s.name = "baza"
-  s.version = "0.0.10"
+  s.version = "0.0.11"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Kasper Johansen"]
-  s.date = "2013-05-16"
+  s.date = "2013-05-17"
   s.description = "A database abstraction layer, model framework and database framework."
   s.email = "kj@gfish.com"
   s.extra_rdoc_files = [
@@ -28,7 +28,6 @@ Gem::Specification.new do |s|
     "baza.gemspec",
     "include/db.rb",
     "include/dbtime.rb",
-    "include/drivers/.DS_Store",
     "include/drivers/mysql/mysql.rb",
     "include/drivers/mysql/mysql_columns.rb",
     "include/drivers/mysql/mysql_indexes.rb",
