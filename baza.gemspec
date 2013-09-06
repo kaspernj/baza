@@ -5,7 +5,7 @@
 
 Gem::Specification.new do |s|
   s.name = "baza"
-  s.version = "0.0.12"
+  s.version = "0.0.13"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Kasper Johansen"]
@@ -28,6 +28,7 @@ Gem::Specification.new do |s|
     "baza.gemspec",
     "include/db.rb",
     "include/dbtime.rb",
+    "include/drivers/active_record/active_record.rb",
     "include/drivers/mysql/mysql.rb",
     "include/drivers/mysql/mysql_columns.rb",
     "include/drivers/mysql/mysql_indexes.rb",
