@@ -1,6 +1,6 @@
 #This class handels SQLite3-specific behaviour.
 class Baza::Driver::Sqlite3
-  attr_reader :knjdb, :conn, :sep_table, :sep_col, :sep_val, :symbolize
+  attr_reader :baza, :conn, :sep_table, :sep_col, :sep_val, :symbolize
   attr_accessor :tables, :cols, :indexes
   
   #Helper to enable automatic registering of database using Baza::Db.from_object
@@ -19,34 +19,34 @@ class Baza::Driver::Sqlite3
   end
   
   #Constructor. This should not be called manually.
-  def initialize(knjdb_ob)
+  def initialize(baza_db_obj)
     @sep_table = "`"
     @sep_col = "`"
     @sep_val = "'"
     
-    @knjdb = knjdb_ob
-    @path = @knjdb.opts[:path] if @knjdb.opts[:path]
-    @path = @knjdb.opts["path"] if @knjdb.opts["path"]
+    @baza_db = baza_db_obj
+    @path = @baza_db.opts[:path] if @baza_db.opts[:path]
+    @path = @baza_db.opts["path"] if @baza_db.opts["path"]
     
-    @knjdb.opts[:subtype] = "java" if !@knjdb.opts.key?(:subtype) and RUBY_ENGINE == "jruby"
+    @baza_db.opts[:subtype] = "java" if !@baza_db.opts.key?(:subtype) and RUBY_ENGINE == "jruby"
     
-    if @knjdb.opts[:conn]
-      @conn = @knjdb.opts[:conn]
+    if @baza_db.opts[:conn]
+      @conn = @baza_db.opts[:conn]
     else
       raise "No path was given." if !@path
       
-      if @knjdb.opts[:subtype] == "java"
-        if @knjdb.opts[:sqlite_driver]
-          require @knjdb.opts[:sqlite_driver]
+      if @baza_db.opts[:subtype] == "java"
+        if @baza_db.opts[:sqlite_driver]
+          require @baza_db.opts[:sqlite_driver]
         else
           require "#{File.dirname(__FILE__)}/../../../jruby/sqlitejdbc-v056.jar"
         end
         
         require "java"
         import "org.sqlite.JDBC"
-        @conn = java.sql.DriverManager::getConnection("jdbc:sqlite:#{@knjdb.opts[:path]}")
+        @conn = java.sql.DriverManager::getConnection("jdbc:sqlite:#{@baza_db.opts[:path]}")
         @stat = @conn.createStatement
-      elsif @knjdb.opts[:subtype] == "rhodes"
+      elsif @baza_db.opts[:subtype] == "rhodes"
         @conn = SQLite3::Database.new(@path, @path)
       else
         @conn = SQLite3::Database.open(@path)
@@ -58,9 +58,9 @@ class Baza::Driver::Sqlite3
   
   #Executes a query against the driver.
   def query(string)
-    if @knjdb.opts[:subtype] == :rhodes
+    if @baza_db.opts[:subtype] == :rhodes
       return Baza::Driver::Sqlite3::Result.new(self, @conn.execute(string, string))
-    elsif @knjdb.opts[:subtype] == :java
+    elsif @baza_db.opts[:subtype] == :java
       begin
         return Baza::Driver::Sqlite3::ResultJava.new(self, @stat.executeQuery(string))
       rescue java.sql.SQLException => e
@@ -109,16 +109,16 @@ class Baza::Driver::Sqlite3
   #Starts a transaction, yields the database and commits.
   def transaction
     @conn.transaction do
-      yield(@knjdb)
+      yield(@baza_db)
     end
   end
   
   def insert_multi(tablename, arr_hashes, args = nil)
     sql = [] if args and args[:return_sql]
     
-    @knjdb.transaction do
+    @baza_db.transaction do
       arr_hashes.each do |hash|
-        res = @knjdb.insert(tablename, hash, args)
+        res = @baza_db.insert(tablename, hash, args)
         sql << res if args and args[:return_sql]
       end
     end

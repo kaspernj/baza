@@ -14,9 +14,9 @@ class Baza::Driver::Sqlite3_ironruby
     return "'"
   end
   
-  def initialize(knjdb_ob)
-    @knjdb = knjdb_ob
-    @conn = Mono::Data::SqliteClient::SqliteConnection.new("URI=file:" + @knjdb.opts[:path] + ",version=3")
+  def initialize(baza_db_obj)
+    @baza_db = baza_db_obj
+    @conn = Mono::Data::SqliteClient::SqliteConnection.new("URI=file:" + @baza_db.opts[:path] + ",version=3")
     @conn.Open
   end
   

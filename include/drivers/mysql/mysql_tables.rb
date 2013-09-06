@@ -45,6 +45,7 @@ class Baza::Driver::Mysql::Tables
     
     @list_mutex.synchronize do
       @db.q(sql) do |d_tables|
+        raise "No name was given from: #{d_tables}" unless d_tables.is_a?(Hash) && d_tables[:Name]
         name = d_tables[:Name].to_sym
         obj = @list.get!(name)
         

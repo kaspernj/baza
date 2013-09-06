@@ -1,5 +1,5 @@
 class Baza::Driver::Mysql
-  attr_reader :knjdb, :conn, :conns, :sep_table, :sep_col, :sep_val
+  attr_reader :baza, :conn, :conns, :sep_table, :sep_col, :sep_val
   attr_accessor :tables, :cols, :indexes
   
   #Helper to enable automatic registering of database using Baza::Db.from_object
@@ -10,7 +10,11 @@ class Baza::Driver::Mysql
         :args => {
           :type => :mysql,
           :subtype => :mysql2,
-          :conn => args[:object]
+          :conn => args[:object],
+          :query_args => {
+            :as => :hash,
+            :symbolize_keys => true
+          }
         }
       }
     end
@@ -18,9 +22,9 @@ class Baza::Driver::Mysql
     return nil
   end
   
-  def initialize(knjdb_ob)
-    @knjdb = knjdb_ob
-    @opts = @knjdb.opts
+  def initialize(baza_db_obj)
+    @baza_db = baza_db_obj
+    @opts = @baza_db.opts
     @sep_table = "`"
     @sep_col = "`"
     @sep_val = "'"
@@ -34,14 +38,14 @@ class Baza::Driver::Mysql
       @encoding = "utf8"
     end
     
-    if @knjdb.opts.key?(:port)
-      @port = @knjdb.opts[:port].to_i
+    if @baza_db.opts.key?(:port)
+      @port = @baza_db.opts[:port].to_i
     else
       @port = 3306
     end
     
     @java_rs_data = {}
-    @subtype = @knjdb.opts[:subtype]
+    @subtype = @baza_db.opts[:subtype]
     @subtype = :mysql if @subtype.to_s.empty?
     self.reconnect
   end
@@ -66,16 +70,16 @@ class Baza::Driver::Mysql
     @mutex.synchronize do
       case @subtype
         when :mysql
-          @conn = Mysql.real_connect(@knjdb.opts[:host], @knjdb.opts[:user], @knjdb.opts[:pass], @knjdb.opts[:db], @port)
+          @conn = Mysql.real_connect(@baza_db.opts[:host], @baza_db.opts[:user], @baza_db.opts[:pass], @baza_db.opts[:db], @port)
         when :mysql2
           require "rubygems"
           require "mysql2"
           
           args = {
-            :host => @knjdb.opts[:host],
-            :username => @knjdb.opts[:user],
-            :password => @knjdb.opts[:pass],
-            :database => @knjdb.opts[:db],
+            :host => @baza_db.opts[:host],
+            :username => @baza_db.opts[:user],
+            :password => @baza_db.opts[:pass],
+            :database => @baza_db.opts[:db],
             :port => @port,
             :symbolize_keys => true,
             :cache_rows => false
@@ -83,11 +87,11 @@ class Baza::Driver::Mysql
           
           #Symbolize keys should also be given here, else table-data wont be symbolized for some reason - knj.
           @query_args = {:symbolize_keys => true}
-          @query_args.merge!(@knjdb.opts[:query_args]) if @knjdb.opts[:query_args]
+          @query_args.merge!(@baza_db.opts[:query_args]) if @baza_db.opts[:query_args]
           
           pos_args = [:as, :async, :cast_booleans, :database_timezone, :application_timezone, :cache_rows, :connect_flags, :cast]
           pos_args.each do |key|
-            args[key] = @knjdb.opts[key] if @knjdb.opts.key?(key)
+            args[key] = @baza_db.opts[key] if @baza_db.opts.key?(key)
           end
           
           args[:as] = :array if @opts[:result] == "array"
@@ -95,8 +99,8 @@ class Baza::Driver::Mysql
           tries = 0
           begin
             tries += 1
-            if @knjdb.opts[:conn]
-              @conn = @knjdb.opts[:conn]
+            if @baza_db.opts[:conn]
+              @conn = @baza_db.opts[:conn]
             else
               @conn = Mysql2::Client.new(args)
             end
@@ -104,6 +108,7 @@ class Baza::Driver::Mysql
             if tries <= 3
               if e.message == "Can't connect to local MySQL server through socket '/var/run/mysqld/mysqld.sock' (111)"
                 sleep 1
+                tries += 1
                 retry
               end
             end
@@ -118,7 +123,7 @@ class Baza::Driver::Mysql
             @jdbc_loaded = true
           end
           
-          @conn = java.sql::DriverManager.getConnection("jdbc:mysql://#{@knjdb.opts[:host]}:#{@port}/#{@knjdb.opts[:db]}?user=#{@knjdb.opts[:user]}&password=#{@knjdb.opts[:pass]}&populateInsertRowWithDefaultValues=true&zeroDateTimeBehavior=round&characterEncoding=#{@encoding}&holdResultsOpenOverStatementClose=true")
+          @conn = java.sql::DriverManager.getConnection("jdbc:mysql://#{@baza_db.opts[:host]}:#{@port}/#{@baza_db.opts[:db]}?user=#{@baza_db.opts[:user]}&password=#{@baza_db.opts[:pass]}&populateInsertRowWithDefaultValues=true&zeroDateTimeBehavior=round&characterEncoding=#{@encoding}&holdResultsOpenOverStatementClose=true")
           self.query("SET SQL_MODE = ''")
         else
           raise "Unknown subtype: #{@subtype} (#{@subtype.class.name})"
@@ -158,7 +163,7 @@ class Baza::Driver::Mysql
               
               begin
                 res = stmt.execute_query(str)
-                ret = Baza::Driver::Mysql::ResultJava.new(@knjdb, @opts, res)
+                ret = Baza::Driver::Mysql::ResultJava.new(@baza_db, @opts, res)
                 id = ret.__id__
                 
                 #If ID is being reused we have to free the result.
@@ -222,7 +227,7 @@ class Baza::Driver::Mysql
             
             begin
               res = stmt.executeQuery(str)
-              ret = Baza::Driver::Mysql::ResultJava.new(@knjdb, @opts, res)
+              ret = Baza::Driver::Mysql::ResultJava.new(@baza_db, @opts, res)
               
               #Save reference to result and statement, so we can close them when they are garbage collected.
               @java_rs_data[ret.__id__] = {:res => res, :stmt => stmt}
@@ -271,7 +276,7 @@ class Baza::Driver::Mysql
   #Escapes a string to be safe to use as a column in a query.
   def esc_col(string)
     string = string.to_s
-    raise "Invalid column-string: #{string}" if string.index(@sep_col) != nil
+    raise "Invalid column-string: #{string}" if string.include?(@sep_col)
     return string
   end
   
@@ -306,7 +311,7 @@ class Baza::Driver::Mysql
   #Destroyes the connection.
   def destroy
     @conn = nil
-    @knjdb = nil
+    @baza_db = nil
     @mutex = nil
     @subtype = nil
     @encoding = nil
@@ -352,7 +357,7 @@ class Baza::Driver::Mysql
             sql << ","
           end
           
-          sql << @knjdb.sqlval(val)
+          sql << @baza_db.sqlval(val)
         end
       else
         hash.each do |key, val|
@@ -362,7 +367,7 @@ class Baza::Driver::Mysql
             sql << ","
           end
           
-          sql << @knjdb.sqlval(val)
+          sql << @baza_db.sqlval(val)
         end
       end
     end
@@ -393,13 +398,13 @@ class Baza::Driver::Mysql
   
   #Starts a transaction, yields the database and commits at the end.
   def transaction
-    @knjdb.q("START TRANSACTION")
+    @baza_db.q("START TRANSACTION")
     
     begin
-      yield(@knjdb)
-      @knjdb.q("COMMIT")
+      yield(@baza_db)
+      @baza_db.q("COMMIT")
     rescue
-      @knjdb.q("ROLLBACK")
+      @baza_db.q("ROLLBACK")
       raise
     end
   end
@@ -552,7 +557,7 @@ end
 class Baza::Driver::Mysql::ResultJava
   #Constructor. This should not be called manually.
   def initialize(knjdb, opts, result)
-    @knjdb = knjdb
+    @baza_db = knjdb
     @result = result
     
     if !opts.key?(:result) or opts[:result] == "hash"

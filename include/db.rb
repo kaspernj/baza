@@ -28,7 +28,7 @@ class Baza::Db
       next unless File.directory?(fp)
       
       driver_file = "#{fp}/#{file}.rb"
-      class_name = "#{file.slice(0, 1).to_s.upcase}#{file.slice(1, file.length)}".to_sym
+      class_name = StringCases.snake_to_camel(file).to_sym
       
       drivers << {
         :name => file,
@@ -54,7 +54,9 @@ class Baza::Db
       obj = const.from_object(args)
       if obj.is_a?(Hash) and obj[:type] == :success
         if obj[:args]
-          return Baza::Db.new(obj[:args])
+          new_args = obj[:args]
+          new_args = new_args.merge(args[:new_args]) if args[:new_args]
+          return Baza::Db.new(new_args)
         else
           raise "Didnt know what to do."
         end
@@ -100,7 +102,7 @@ class Baza::Db
       @opts[:subtype] = "ironruby"
     end
     
-    @type_cc = "#{@opts[:type].to_s.slice(0, 1).upcase}#{@opts[:type].to_s.slice(1, @opts[:type].to_s.length)}"
+    @type_cc = StringCases.snake_to_camel(@opts[:type])
     self.connect
   end
   
@@ -142,14 +144,14 @@ class Baza::Db
     
     thread_cur = Thread.current
     tid = self.__id__
-    thread_cur[:knjdb] = {} if !thread_cur[:knjdb]
+    thread_cur[:baza] = {} if !thread_cur[:baza]
     
-    if thread_cur[:knjdb][tid]
+    if thread_cur[:baza][tid]
       #An object has already been spawned - free that first to avoid endless "used" objects.
       self.free_thread
     end
     
-    thread_cur[:knjdb][tid] = @conns.get_and_lock if !thread_cur[:knjdb][tid]
+    thread_cur[:baza][tid] = @conns.get_and_lock if !thread_cur[:baza][tid]
     
     #If block given then be ensure to free thread after yielding.
     if block_given?
@@ -166,9 +168,9 @@ class Baza::Db
     thread_cur = Thread.current
     tid = self.__id__
     
-    if thread_cur[:knjdb] and thread_cur[:knjdb].key?(tid)
-      db = thread_cur[:knjdb][tid]
-      thread_cur[:knjdb].delete(tid)
+    if thread_cur[:baza] and thread_cur[:baza].key?(tid)
+      db = thread_cur[:baza][tid]
+      thread_cur[:baza].delete(tid)
       @conns.free(db) if @conns
     end
   end
@@ -584,11 +586,11 @@ class Baza::Db
   #   str = driver.escape('something̈́')
   # end
   def conn_exec
-    if tcur = Thread.current and tcur[:knjdb]
+    if tcur = Thread.current and tcur[:baza]
       tid = self.__id__
       
-      if tcur[:knjdb].key?(tid)
-        yield(tcur[:knjdb][tid])
+      if tcur[:baza].key?(tid)
+        yield(tcur[:baza][tid])
         return nil
       end
     end
@@ -779,7 +781,7 @@ class Baza::Db
   #Returns the table-module and spawns it if it isnt already spawned.
   def tables
     if !@tables
-      require "#{File.dirname(__FILE__)}/drivers/#{@opts[:type]}/#{@opts[:type]}_tables" if (!@opts.key?(:require) or @opts[:require])
+      require "#{File.dirname(__FILE__)}/drivers/#{@opts[:type]}/#{@opts[:type]}_tables" if (!@opts.key?(:require) or @opts[:require]) unless Baza::Driver.const_get(@type_cc).const_defined?(:Tables)
       @tables = Baza::Driver.const_get(@type_cc).const_get(:Tables).new(
         :db => self
       )
@@ -791,7 +793,7 @@ class Baza::Db
   #Returns the columns-module and spawns it if it isnt already spawned.
   def cols
     if !@cols
-      require "#{File.dirname(__FILE__)}/drivers/#{@opts[:type]}/#{@opts[:type]}_columns" if (!@opts.key?(:require) or @opts[:require])
+      require "#{File.dirname(__FILE__)}/drivers/#{@opts[:type]}/#{@opts[:type]}_columns" if (!@opts.key?(:require) or @opts[:require]) unless Baza::Driver.const_get(@type_cc).const_defined?(:Columns)
       @cols = Baza::Driver.const_get(@type_cc).const_get(:Columns).new(
         :db => self
       )
@@ -803,7 +805,7 @@ class Baza::Db
   #Returns the index-module and spawns it if it isnt already spawned.
   def indexes
     if !@indexes
-      require "#{File.dirname(__FILE__)}/drivers/#{@opts[:type]}/#{@opts[:type]}_indexes" if (!@opts.key?(:require) or @opts[:require])
+      require "#{File.dirname(__FILE__)}/drivers/#{@opts[:type]}/#{@opts[:type]}_indexes" if (!@opts.key?(:require) or @opts[:require]) unless Baza::Driver.const_get(@type_cc).const_defined?(:Indexes)
       @indexes = Baza::Driver.const_get(@type_cc).const_get(:Indexes).new(
         :db => self
       )
@@ -815,7 +817,7 @@ class Baza::Db
   #Returns the SQLSpec-module and spawns it if it isnt already spawned.
   def sqlspecs
     if !@sqlspecs
-      require "#{File.dirname(__FILE__)}/drivers/#{@opts[:type]}/#{@opts[:type]}_sqlspecs" if (!@opts.key?(:require) or @opts[:require])
+      require "#{File.dirname(__FILE__)}/drivers/#{@opts[:type]}/#{@opts[:type]}_sqlspecs" if (!@opts.key?(:require) or @opts[:require]) unless Baza::Driver.const_get(@type_cc).const_defined?(:Sqlspecs)
       @sqlspecs = Baza::Driver.const_get(@type_cc).const_get(:Sqlspecs).new(
         :db => self
       )
@@ -861,11 +863,16 @@ class Baza::Db
       end
     end
     
-    raise "Method not found: #{method_name}"
+    raise "Method not found: '#{method_name}'."
   end
 end
 
 #Subclass that contains all the drivers as further subclasses.
 class Baza::Driver
-  
+  #Autoloader for drivers.
+  def self.const_missing(name)
+    require_relative "drivers/#{StringCases.camel_to_snake(name)}/#{StringCases.camel_to_snake(name)}.rb"
+    raise LoadError, "Still not loaded: '#{name}'." unless Baza::Driver.const_defined?(name)
+    return Baza::Driver.const_get(name)
+  end
 end
