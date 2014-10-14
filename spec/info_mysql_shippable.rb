@@ -5,7 +5,7 @@ class Baza::InfoMysql
       subtype: :mysql2,
       host: "localhost",
       user: "shippa",
-      db: "baza-test"
+      db: "baza"
     )
 
     db.tables.list.each do |name, table|

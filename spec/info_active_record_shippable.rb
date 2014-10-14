@@ -5,7 +5,7 @@ class Baza::InfoActive_record
     active_record_connection = ::ActiveRecord::Base.establish_connection(
       adapter: "mysql2",
       host: "localhost",
-      database: "baza-test",
+      database: "baza",
       username: "shippa"
     )
 
