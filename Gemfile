@@ -19,3 +19,5 @@ group :development do
   gem "sqlite3"
   gem "mysql2"
 end
+
+gem "codeclimate-test-reporter", group: :test, require: nil
