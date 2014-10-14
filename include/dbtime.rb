@@ -7,9 +7,9 @@ class Baza::Dbtime
   def initialize(args)
     args = {:time => args} if args.is_a?(String)
     
-    raise "Invalid arguments given." if !args.is_a?(Hash)
+    raise "Invalid arguments given: #{args}" if !args.is_a?(Hash)
     raise "No time given." if !args[:time]
-    raise "Invalid time given." if !args[:time].is_a?(String)
+    raise "Invalid time given: #{args[:time].class.name}" if !args[:time].is_a?(String)
     
     match = args[:time].match(/^(\d+):(\d+):(\d+)$/)
     raise "Could not understand time format." if !match
