@@ -9,7 +9,7 @@ A database abstraction layer for Ruby.
 ## Installation
 
 Is fairly painless.
-```ruby
+```
 gem install baza
 ```
 
