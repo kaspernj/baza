@@ -34,7 +34,7 @@ db = Baza::Db.new(type: :sqlite3, path: "/path/to/file.sqlite3")
 
 ### Select
 ```ruby
-db.select(:users, {:name => "Kasper"}, {:orderby => "age"}) do |row|
+db.select(:users, {name: "Kasper"}, {orderby: "age"}) do |row|
   puts "Row: #{row}"
 end
 
@@ -46,38 +46,38 @@ end
 
 ### Inserting
 ```ruby
-db.insert(:users, {:name => "Kasper", :age => 27})
+db.insert(:users, {name: "Kasper", age: 27})
 id = db.last_id
 ```
 
 It can also return the ID at the same time
 ```ruby
-id = db.insert(:users, {:name => "Kasper", :age => 27}, :return_id => true)
+id = db.insert(:users, {name: "Kasper", age: 27}, return_id: true)
 ```
 
 Inserting multiple rows in one query is also fairly painless:
 ```ruby
 db.insert_multi(:users, [
-  {:name => "Kasper", :age => 27},
-  {:name => "Christina", :age => 25},
-  {:name => "Charlotte", :age => 23}
+  {name: "Kasper", age: 27},
+  {name: "Christina", age: 25},
+  {name: "Charlotte", age: 23}
 ])
 ```
 
 ### Update
 ```ruby
-db.update(:users, {:name => "Kasper Johansen"}, {:name => "Kasper"})
+db.update(:users, {name: "Kasper Johansen"}, {name: "Kasper"})
 ```
 
 ### Delete
 ```ruby
-db.delete(:users, {:name => "Kasper"})
+db.delete(:users, {name: "Kasper"})
 ```
 
 ### Upsert
-The following example handels a row that will be inserted with {:name => "Kasper", :age => 27} if it doesnt exist or rows with {:name => "Kasper"} will have their their age updated to 27.
+The following example handels a row that will be inserted with {name: "Kasper", age: 27} if it doesnt exist or rows with {name: "Kasper"} will have their their age updated to 27.
 ```ruby
-db.upsert(:users, {:name => "Kasper"}, {:age => 27})
+db.upsert(:users, {name: "Kasper"}, {age: 27})
 ```
 
 ## Structure
