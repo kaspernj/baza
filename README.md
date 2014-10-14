@@ -22,12 +22,12 @@ gem 'baza'
 
 ### MySQL
 ```ruby
-db = Baza::Db.new(:type => :mysql, :subtype => :mysql2, :host => "localhost", :user => "my_user", :pass => "my_password", :port => 3306, :db => "my_database")
+db = Baza::Db.new(type: :mysql, subtype: :mysql2, host: "localhost", user: "my_user", pass: "my_password", port: 3306, db: "my_database")
 ```
 
 ### SQLite3
 ```ruby
-db = Baza::Db.new(:type => :sqlite3, :path => "/path/to/file.sqlite3")
+db = Baza::Db.new(type: :sqlite3, path: "/path/to/file.sqlite3")
 ```
 
 ## Queries
