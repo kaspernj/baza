@@ -395,32 +395,32 @@ class Baza::Driver::Mysql::Tables::Table
       pkey_found = true if !pkey_found and col_data[:primarykey] and args[:force_single_pkey]
 
       if args[:no_pkey] or (pkey_found and col_data[:primarykey] and args[:force_single_pkey])
-				col_data[:primarykey] = false
-			end
+        col_data[:primarykey] = false
+      end
 
-			if col_data[:primarykey]
-				pkeys << col_data[:name]
-				col_data.delete(:primarykey)
-			end
+      if col_data[:primarykey]
+        pkeys << col_data[:name]
+        col_data.delete(:primarykey)
+      end
 
-			if args[:all_cols_storage]
-				col_data[:storage] = args[:all_cols_storage]
-			end
+      if args[:all_cols_storage]
+        col_data[:storage] = args[:all_cols_storage]
+      end
 
       sql << @db.cols.data_sql(col_data)
     end
 
     if !pkeys.empty?
-			sql << ", PRIMARY KEY ("
+      sql << ", PRIMARY KEY ("
 
-			first = true
-			pkeys.each do |pkey|
-				sql << ", " if !first
-				first = false if first
-				sql << "`#{@db.esc_col(pkey)}`"
-			end
+      first = true
+      pkeys.each do |pkey|
+        sql << ", " if !first
+        first = false if first
+        sql << "`#{@db.esc_col(pkey)}`"
+      end
 
-			sql << ")"
+      sql << ")"
     end
 
     sql << ")"
@@ -440,7 +440,7 @@ class Baza::Driver::Mysql::Tables::Table
     new_table = @db.tables[newname]
     indexes_list = []
     self.indexes do |index|
-			indexes_list << index.data if !index.primary?
+      indexes_list << index.data if !index.primary?
     end
 
     new_table.create_indexes(indexes_list)
@@ -457,9 +457,9 @@ class Baza::Driver::Mysql::Tables::Table
 
   #Changes the engine for a table.
   def engine=(newengine)
-		raise "Invalid engine: '#{newengine}'." if !newengine.to_s.match(/^[A-z]+$/)
-		@db.query("ALTER TABLE `#{@db.esc_table(self.name)}` ENGINE = #{newengine}") if self.engine.to_s != newengine.to_s
-		@data[:Engine] = newengine
+    raise "Invalid engine: '#{newengine}'." if !newengine.to_s.match(/^[A-z]+$/)
+    @db.query("ALTER TABLE `#{@db.esc_table(self.name)}` ENGINE = #{newengine}") if self.engine.to_s != newengine.to_s
+    @data[:Engine] = newengine
   end
 
   private
