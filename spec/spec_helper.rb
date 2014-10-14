@@ -1,3 +1,6 @@
+require "codeclimate-test-reporter"
+CodeClimate::TestReporter.start
+
 require 'baza'
 
 Dir["#{File.dirname(__FILE__)}/support/**/*.rb"].each {|f| require f}
