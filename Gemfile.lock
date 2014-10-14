@@ -4,8 +4,11 @@ GEM
     addressable (2.3.5)
     array_enumerator (0.0.3)
     builder (3.2.2)
+    codeclimate-test-reporter (0.4.0)
+      simplecov (>= 0.7.1, < 1.0.0)
     datet (0.0.25)
     diff-lcs (1.1.3)
+    docile (1.1.5)
     faraday (0.8.8)
       multipart-post (~> 1.2.0)
     git (1.2.6)
@@ -70,6 +73,11 @@ GEM
     ruby_process (0.0.8)
       tsafe
       wref
+    simplecov (0.9.0)
+      docile (~> 1.1.0)
+      multi_json
+      simplecov-html (~> 0.8.0)
+    simplecov-html (0.8.0)
     sqlite3 (1.3.8)
     string-cases (0.0.0)
     string-strtr (0.0.3)
@@ -82,6 +90,7 @@ PLATFORMS
 DEPENDENCIES
   array_enumerator
   bundler (>= 1.0.0)
+  codeclimate-test-reporter
   datet
   jeweler (~> 1.8.4)
   knjrbfw
