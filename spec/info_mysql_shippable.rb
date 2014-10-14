@@ -1,21 +1,23 @@
 class Baza::InfoMysql
-  def self.sample_db
-    db = Baza::Db.new(
+  attr_reader :db
+
+  def initialize
+    @db = Baza::Db.new(
       type: :mysql,
       subtype: :mysql2,
       host: "localhost",
       user: "shippa",
       db: "baza"
     )
+  end
 
-    db.tables.list.each do |name, table|
+  def before
+    @db.tables.list.each do |name, table|
       table.drop
     end
+  end
 
-    begin
-      yield db
-    ensure
-      db.close
-    end
+  def after
+    @db.close
   end
 end

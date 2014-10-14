@@ -11,10 +11,10 @@ class Baza::Driver::ActiveRecord
       end
 
       return {
-        :type => :success,
-        :args => {
-          :type => :active_record,
-          :conn => object_to_use
+        type: :success,
+        args: {
+          type: :active_record,
+          conn: object_to_use
         }
       }
     end

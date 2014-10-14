@@ -1,24 +1,36 @@
-require "active_record"
+class Baza::InfoActiveRecord
+  attr_reader :db
 
-class Baza::InfoActive_record
-  def self.sample_db
-    active_record_connection = ::ActiveRecord::Base.establish_connection(
+  def self.connection
+    require "active_record"
+
+    @conn_pool ||= ::ActiveRecord::Base.establish_connection(
       adapter: "mysql2",
       host: "localhost",
       database: "baza",
       username: "shippa"
     )
+    @conn ||= @conn_pool.connection
 
-    db = Baza::Db.from_object(active_record_connection)
+    return {pool: @conn_pool, conn: @conn}
+  end
 
-    db.tables.list.each do |name, table|
+  def initialize
+    data = Baza::InfoActiveRecord.connection
+
+    @db = Baza::Db.new(
+      type: :active_record,
+      conn: data[:conn]
+    )
+  end
+
+  def before
+    @db.tables.list.each do |name, table|
       table.drop
     end
+  end
 
-    begin
-      yield db
-    ensure
-      db.close
-    end
+  def after
+    @db.close
   end
 end
