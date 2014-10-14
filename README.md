@@ -9,7 +9,14 @@ A database abstraction layer for Ruby.
 ## Installation
 
 Is fairly painless.
-  gem install baza
+```ruby
+gem install baza
+```
+
+Or in your Gemfile:
+```ruby
+gem 'baza'
+```
 
 ## Connection to a database.
 
