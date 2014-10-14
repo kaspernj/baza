@@ -18,4 +18,5 @@ group :development do
   gem "jeweler", "~> 1.8.4"
   gem "sqlite3"
   gem "mysql2"
+  gem "activerecord"
 end

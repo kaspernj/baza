@@ -49,3 +49,4 @@ pkg
 #*.rbc
 
 spec/info_mysql.rb
+spec/info_active_record.rb

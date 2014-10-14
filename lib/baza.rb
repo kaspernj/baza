@@ -1,3 +1,5 @@
+require "string-cases"
+
 class Baza
   #Autoloader for subclasses.
   def self.const_missing(name)
