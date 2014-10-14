@@ -43,13 +43,7 @@ class Baza::Driver::ActiveRecord
   end
 
   def query(str)
-    begin
-      Baza::Driver::ActiveRecord::Result.new(@conn.execute(str))
-    rescue Exception => e
-      puts "QueryFailed: #{str}"
-      puts "Error: #{e.message}"
-      raise
-    end
+    Baza::Driver::ActiveRecord::Result.new(@conn.execute(str))
   end
 
   def escape(str)
