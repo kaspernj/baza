@@ -6,6 +6,6 @@ before_script:
   - cp spec/info_active_record_shippable.rb spec/info_active_record.rb
   - mysql -e 'CREATE DATABASE baza;'
 script:
-  - CODECLIMATE_REPO_TOKEN=98c06de7271764c9cd7bbde7cee4ddfa0d3e7db4bd9933f17779100276672e5f bundle exec rspec
+  - bundle exec rspec
 notifications:
    email: false
