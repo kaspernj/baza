@@ -2,6 +2,9 @@ require "spec_helper"
 
 describe Baza::Driver::Sqlite3 do
   it_behaves_like "a baza driver"
+  it_should_behave_like "a baza tables driver"
+  it_should_behave_like "a baza columns driver"
+  it_should_behave_like "a baza indexes driver"
 
   it "should copy database structure and data" do
     require "info_sqlite3"
@@ -9,11 +12,11 @@ describe Baza::Driver::Sqlite3 do
     db2 = Baza::InfoSqlite3.new.db
 
     db.tables.create(:test_table, {
-      :columns => [
-        {:name => "id", :type => :int, :autoincr => true, :primarykey => true},
-        {:name => "testname", :type => :varchar, null: true}
+      columns: [
+        {name: "id", type: :int, autoincr: true, primarykey: true},
+        {name: "testname", type: :varchar, null: true}
       ],
-      :indexes => [
+      indexes: [
         "testname"
       ]
     })
@@ -22,7 +25,7 @@ describe Baza::Driver::Sqlite3 do
     cols1 = table1.columns
 
     100.times do |count|
-      table1.insert(:testname => "TestRow#{count}")
+      table1.insert(testname: "TestRow#{count}")
     end
 
     expect {

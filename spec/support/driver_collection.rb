@@ -12,9 +12,9 @@ shared_examples_for "a baza driver" do
   let(:db2){ driver2.db }
   let(:test_table){
     db.tables.create("test", {
-      :columns => [
-        {:name => "id", :type => :int, :autoincr => true, :primarykey => true},
-        {:name => "text", :type => :varchar}
+      columns: [
+        {name: "id", type: :int, autoincr: true, primarykey: true},
+        {name: "text", type: :varchar}
       ]
     })
     db.tables[:test]
@@ -28,29 +28,6 @@ shared_examples_for "a baza driver" do
   after do
     driver.after
     driver2.after
-  end
-
-  it "should create tables" do
-    test_table.name.should eq :test
-    db.tables[:test].should_not eq nil
-  end
-
-  it "should create columns right" do
-    col_id = test_table.column(:id)
-    col_id.type.should eq :int
-
-    col_text = test_table.column(:text)
-    col_text.type.should eq :varchar
-  end
-
-  it "should list tables" do
-    test_table
-    db.tables.list.values.should include test_table
-  end
-
-  it "should optimize tables" do
-    test_table.optimize
-    # FIXME: How to validate?
   end
 
   it "should do revisions" do
@@ -84,17 +61,6 @@ shared_examples_for "a baza driver" do
     test_table = db.tables[:test_table]
     test_table.columns.keys.should include :age
     test_table.columns.keys.should include :nickname
-  end
-
-  it "should truncate tables" do
-    test_table
-
-    db.insert(:test, text: "test")
-    test_table.rows_count.should eq 1
-
-    #Throw out invalid encoding because it will make dumping fail.
-    db.tables[:test].truncate
-    test_table.rows_count.should eq 0
   end
 
   it "should do id-queries" do

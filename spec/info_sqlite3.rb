@@ -16,6 +16,9 @@ class Baza::InfoSqlite3
   end
 
   def before
+    @db.tables.list.each do |name, table|
+      table.drop
+    end
   end
 
   def after

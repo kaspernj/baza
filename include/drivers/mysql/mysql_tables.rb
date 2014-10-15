@@ -214,30 +214,29 @@ class Baza::Driver::Mysql::Tables::Table
     end
   end
 
-  def indexes(args = nil)
+  def indexes args = nil
     @db.indexes
     ret = {}
 
-    sql = "SHOW INDEX FROM `#{@db.esc_table(self.name)}`"
-    sql << " WHERE `Key_name` = '#{@db.esc(args[:name])}'" if args and args.key?(:name)
+    sql = "SHOW INDEX FROM `#{@db.esc_table(name)}`"
+    sql << " WHERE `Key_name` = '#{@db.esc(args[:name])}'" if args && args.key?(:name)
 
     @db.q(sql) do |d_indexes|
       next if d_indexes[:Key_name] == "PRIMARY"
-
       obj = @indexes_list.get!(d_indexes[:Key_name].to_s)
 
-      if !obj
+      unless obj
         obj = Baza::Driver::Mysql::Indexes::Index.new(
-          :table_name => self.name,
-          :db => @db,
-          :data => d_indexes
+          table_name: name,
+          db: @db,
+          data: d_indexes
         )
         obj.columns << d_indexes[:Column_name]
         @indexes_list[d_indexes[:Key_name].to_s] = obj
       end
 
       if block_given?
-        yield(obj)
+        yield obj
       else
         ret[d_indexes[:Key_name].to_s] = obj
       end
@@ -350,6 +349,15 @@ class Baza::Driver::Mysql::Tables::Table
     @data[:Name] = newname
     @name = newname
     @tables.__send__(:add_to_list, self)
+
+    @list.each do |name, column|
+      column.instance_variable_set(:@name, newname)
+      column.args[:Field] = newname
+    end
+
+    @indexes_list.each do |name, index|
+      index.args[:table_name] = newname
+    end
   end
 
   def truncate
@@ -387,7 +395,7 @@ class Baza::Driver::Mysql::Tables::Table
     pkey_found = false
     pkeys = []
 
-    self.columns do |col|
+    columns do |col|
       sql << ", " if !first
       first = false if first
 
@@ -410,7 +418,7 @@ class Baza::Driver::Mysql::Tables::Table
       sql << @db.cols.data_sql(col_data)
     end
 
-    if !pkeys.empty?
+    unless pkeys.empty?
       sql << ", PRIMARY KEY ("
 
       first = true
@@ -439,8 +447,8 @@ class Baza::Driver::Mysql::Tables::Table
     #Create indexes.
     new_table = @db.tables[newname]
     indexes_list = []
-    self.indexes do |index|
-      indexes_list << index.data if !index.primary?
+    indexes do |index|
+      indexes_list << index.data unless index.primary?
     end
 
     new_table.create_indexes(indexes_list)
