@@ -62,13 +62,13 @@ class Baza::Driver::Mysql::Columns::Column
   #Returns all data of the column in the knjdb-format.
   def data
     return {
-      :type => self.type,
-      :name => self.name,
-      :null => self.null?,
-      :maxlength => self.maxlength,
-      :default => self.default,
-      :primarykey => self.primarykey?,
-      :autoincr => self.autoincr?
+      type: type,
+      name: name,
+      null: null?,
+      maxlength: maxlength,
+      default: default,
+      primarykey: primarykey?,
+      autoincr: autoincr?
     }
   end
 
