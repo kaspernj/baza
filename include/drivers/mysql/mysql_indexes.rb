@@ -5,7 +5,7 @@ class Baza::Driver::Mysql::Indexes
 end
 
 class Baza::Driver::Mysql::Indexes::Index
-  attr_reader :columns
+  attr_reader :args, :columns
 
   def initialize(args)
     @args = args
@@ -40,10 +40,20 @@ class Baza::Driver::Mysql::Indexes::Index
     end
   end
 
+  def rename newname
+    newname = newname.to_sym
+    create_args = data
+    create_args[:name] = newname
+
+    drop
+    table.create_indexes([create_args])
+    @args[:data][:Key_name] = newname
+  end
+
   def data
     return {
-      :name => name,
-      :columns => @columns
+      name: name,
+      columns: @columns
     }
   end
 
@@ -58,12 +68,11 @@ class Baza::Driver::Mysql::Indexes::Index
 
   #Returns true if the index is a primary-index.
   def primary?
-    return true if @args[:data][:Index_type] == "BTREE"
+    return true if @args[:data][:Key_name] == "PRIMARY"
     return false
   end
 
-  #Inspect crashes if this is not present? - knj.
   def to_s
-    return "#<#{self.class.name}>"
+    return "#<Baza::Driver::Mysql::Index name: \"#{name}\", columns: #{@columns}, primary: #{primary?}, unique: #{unique?}>"
   end
 end

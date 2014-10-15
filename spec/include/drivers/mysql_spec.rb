@@ -2,6 +2,9 @@ require "spec_helper"
 
 describe Baza::Driver::Mysql do
   it_should_behave_like "a baza driver"
+  it_should_behave_like "a baza tables driver"
+  it_should_behave_like "a baza columns driver"
+  it_should_behave_like "a baza indexes driver"
 
   it "should dump to sqlite3" do
     require "info_sqlite3"

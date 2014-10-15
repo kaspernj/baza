@@ -823,8 +823,8 @@ class Baza::Db
   #
   #===Examples
   # db.transaction do |db|
-  #   db.insert(:users, {:name => "John"})
-  #   db.insert(:users, {:name => "Kasper"})
+  #   db.insert(:users, name: "John")
+  #   db.insert(:users, name: "Kasper")
   # end
   def transaction(&block)
     self.conn_exec do |driver|
@@ -857,5 +857,9 @@ class Baza::Db
     end
 
     raise "Method not found: '#{method_name}'."
+  end
+
+  def to_s
+    "#<Baza::Db driver \"#{@opts[:type]}\">"
   end
 end
