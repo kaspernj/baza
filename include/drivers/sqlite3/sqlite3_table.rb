@@ -379,7 +379,7 @@ class Baza::Driver::Sqlite3::Table
   end
 
   def insert(data)
-    @db.insert(self.name, data)
+    @db.insert(name, data)
   end
 
   def to_s
