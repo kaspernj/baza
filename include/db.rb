@@ -4,12 +4,12 @@ Knj.gem_require([:wref, :datet])
 #A wrapper of several possible database-types.
 #
 #===Examples
-# db = Baza::Db.new(:type => "mysql", :subtype => "mysql2", :db => "mysql", :user => "user", :pass => "password")
+# db = Baza::Db.new(type: "mysql", subtype: "mysql2", db: "mysql", user: "user", pass: "password")
 # mysql_table = db.tables['mysql']
 # name = mysql_table.name
 # cols = mysql_table.columns
 #
-# db = Baza::Db.new(:type => "sqlite3", :path => "some_db.sqlite3")
+# db = Baza::Db.new(type: "sqlite3", path: "some_db.sqlite3")
 #
 # db.q("SELECT * FROM users") do |data|
 #   print data[:name]
@@ -31,9 +31,9 @@ class Baza::Db
       class_name = StringCases.snake_to_camel(file).to_sym
 
       drivers << {
-        :name => file,
-        :driver_path => driver_file,
-        :class_name => class_name
+        name: file,
+        driver_path: driver_file,
+        class_name: class_name
       }
     end
 
@@ -42,8 +42,8 @@ class Baza::Db
 
   #Tries to create a database-object based on the given object which could be a SQLite3 object or a MySQL 2 object (or other supported).
   def self.from_object(args)
-    args = {:object => args} if !args.is_a?(Hash)
-    raise "No :object was given." if !args[:object]
+    args = {object: args} unless args.is_a?(Hash)
+    raise "No :object was given." unless args[:object]
 
     Baza::Db.drivers.each do |driver|
       require driver[:driver_path]
@@ -52,7 +52,7 @@ class Baza::Db
       next unless const.respond_to?(:from_object)
 
       obj = const.from_object(args)
-      if obj.is_a?(Hash) and obj[:type] == :success
+      if obj.is_a?(Hash) && obj[:type] == :success
         if obj[:args]
           new_args = obj[:args]
           new_args = new_args.merge(args[:new_args]) if args[:new_args]
@@ -220,9 +220,9 @@ class Baza::Db
 
     data[:tables].each do |table|
       table_args = nil
-      table_args = args[:tables][table[:name.to_sym]] if args and args[:tables] and args[:tables][table[:name].to_sym]
-      next if table_args and table_args[:skip]
-      table.delete(:indexes) if table.key?(:indexes) and args[:skip_indexes]
+      table_args = args[:tables][table[:name.to_sym]] if args && args[:tables] and args[:tables][table[:name].to_sym]
+      next if table_args && table_args[:skip]
+      table.delete(:indexes) if table.key?(:indexes) && args[:skip_indexes]
 
       table_name = table.delete(:name)
       puts "Creating table: '#{table_name}'." if debug
@@ -234,14 +234,14 @@ class Baza::Db
       loop do
         puts "Copying rows (#{limit_from}, #{limit_incr})." if debug
         ins_arr = []
-        q_rows = self.select(table_name, {}, {:limit_from => limit_from, :limit_to => limit_incr})
+        q_rows = self.select(table_name, {}, {limit_from: limit_from, limit_to: limit_incr})
         while d_rows = q_rows.fetch
           col_args = nil
 
-          if table_args and table_args[:columns]
+          if table_args && table_args[:columns]
             d_rows.each do |col_name, col_data|
               col_args = table_args[:columns][col_name.to_sym] if table_args and table_args[:columns]
-              d_rows[col_name] = "" if col_args and col_args[:empty]
+              d_rows[col_name] = "" if col_args && col_args[:empty]
             end
           end
 
@@ -268,16 +268,16 @@ class Baza::Db
     end
 
     return {
-      :tables => tables_ret
+      tables: tables_ret
     }
   end
 
   #Simply inserts data into a table.
   #
   #===Examples
-  # db.insert(:users, {:name => "John", :lastname => "Doe"})
-  # id = db.insert(:users, {:name => "John", :lastname => "Doe"}, :return_id => true)
-  # sql = db.insert(:users, {:name => "John", :lastname => "Doe"}, :return_sql => true) #=> "INSERT INTO `users` (`name`, `lastname`) VALUES ('John', 'Doe')"
+  # db.insert(:users, name: "John", lastname: "Doe")
+  # id = db.insert(:users, {name: "John", lastname: "Doe"}, return_id: true)
+  # sql = db.insert(:users, {name: "John", lastname: "Doe"}, return_sql: true) #=> "INSERT INTO `users` (`name`, `lastname`) VALUES ('John', 'Doe')"
   def insert(tablename, arr_insert, args = nil)
     sql = "INSERT INTO #{@sep_table}#{self.esc_table(tablename)}#{@sep_table}"
 
@@ -330,7 +330,7 @@ class Baza::Db
         raise e
       end
 
-      return driver.lastID if args and args[:return_id]
+      return driver.last_id if args and args[:return_id]
       return nil
     end
   end
@@ -348,7 +348,7 @@ class Baza::Db
     elsif val == nil
       return "NULL"
     elsif val.is_a?(Date)
-      return "#{@sep_val}#{Datet.in(val).dbstr(:time => false)}#{@sep_val}"
+      return "#{@sep_val}#{Datet.in(val).dbstr(time: false)}#{@sep_val}"
     elsif val.is_a?(Time) or val.is_a?(DateTime)
       return "#{@sep_val}#{Datet.in(val).dbstr}#{@sep_val}"
     else
@@ -360,8 +360,8 @@ class Baza::Db
   #
   #===Examples
   # db.insert_multi(:users, [
-  #   {:name => "John", :lastname => "Doe"},
-  #   {:name => "Kasper", :lastname => "Johansen"}
+  #   {name: "John", lastname: "Doe"},
+  #   {name: "Kasper", lastname: "Johansen"}
   # ])
   def insert_multi(tablename, arr_hashes, args = nil)
     return false if arr_hashes.empty?
@@ -395,7 +395,7 @@ class Baza::Db
   #Simple updates rows.
   #
   #===Examples
-  # db.update(:users, {:name => "John"}, {:lastname => "Doe"})
+  # db.update(:users, {name: "John"}, {lastname: "Doe"})
   def update(tablename, hash_update, arr_terms = {}, args = nil)
     raise "'hash_update' was not a hash: '#{hash_update.class.name}'." if !hash_update.is_a?(Hash)
     return false if hash_update.empty?
@@ -412,17 +412,17 @@ class Baza::Db
       end
 
       #Convert dates to valid dbstr.
-      value = self.date_out(value) if value.is_a?(Datet) or value.is_a?(Time)
+      value = self.date_out(value) if value.is_a?(Datet) || value.is_a?(Time)
 
       sql << "#{@sep_col}#{self.esc_col(key)}#{@sep_col} = "
       sql << self.sqlval(value)
     end
 
-    if arr_terms and arr_terms.length > 0
+    if arr_terms && arr_terms.length > 0
       sql << " WHERE #{self.makeWhere(arr_terms)}"
     end
 
-    return sql if args and args[:return_sql]
+    return sql if args && args[:return_sql]
 
     self.conn_exec do |driver|
       driver.query(sql)
@@ -433,7 +433,7 @@ class Baza::Db
   def upsert(table, data, terms, args = nil)
     row = self.select(table, terms, "limit" => 1).fetch
 
-    if args and args[:buffer]
+    if args && args[:buffer]
       obj = args[:buffer]
     else
       obj = self
@@ -455,12 +455,12 @@ class Baza::Db
     select_sql = "*"
 
     #Give 'cloned_ubuf' argument to 'q'-method.
-    if args and args[:cloned_ubuf]
-      args_q = {:cloned_ubuf => true}
+    if args && args[:cloned_ubuf]
+      args_q = {cloned_ubuf: true}
     end
 
     #Set up IDQuery-stuff if that is given in arguments.
-    if args and args[:idquery]
+    if args && args[:idquery]
       if args[:idquery] == true
         select_sql = "`id`"
         col = :id
@@ -472,7 +472,7 @@ class Baza::Db
 
     sql = "SELECT #{select_sql} FROM #{@sep_table}#{tablename}#{@sep_table}"
 
-    if arr_terms != nil and !arr_terms.empty?
+    if arr_terms != nil && !arr_terms.empty?
       sql << " WHERE #{self.makeWhere(arr_terms)}"
     end
 
@@ -485,7 +485,7 @@ class Baza::Db
         sql << " LIMIT #{args[:limit]}"
       end
 
-      if args[:limit_from] and args[:limit_to]
+      if args[:limit_from] && args[:limit_to]
         raise "'limit_from' was not numeric: '#{args[:limit_from]}'." if !(Float(args[:limit_from]) rescue false)
         raise "'limit_to' was not numeric: '#{args[:limit_to]}'." if !(Float(args[:limit_to]) rescue false)
         sql << " LIMIT #{args[:limit_from]}, #{args[:limit_to]}"
@@ -493,10 +493,10 @@ class Baza::Db
     end
 
     #Do IDQuery if given in arguments.
-    if args and args[:idquery]
-      res = Baza::Idquery.new(:db => self, :table => tablename, :query => sql, :col => col, &block)
+    if args && args[:idquery]
+      res = Baza::Idquery.new(db: self, table: tablename, query: sql, col: col, &block)
     else
-      res = self.q(sql, args_q, &block)
+      res = q(sql, args_q, &block)
     end
 
     #Return result if a block wasnt given.
@@ -510,7 +510,7 @@ class Baza::Db
   #Returns a single row from a database.
   #
   #===Examples
-  # row = db.single(:users, {:lastname => "Doe"})
+  # row = db.single(:users, lastname: "Doe")
   def single(tablename, arr_terms = nil, args = {})
     args[:limit] = 1
 
@@ -721,13 +721,11 @@ class Baza::Db
   #
   #===Examples
   # id = db.last_id
-  def lastID
+  def last_id
     self.conn_exec do |driver|
-      return driver.lastID
+      return driver.last_id
     end
   end
-
-  alias :last_id :lastID
 
   #Escapes a string to be safe-to-use in a query-string.
   #
@@ -773,10 +771,9 @@ class Baza::Db
 
   #Returns the table-module and spawns it if it isnt already spawned.
   def tables
-    if !@tables
-      require "#{File.dirname(__FILE__)}/drivers/#{@opts[:type]}/#{@opts[:type]}_tables" if (!@opts.key?(:require) or @opts[:require]) unless Baza::Driver.const_get(@type_cc).const_defined?(:Tables)
+    unless @tables
       @tables = Baza::Driver.const_get(@type_cc).const_get(:Tables).new(
-        :db => self
+        db: self
       )
     end
 
@@ -785,10 +782,9 @@ class Baza::Db
 
   #Returns the columns-module and spawns it if it isnt already spawned.
   def cols
-    if !@cols
-      require "#{File.dirname(__FILE__)}/drivers/#{@opts[:type]}/#{@opts[:type]}_columns" if (!@opts.key?(:require) or @opts[:require]) unless Baza::Driver.const_get(@type_cc).const_defined?(:Columns)
+    unless @cols
       @cols = Baza::Driver.const_get(@type_cc).const_get(:Columns).new(
-        :db => self
+        db: self
       )
     end
 
@@ -797,10 +793,9 @@ class Baza::Db
 
   #Returns the index-module and spawns it if it isnt already spawned.
   def indexes
-    if !@indexes
-      require "#{File.dirname(__FILE__)}/drivers/#{@opts[:type]}/#{@opts[:type]}_indexes" if (!@opts.key?(:require) or @opts[:require]) unless Baza::Driver.const_get(@type_cc).const_defined?(:Indexes)
+    unless @indexes
       @indexes = Baza::Driver.const_get(@type_cc).const_get(:Indexes).new(
-        :db => self
+        db: self
       )
     end
 
@@ -809,10 +804,9 @@ class Baza::Db
 
   #Returns the SQLSpec-module and spawns it if it isnt already spawned.
   def sqlspecs
-    if !@sqlspecs
-      require "#{File.dirname(__FILE__)}/drivers/#{@opts[:type]}/#{@opts[:type]}_sqlspecs" if (!@opts.key?(:require) or @opts[:require]) unless Baza::Driver.const_get(@type_cc).const_defined?(:Sqlspecs)
+    unless @sqlspecs
       @sqlspecs = Baza::Driver.const_get(@type_cc).const_get(:Sqlspecs).new(
-        :db => self
+        db: self
       )
     end
 
@@ -827,7 +821,7 @@ class Baza::Db
   #   db.insert(:users, name: "Kasper")
   # end
   def transaction(&block)
-    self.conn_exec do |driver|
+    conn_exec do |driver|
       driver.transaction(&block)
     end
 
@@ -837,7 +831,7 @@ class Baza::Db
   #Optimizes all tables in the database.
   def optimize(args = nil)
     STDOUT.puts "Beginning optimization of database." if @debug or (args and args[:debug])
-    self.tables.list do |table|
+    tables.list do |table|
       STDOUT.puts "Optimizing table: '#{table.name}'." if @debug or (args and args[:debug])
       table.optimize
     end
@@ -861,5 +855,9 @@ class Baza::Db
 
   def to_s
     "#<Baza::Db driver \"#{@opts[:type]}\">"
+  end
+
+  def inspect
+    to_s
   end
 end
