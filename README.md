@@ -71,7 +71,7 @@ db.update(:users, {name: "Kasper Johansen"}, {name: "Kasper"})
 
 ### Delete
 ```ruby
-db.delete(:users, {name: "Kasper"})
+db.delete(:users, name: "Kasper")
 ```
 
 ### Upsert
@@ -85,11 +85,11 @@ db.upsert(:users, {name: "Kasper"}, {age: 27})
 ### Table creation
 ```ruby
 db.tables.create(:users, {
-  :columns => [
-    {:name => :id, :type => :int, :autoincr => true, :primarykey => true},
-    {:name => :name, :type => :varchar}
+  columns: [
+    {name: :id, type: :int, autoincr: true, primarykey: true},
+    {name: :name, type: :varchar}
   ],
-  :indexes => [
+  indexes: [
     :name
   ]
 })
@@ -133,8 +133,8 @@ puts "Column: #{col.name} #{col.type}(#{col.maxlength})"
 
 ## Copying databases
 ```ruby
-db_mysql = Baza::Db.new(:type => :mysql, :subtype => :mysql2, ...)
-db_sqlite = Baza::Db.new(:type => :sqlite3, :path => ...)
+db_mysql = Baza::Db.new(type: :mysql, subtype: :mysql2, ...)
+db_sqlite = Baza::Db.new(type: :sqlite3, path: ...)
 
 db_mysql.copy_to(db_sqlite)
 ```
@@ -142,7 +142,7 @@ db_mysql.copy_to(db_sqlite)
 ## Dumping SQL to an IO
 ```ruby
 db = Baza::Db.new(...)
-dump = Baza::Dump.new(:db => db)
+dump = Baza::Dump.new(db: db)
 str_io = StringIO.new
 dump.dump(str_io)
 ```
@@ -151,7 +151,7 @@ dump.dump(str_io)
 ```ruby
 db.transaction do
   1000.times do
-    db.insert(:users, {:name => "Kasper"})
+    db.insert(:users, name: "Kasper")
   end
 end
 ```
@@ -161,7 +161,7 @@ In order to speed things up, but without using transactions directly, you can us
 ```ruby
 db.q_buffer do |buffer|
   100_000.times do |count|
-    buffer.insert(:table_name, {:name => "Kasper #{count}"})
+    buffer.insert(:table_name, name: "Kasper #{count}")
 
     buffer.query("UPDATE table SET ...")
     buffer.query("DELETE FROM table WHERE ...")
