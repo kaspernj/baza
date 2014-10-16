@@ -46,4 +46,21 @@ shared_examples_for "a baza columns driver" do
     col_text = test_table.column(:text)
     col_text.type.should eq :varchar
   end
+
+  it "should be able to change columns" do
+    col_text = test_table.column(:text)
+    col_text.change(name: "text2", type: :int, default: 5)
+
+    col_text.type.should eq :int
+    col_text.default.should eq "5"
+    col_text.name.should eq :text2
+  end
+
+  it "should be able to drop a column" do
+    test_table.column(:text).drop
+
+    expect {
+      test_table.column(:text)
+    }.to raise_error(Errno::ENOENT)
+  end
 end
