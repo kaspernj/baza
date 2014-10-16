@@ -10,12 +10,16 @@ class Baza::Driver::Sqlite3::Column
 
   #Returns the name of the column.
   def name
-    return @args[:data][:name]
+    return @args[:data][:name].to_sym
+  end
+
+  def table_name
+    @args[:table_name]
   end
 
   #Returns the columns table-object.
   def table
-    return @db.tables[@args[:table_name]]
+    return @db.tables[table_name]
   end
 
   #Returns the data of the column as a hash in knjdb-format.
@@ -79,12 +83,9 @@ class Baza::Driver::Sqlite3::Column
   #Returns the default value of the column.
   def default
     def_val = @args[:data][:dflt_value]
-    if def_val.to_s.slice(0..0) == "'"
-      def_val = def_val.to_s.slice(0)
-    end
 
-    if def_val.to_s.slice(-1..-1) == "'"
-      def_val = def_val.to_s.slice(0, def_val.length - 1)
+    if def_val && match = def_val.match(/\A'(.*)'\Z/)
+      return match[1]
     end
 
     return false if @args[:data][:dflt_value].to_s.empty?
@@ -99,33 +100,47 @@ class Baza::Driver::Sqlite3::Column
 
   #Returns true if the column is auto-increasing.
   def autoincr?
-    return true if @args[:data][:pk].to_i == 1 and @args[:data][:type].to_sym == :integer
+    return true if @args[:data][:pk].to_i == 1 && @args[:data][:type].to_sym == :integer
     return false
   end
 
   #Drops the column from the table.
   def drop
-    self.table.copy(drops: name)
+    table.copy(drops: name)
+  end
+
+  def reload
+    @db.q("PRAGMA table_info(`#{@db.esc_table(table_name)}`)") do |data|
+      next unless data[:name] == @args[:data][:name]
+      @args[:data] = data
+      @type = nil
+      return
+    end
+
+    raise "Could not find data for column: #{table_name}.#{name}"
   end
 
   #Changes data on the column. Like the name, type, maxlength or whatever.
   def change(data)
     newdata = data.clone
 
-    newdata[:name] = self.name if !newdata.key?(:name)
-    newdata[:type] = self.type if !newdata.key?(:type)
-    newdata[:maxlength] = self.maxlength if !newdata.key?(:maxlength) and self.maxlength
-    newdata[:null] = self.null? if !newdata.key?(:null)
-    newdata[:default] = self.default if !newdata.key?(:default)
-    newdata[:primarykey] = self.primarykey? if !newdata.key?(:primarykey)
+    newdata[:name] = name unless newdata.key?(:name)
+    newdata[:type] = type unless newdata.key?(:type)
+    newdata[:maxlength] = maxlength unless newdata.key?(:maxlength) && maxlength
+    newdata[:null] = null? unless newdata.key?(:null)
+    newdata[:default] = default unless newdata.key?(:default)
+    newdata[:primarykey] = primarykey? unless newdata.key?(:primarykey)
 
     @type = nil
     @maxlength = nil
 
-    new_table = self.table.copy(
+    new_table = table.copy(
       alter_columns: {
         name.to_sym => newdata
       }
     )
+
+    @args[:data][:name] = newdata[:name].to_s
+    reload
   end
 end

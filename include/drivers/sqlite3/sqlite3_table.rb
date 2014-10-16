@@ -75,30 +75,30 @@ class Baza::Driver::Sqlite3::Table
   def column(name)
     list = self.columns
     return list[name] if list[name]
-    raise Errno::ENOENT.new("Column not found: #{name}.")
+    raise Errno::ENOENT, "Column not found: #{name}."
   end
 
   def columns
     @db.cols
     ret = {}
 
-    @db.q("PRAGMA table_info(`#{@db.esc_table(self.name)}`)") do |d_cols|
-      name = d_cols[:name].to_sym
-      obj = @list.get!(name)
+    @db.q("PRAGMA table_info(`#{@db.esc_table(name)}`)") do |d_cols|
+      column_name = d_cols[:name].to_sym
+      obj = @list.get!(column_name)
 
-      if !obj
+      unless obj
         obj = Baza::Driver::Sqlite3::Column.new(
-          table_name: self.name,
+          table_name: name,
           db: @db,
           data: d_cols
         )
-        @list[name] = obj
+        @list[column_name] = obj
       end
 
       if block_given?
-        yield(obj)
+        yield obj
       else
-        ret[name] = obj
+        ret[column_name] = obj
       end
     end
 
@@ -204,12 +204,12 @@ class Baza::Driver::Sqlite3::Table
     sql = "CREATE TABLE `#{self.name}` ("
     first = true
     cols_cur.each do |name, col|
-      next if args[:drops] and args[:drops].index(name) != nil
+      next if args[:drops] && args[:drops].to_s.include?(name.to_s)
 
       sql << ", " if !first
       first = false if first
 
-      if args.key?(:alter_columns) and args[:alter_columns][name.to_sym]
+      if args.key?(:alter_columns) && args[:alter_columns][name.to_sym]
         sql << @db.cols.data_sql(args[:alter_columns][name.to_sym])
       else
         sql << @db.cols.data_sql(col.data)
@@ -217,7 +217,7 @@ class Baza::Driver::Sqlite3::Table
 
       if args[:new]
         args[:new].each do |col_data|
-          if col_data[:after] and col_data[:after] == name
+          if col_data[:after] && col_data[:after] == name
             sql << ", #{@db.cols.data_sql(col_data)}"
           end
         end
@@ -229,7 +229,7 @@ class Baza::Driver::Sqlite3::Table
     sql = "INSERT INTO `#{self.name}` SELECT "
     first = true
     cols_cur.each do |name, col|
-      next if args[:drops] and args[:drops].index(name) != nil
+      next if args[:drops] && args[:drops].to_s.include?(name.to_s)
 
       sql << ", " if !first
       first = false if first
@@ -238,7 +238,7 @@ class Baza::Driver::Sqlite3::Table
 
       if args[:news]
         args[:news].each do |col_data|
-          if col_data[:after] and col_data[:after] == name
+          if col_data[:after] && col_data[:after] == name.to_s
             sql << ", ''"
           end
         end
