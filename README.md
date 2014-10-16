@@ -119,6 +119,16 @@ table = db.tables[:users]
 table.rename(:new_table_name)
 ```
 
+### Table optimizing
+```ruby
+table.optimize
+```
+
+### Table rows counting
+```ruby
+table.rows_count
+```
+
 ### Column listing
 ```ruby
 table = db.tables[:users]
@@ -127,8 +137,41 @@ cols = table.columns
 
 Or a specific column:
 ```ruby
-col = table.column(:id)
-puts "Column: #{col.name} #{col.type}(#{col.maxlength})"
+column = table.column(:id)
+puts "Column: #{column.name} #{column.type}(#{column.maxlength})"
+puts "Default: #{column.default}"
+```
+
+### Column altering
+```ruby
+column.change(name: "newname", type: :varchar, default: "")
+```
+
+### Drop column
+```ruby
+column.drop
+```
+
+### Get an index by name
+```ruby
+index = table.index("index_name")
+```
+
+### Rename index
+```ruby
+index.rename("new name")
+```
+
+### Dropping an index
+```ruby
+index.drop
+```
+
+### Getting various data from an index
+```ruby
+puts "Unique: #{index.unique?}"
+puts "Primary: #{index.primary?}"
+puts "Table: #{index.table}"
 ```
 
 ## Copying databases
@@ -157,7 +200,9 @@ end
 ```
 
 ## Query Buffer
-In order to speed things up, but without using transactions directly, you can use a query buffer. This stores various instructions in memory and flushes them every now and then through transactions or intelligent queries (like multi-insertion). The drawback is that it will not be possible to test the queries for errors before a flush is executed and it wont be possible to read results form any of the queries. It is fairly simple do however:
+In order to speed things up, but without using transactions directly, you can use a query buffer. This stores various instructions in memory and flushes them every now and then through transactions or intelligent queries (like multi-insertion). The drawback is that it will not be possible to test the queries for errors before a flush is executed and it wont be possible to read results from any of the queries.
+
+It is fairly simple do:
 ```ruby
 db.q_buffer do |buffer|
   100_000.times do |count|
