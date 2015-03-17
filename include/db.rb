@@ -98,7 +98,7 @@ class Baza::Db
 
     if RUBY_PLATFORM == "java"
       @opts[:subtype] = "java"
-    elsif @opts[:type] == "sqlite3" and RUBY_PLATFORM.index("mswin32") != nil
+    elsif @opts[:type] == "sqlite3" && RUBY_PLATFORM.index("mswin32") != nil
       @opts[:subtype] = "ironruby"
     end
 
@@ -132,15 +132,15 @@ class Baza::Db
   #===Examples
   # driver_instance = db.spawn
   def spawn
-    raise "No type given (#{@opts.keys.join(",")})." if !@opts[:type]
+    raise "No type given (#{@opts.keys.join(",")})." unless @opts[:type]
     rpath = "#{File.dirname(__FILE__)}/#{"drivers/#{@opts[:type]}/#{@opts[:type]}.rb"}"
-    require rpath if (!@opts.key?(:require) or @opts[:require]) and File.exists?(rpath)
+    require rpath if (!@opts.key?(:require) || @opts[:require]) && File.exists?(rpath)
     return Baza::Driver.const_get(@type_cc).new(self)
   end
 
   #Registers a driver to the current thread.
   def get_and_register_thread
-    raise "KnjDB-object is not in threadding mode." if !@conns
+    raise "KnjDB-object is not in threadding mode." unless @conns
 
     thread_cur = Thread.current
     tid = self.__id__
@@ -151,7 +151,7 @@ class Baza::Db
       self.free_thread
     end
 
-    thread_cur[:baza][tid] = @conns.get_and_lock if !thread_cur[:baza][tid]
+    thread_cur[:baza][tid] = @conns.get_and_lock unless thread_cur[:baza][tid]
 
     #If block given then be ensure to free thread after yielding.
     if block_given?
@@ -168,7 +168,7 @@ class Baza::Db
     thread_cur = Thread.current
     tid = self.__id__
 
-    if thread_cur[:baza] and thread_cur[:baza].key?(tid)
+    if thread_cur[:baza] && thread_cur[:baza].key?(tid)
       db = thread_cur[:baza][tid]
       thread_cur[:baza].delete(tid)
       @conns.free(db) if @conns
@@ -193,6 +193,12 @@ class Baza::Db
 
     @conn = nil
     @conns = nil
+
+    @closed = true
+  end
+
+  def closed?
+    @closed
   end
 
   #Clones the current database-connection with possible extra arguments.
@@ -220,7 +226,7 @@ class Baza::Db
 
     data[:tables].each do |table|
       table_args = nil
-      table_args = args[:tables][table[:name.to_sym]] if args && args[:tables] and args[:tables][table[:name].to_sym]
+      table_args = args[:tables][table[:name.to_sym]] if args && args[:tables] && args[:tables][table[:name].to_sym]
       next if table_args && table_args[:skip]
       table.delete(:indexes) if table.key?(:indexes) && args[:skip_indexes]
 
@@ -240,7 +246,7 @@ class Baza::Db
 
           if table_args && table_args[:columns]
             d_rows.each do |col_name, col_data|
-              col_args = table_args[:columns][col_name.to_sym] if table_args and table_args[:columns]
+              col_args = table_args[:columns][col_name.to_sym] if table_args && table_args[:columns]
               d_rows[col_name] = "" if col_args && col_args[:empty]
             end
           end
@@ -281,7 +287,7 @@ class Baza::Db
   def insert(tablename, arr_insert, args = nil)
     sql = "INSERT INTO #{@sep_table}#{self.esc_table(tablename)}#{@sep_table}"
 
-    if !arr_insert or arr_insert.empty?
+    if !arr_insert || arr_insert.empty?
       #This is the correct syntax for inserting a blank row in MySQL.
       if @opts[:type].to_s == "mysql"
         sql << " VALUES ()"
@@ -320,7 +326,7 @@ class Baza::Db
       sql << ")"
     end
 
-    return sql if args and args[:return_sql]
+    return sql if args && args[:return_sql]
 
     self.conn_exec do |driver|
       begin
@@ -330,7 +336,7 @@ class Baza::Db
         raise e
       end
 
-      return driver.last_id if args and args[:return_id]
+      return driver.last_id if args && args[:return_id]
       return nil
     end
   end
@@ -343,13 +349,13 @@ class Baza::Db
   def sqlval(val)
     return @conn.sqlval(val) if @conn.respond_to?(:sqlval)
 
-    if val.is_a?(Fixnum) or val.is_a?(Integer)
+    if val.is_a?(Fixnum) || val.is_a?(Integer)
       return val.to_s
     elsif val == nil
       return "NULL"
     elsif val.is_a?(Date)
       return "#{@sep_val}#{Datet.in(val).dbstr(time: false)}#{@sep_val}"
-    elsif val.is_a?(Time) or val.is_a?(DateTime)
+    elsif val.is_a?(Time) || val.is_a?(DateTime)
       return "#{@sep_val}#{Datet.in(val).dbstr}#{@sep_val}"
     else
       return "#{@sep_val}#{self.escape(val)}#{@sep_val}"
@@ -367,7 +373,7 @@ class Baza::Db
     return false if arr_hashes.empty?
 
     if @esc_driver.respond_to?(:insert_multi)
-      if args and args[:return_sql]
+      if args && args[:return_sql]
         res =  @esc_driver.insert_multi(tablename, arr_hashes, args)
         if res.is_a?(String)
           return [res]
@@ -527,15 +533,15 @@ class Baza::Db
   #Deletes rows from the database.
   #
   #===Examples
-  # db.delete(:users, {:lastname => "Doe"})
+  # db.delete(:users, {lastname: "Doe"})
   def delete(tablename, arr_terms, args = nil)
     sql = "DELETE FROM #{@sep_table}#{tablename}#{@sep_table}"
 
-    if arr_terms != nil and !arr_terms.empty?
+    if arr_terms != nil && !arr_terms.empty?
       sql << " WHERE #{self.makeWhere(arr_terms)}"
     end
 
-    return sql if args and args[:return_sql]
+    return sql if args && args[:return_sql]
 
     self.conn_exec do |driver|
       driver.query(sql)
@@ -547,7 +553,7 @@ class Baza::Db
   #Internally used to generate SQL.
   #
   #===Examples
-  # sql = db.makeWhere({:lastname => "Doe"}, driver_obj)
+  # sql = db.makeWhere({lastname: "Doe"}, driver_obj)
   def makeWhere(arr_terms, driver = nil)
     sql = ""
 
@@ -561,7 +567,7 @@ class Baza::Db
 
       if value.is_a?(Array)
         raise "Array for column '#{key}' was empty." if value.empty?
-        sql << "#{@sep_col}#{key}#{@sep_col} IN (#{Knj::ArrayExt.join(:arr => value, :sep => ",", :surr => "'", :callback => proc{|ele| self.esc(ele)})})"
+        sql << "#{@sep_col}#{key}#{@sep_col} IN (#{Knj::ArrayExt.join(arr: value, sep: ",", surr: "'", callback: proc{|ele| self.esc(ele)})})"
       elsif value.is_a?(Hash)
         raise "Dont know how to handle hash."
       else
@@ -579,7 +585,9 @@ class Baza::Db
   #   str = driver.escape('something̈́')
   # end
   def conn_exec
-    if tcur = Thread.current and tcur[:baza]
+    raise "Call to closed database" if @closed
+
+    if tcur = Thread.current && Thread.current[:baza]
       tid = self.__id__
 
       if tcur[:baza].key?(tid)
@@ -618,7 +626,7 @@ class Baza::Db
     if @debug
       print "SQL: #{string}\n"
 
-      if @debug.is_a?(Fixnum) and @debug >= 2
+      if @debug.is_a?(Fixnum) && @debug >= 2
         print caller.join("\n")
         print "\n"
       end
@@ -665,10 +673,10 @@ class Baza::Db
   # end
   def cloned_conn(args = nil, &block)
     clone_conn_args = {
-      :threadsafe => false
+      threadsafe: false
     }
 
-    clone_conn_args.merge!(args[:clone_args]) if args and args[:clone_args]
+    clone_conn_args.merge!(args[:clone_args]) if args && args[:clone_args]
     dbconn = self.clone_conn(clone_conn_args)
 
     begin
@@ -688,9 +696,9 @@ class Baza::Db
     #If the query should be executed in a new connection unbuffered.
     if args
       if args[:cloned_ubuf]
-        raise "No block given." if !block
+        raise "No block given." unless block
 
-        self.cloned_conn(:clone_args => args[:clone_args]) do |cloned_conn|
+        self.cloned_conn(clone_args: args[:clone_args]) do |cloned_conn|
           ret = cloned_conn.query_ubuf(str)
           ret.each(&block)
         end
@@ -713,7 +721,7 @@ class Baza::Db
 
   #Yields a query-buffer and flushes at the end of the block given.
   def q_buffer(args = {}, &block)
-    Baza::QueryBuffer.new(args.merge(:db => self), &block)
+    Baza::QueryBuffer.new(args.merge(db: self), &block)
     return nil
   end
 
@@ -830,9 +838,9 @@ class Baza::Db
 
   #Optimizes all tables in the database.
   def optimize(args = nil)
-    STDOUT.puts "Beginning optimization of database." if @debug or (args and args[:debug])
+    STDOUT.puts "Beginning optimization of database." if @debug || (args && args[:debug])
     tables.list do |table|
-      STDOUT.puts "Optimizing table: '#{table.name}'." if @debug or (args and args[:debug])
+      STDOUT.puts "Optimizing table: '#{table.name}'." if @debug || (args && args[:debug])
       table.optimize
     end
 
