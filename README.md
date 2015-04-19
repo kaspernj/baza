@@ -4,7 +4,7 @@
 
 # baza
 
-A database abstraction layer for Ruby.
+A database abstraction layer for Ruby. Also supports JRuby.
 
 ## Installation
 
