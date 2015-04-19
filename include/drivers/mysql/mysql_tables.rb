@@ -10,7 +10,7 @@ class Baza::Driver::Mysql::Tables
     @db = @args[:db]
     @subtype = @db.opts[:subtype]
     @list_mutex = Monitor.new
-    @list = Wref_map.new
+    @list = Wref::Map.new
     @list_should_be_reloaded = true
   end
 
@@ -23,10 +23,8 @@ class Baza::Driver::Mysql::Tables
   def [](table_name)
     table_name = table_name.to_sym
 
-    begin
-      return @list[table_name]
-    rescue Wref::Recycled
-      #ignore.
+    if table = @list[table_name]
+      return table
     end
 
     tables = []
@@ -52,9 +50,9 @@ class Baza::Driver::Mysql::Tables
       @db.q(sql) do |d_tables|
         raise "No name was given from: #{d_tables}" unless d_tables.is_a?(Hash) && d_tables[:Name]
         name = d_tables[:Name].to_sym
-        obj = @list.get!(name)
+        obj = @list.get(name)
 
-        if !obj
+        unless obj
           obj = Baza::Driver::Mysql::Table.new(
             db: @db,
             data: d_tables,

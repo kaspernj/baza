@@ -1,4 +1,4 @@
-class Baza::Driver::Mysql::Index
+class Baza::Driver::Mysql::Index < Baza::Index
   attr_reader :args, :columns
 
   def initialize(args)
@@ -53,7 +53,7 @@ class Baza::Driver::Mysql::Index
 
   #Returns true if the index is a unique-index.
   def unique?
-    if @args[:data][:Index_type] == "UNIQUE"
+    if @args[:data][:Index_type] == "UNIQUE" || @args[:data][:Non_unique].to_i == 0
       return true
     else
       return false
@@ -64,13 +64,5 @@ class Baza::Driver::Mysql::Index
   def primary?
     return true if @args[:data][:Key_name] == "PRIMARY"
     return false
-  end
-
-  def to_s
-    return "#<Baza::Driver::Mysql::Index name: \"#{name}\", columns: #{@columns}, primary: #{primary?}, unique: #{unique?}>"
-  end
-
-  def inspect
-    to_s
   end
 end

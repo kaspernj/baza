@@ -6,17 +6,14 @@ class Baza::Driver::Sqlite3::Tables
     @db = @args[:db]
 
     @list_mutex = Mutex.new
-    @list = Wref_map.new
+    @list = Wref::Map.new
   end
 
   def [](table_name)
     table_name = table_name.to_sym
 
-    begin
-      ret = @list[table_name]
+    if ret = @list.get(table_name)
       return ret
-    rescue Wref::Recycled
-      #ignore.
     end
 
     self.list do |table_obj|
@@ -34,9 +31,9 @@ class Baza::Driver::Sqlite3::Tables
         next if d_tables[:name] == "sqlite_sequence"
 
         tname = d_tables[:name].to_sym
-        obj = @list.get!(tname)
+        obj = @list.get(tname)
 
-        if !obj
+        unless obj
           obj = Baza::Driver::Sqlite3::Table.new(
             db: @db,
             data: d_tables,

@@ -1,4 +1,4 @@
-class Baza::Driver::Sqlite3::Index
+class Baza::Driver::Sqlite3::Index < Baza::Index
   attr_reader :args, :columns
 
   def initialize(args)
@@ -23,7 +23,7 @@ class Baza::Driver::Sqlite3::Index
     @db.query("DROP INDEX `#{name}`")
   end
 
-  def rename newname
+  def rename(newname)
     newname = newname.to_sym
 
     create_args = data
@@ -37,6 +37,7 @@ class Baza::Driver::Sqlite3::Index
   def data
     return {
       name: name,
+      unique: unique?,
       columns: @columns
     }
   end
@@ -45,11 +46,7 @@ class Baza::Driver::Sqlite3::Index
     @columns
   end
 
-  def to_s
-    "#<Baza::Driver::Sqlite3::Index name: \"#{name}\", columns: #{@columns}>"
-  end
-
-  def inspect
-    to_s
+  def unique?
+    @args[:data][:unique].to_i == 1
   end
 end

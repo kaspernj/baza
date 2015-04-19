@@ -1,5 +1,5 @@
 #This class handels every MySQL-column, that can be returned from a table-object.
-class Baza::Driver::Mysql::Column
+class Baza::Driver::Mysql::Column < Baza::Column
   attr_reader :args, :name
 
   #Constructor. Should not be called manually.

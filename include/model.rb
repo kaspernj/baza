@@ -453,7 +453,7 @@ class Baza::Model
         enum.each(&block)
         return nil
       elsif @ob.args[:array_enum]
-        return Array_enumerator.new(enum)
+        return ArrayEnumerator.new(enum)
       else
         return enum.to_a
       end

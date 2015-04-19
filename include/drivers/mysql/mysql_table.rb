@@ -1,4 +1,4 @@
-class Baza::Driver::Mysql::Table
+class Baza::Driver::Mysql::Table < Baza::Table
   attr_reader :list, :name
 
   def initialize(args)
@@ -6,8 +6,8 @@ class Baza::Driver::Mysql::Table
     @db = args[:db]
     @data = args[:data]
     @subtype = @db.opts[:subtype]
-    @list = Wref_map.new
-    @indexes_list = Wref_map.new
+    @list = Wref::Map.new
+    @indexes_list = Wref::Map.new
     @name = @data[:Name].to_sym
     @tables = args[:tables]
 
@@ -48,7 +48,7 @@ class Baza::Driver::Mysql::Table
   def column(name)
     name = name.to_sym
 
-    if col = @list.get!(name)
+    if col = @list.get(name)
       return @list[name]
     end
 
@@ -63,11 +63,11 @@ class Baza::Driver::Mysql::Table
     @db.cols
     ret = {}
     sql = "SHOW FULL COLUMNS FROM `#{@db.esc_table(name)}`"
-    sql << " WHERE `Field` = '#{@db.esc(args[:name])}'" if args and args.key?(:name)
+    sql << " WHERE `Field` = '#{@db.esc(args[:name])}'" if args && args.key?(:name)
 
     @db.q(sql) do |d_cols|
       column_name = d_cols[:Field].to_sym
-      obj = @list.get!(name)
+      obj = @list.get(name)
 
       unless obj
         obj = Baza::Driver::Mysql::Column.new(
@@ -92,7 +92,7 @@ class Baza::Driver::Mysql::Table
     end
   end
 
-  def indexes args = nil
+  def indexes(args = nil)
     @db.indexes
     ret = {}
 
@@ -101,7 +101,7 @@ class Baza::Driver::Mysql::Table
 
     @db.q(sql) do |d_indexes|
       next if d_indexes[:Key_name] == "PRIMARY"
-      obj = @indexes_list.get!(d_indexes[:Key_name].to_s)
+      obj = @indexes_list.get(d_indexes[:Key_name].to_s)
 
       unless obj
         obj = Baza::Driver::Mysql::Index.new(
@@ -130,7 +130,7 @@ class Baza::Driver::Mysql::Table
   def index(name)
     name = name.to_s
 
-    if index = @indexes_list.get!(name)
+    if index = @indexes_list.get(name)
       return index
     end
 
@@ -167,7 +167,7 @@ class Baza::Driver::Mysql::Table
         sql = ""
       end
 
-      if args[:create] or !args.key?(:create)
+      if args[:create] || !args.key?(:create)
         sql << "CREATE"
       end
 
@@ -217,7 +217,7 @@ class Baza::Driver::Mysql::Table
     end
   end
 
-  def rename newname
+  def rename(newname)
     newname = newname.to_sym
     oldname = name
 

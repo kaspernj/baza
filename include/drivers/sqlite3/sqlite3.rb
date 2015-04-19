@@ -57,9 +57,9 @@ class Baza::Driver::Sqlite3
         @conn = java.sql.DriverManager::getConnection("jdbc:sqlite:#{@baza_db.opts[:path]}")
         @stat = @conn.createStatement
       elsif @baza_db.opts[:subtype] == "rhodes"
-        @conn = SQLite3::Database.new(@path, @path)
+        @conn = ::SQLite3::Database.new(@path, @path)
       else
-        @conn = SQLite3::Database.open(@path)
+        @conn = ::SQLite3::Database.open(@path)
         @conn.results_as_hash = true
         @conn.type_translation = false
       end
