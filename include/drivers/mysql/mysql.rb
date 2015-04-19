@@ -29,14 +29,27 @@ class Baza::Driver::Mysql
           }
         }
       }
+    elsif args[:object].class.name == "Java::ComMysqlJdbc::JDBC4Connection"
+      return {
+        type: :success,
+        args: {
+          type: :mysql,
+          subtype: :java,
+          conn: args[:object],
+          query_args: {
+            as: :hash,
+            symbolize_keys: true
+          }
+        }
+      }
     end
 
     return nil
   end
 
-  def initialize(baza_db_obj)
-    @baza_db = baza_db_obj
-    @opts = @baza_db.opts
+  def initialize(baza)
+    @baza = baza
+    @opts = @baza.opts
     @sep_table = "`"
     @sep_col = "`"
     @sep_val = "'"
@@ -50,22 +63,22 @@ class Baza::Driver::Mysql
       @encoding = "utf8"
     end
 
-    if @baza_db.opts.key?(:port)
-      @port = @baza_db.opts[:port].to_i
+    if @baza.opts.key?(:port)
+      @port = @baza.opts[:port].to_i
     else
       @port = 3306
     end
 
     @java_rs_data = {}
-    @subtype = @baza_db.opts[:subtype]
-    @subtype = :mysql if @subtype.to_s.empty?
-    self.reconnect
+    @subtype = @baza.opts[:subtype]
+    @subtype ||= :mysql
+    reconnect
   end
 
   #This method handels the closing of statements and results for the Java MySQL-mode.
   def java_mysql_resultset_killer(id)
     data = @java_rs_data[id]
-    return nil if !data
+    return nil unless data
 
     data[:res].close
     data[:stmt].close
@@ -74,7 +87,7 @@ class Baza::Driver::Mysql
 
   #Cleans the wref-map holding the tables.
   def clean
-    self.tables.clean if self.tables
+    tables.clean if tables
   end
 
   #Respawns the connection to the MySQL-database.
@@ -82,16 +95,16 @@ class Baza::Driver::Mysql
     @mutex.synchronize do
       case @subtype
         when :mysql
-          @conn = Mysql.real_connect(@baza_db.opts[:host], @baza_db.opts[:user], @baza_db.opts[:pass], @baza_db.opts[:db], @port)
+          @conn = Mysql.real_connect(@baza.opts[:host], @baza.opts[:user], @baza.opts[:pass], @baza.opts[:db], @port)
         when :mysql2
           require "rubygems"
           require "mysql2"
 
           args = {
-            host: @baza_db.opts[:host],
-            username: @baza_db.opts[:user],
-            password: @baza_db.opts[:pass],
-            database: @baza_db.opts[:db],
+            host: @baza.opts[:host],
+            username: @baza.opts[:user],
+            password: @baza.opts[:pass],
+            database: @baza.opts[:db],
             port: @port,
             symbolize_keys: true,
             cache_rows: false
@@ -99,11 +112,11 @@ class Baza::Driver::Mysql
 
           #Symbolize keys should also be given here, else table-data wont be symbolized for some reason - knj.
           @query_args = {symbolize_keys: true}
-          @query_args.merge!(@baza_db.opts[:query_args]) if @baza_db.opts[:query_args]
+          @query_args.merge!(@baza.opts[:query_args]) if @baza.opts[:query_args]
 
           pos_args = [:as, :async, :cast_booleans, :database_timezone, :application_timezone, :cache_rows, :connect_flags, :cast]
           pos_args.each do |key|
-            args[key] = @baza_db.opts[key] if @baza_db.opts.key?(key)
+            args[key] = @baza.opts[key] if @baza.opts.key?(key)
           end
 
           args[:as] = :array if @opts[:result] == "array"
@@ -111,8 +124,8 @@ class Baza::Driver::Mysql
           tries = 0
           begin
             tries += 1
-            if @baza_db.opts[:conn]
-              @conn = @baza_db.opts[:conn]
+            if @baza.opts[:conn]
+              @conn = @baza.opts[:conn]
             else
               @conn = Mysql2::Client.new(args)
             end
@@ -128,14 +141,20 @@ class Baza::Driver::Mysql
             raise e
           end
         when :java
-          unless @jdbc_loaded
-            require "java"
-            require "/usr/share/java/mysql-connector-java.jar" if File.exists?("/usr/share/java/mysql-connector-java.jar")
-            import "com.mysql.jdbc.Driver"
+          if @baza.opts[:conn]
             @jdbc_loaded = true
+            @conn = @baza.opts[:conn]
+          else
+            unless @jdbc_loaded
+              require "java"
+              require "/usr/share/java/mysql-connector-java.jar" if File.exists?("/usr/share/java/mysql-connector-java.jar")
+              import "com.mysql.jdbc.Driver"
+              @jdbc_loaded = true
+            end
+
+            @conn = java.sql::DriverManager.getConnection("jdbc:mysql://#{@baza.opts[:host]}:#{@port}/#{@baza.opts[:db]}?user=#{@baza.opts[:user]}&password=#{@baza.opts[:pass]}&populateInsertRowWithDefaultValues=true&zeroDateTimeBehavior=round&characterEncoding=#{@encoding}&holdResultsOpenOverStatementClose=true")
           end
 
-          @conn = java.sql::DriverManager.getConnection("jdbc:mysql://#{@baza_db.opts[:host]}:#{@port}/#{@baza_db.opts[:db]}?user=#{@baza_db.opts[:user]}&password=#{@baza_db.opts[:pass]}&populateInsertRowWithDefaultValues=true&zeroDateTimeBehavior=round&characterEncoding=#{@encoding}&holdResultsOpenOverStatementClose=true")
           query("SET SQL_MODE = ''")
         else
           raise "Unknown subtype: #{@subtype} (#{@subtype.class.name})"
@@ -162,7 +181,7 @@ class Baza::Driver::Mysql
           when :java
             stmt = conn.create_statement
 
-            if str.match(/^\s*(delete|update|create|drop|insert\s+into|alter)\s+/i)
+            if str.match(/^\s*(delete|update|create|drop|insert\s+into|alter|truncate)\s+/i)
               begin
                 stmt.execute(str)
               ensure
@@ -175,7 +194,7 @@ class Baza::Driver::Mysql
 
               begin
                 res = stmt.execute_query(str)
-                ret = Baza::Driver::Mysql::ResultJava.new(@baza_db, @opts, res)
+                ret = Baza::Driver::Mysql::ResultJava.new(@baza, @opts, res)
                 id = ret.__id__
 
                 #If ID is being reused we have to free the result.
@@ -189,7 +208,8 @@ class Baza::Driver::Mysql
               rescue => e
                 res.close if res
                 stmt.close
-                @java_rs_data.delete(id) if ret and id
+                @java_rs_data.delete(id) if ret && id
+
                 raise e
               end
             end
@@ -239,7 +259,7 @@ class Baza::Driver::Mysql
 
             begin
               res = stmt.executeQuery(str)
-              ret = Baza::Driver::Mysql::ResultJava.new(@baza_db, @opts, res)
+              ret = Baza::Driver::Mysql::ResultJava.new(@baza, @opts, res)
 
               #Save reference to result and statement, so we can close them when they are garbage collected.
               @java_rs_data[ret.__id__] = {res: res, stmt: stmt}
@@ -323,7 +343,7 @@ class Baza::Driver::Mysql
   #Destroyes the connection.
   def destroy
     @conn = nil
-    @baza_db = nil
+    @baza = nil
     @mutex = nil
     @subtype = nil
     @encoding = nil
@@ -369,7 +389,7 @@ class Baza::Driver::Mysql
             sql << ","
           end
 
-          sql << @baza_db.sqlval(val)
+          sql << @baza.sqlval(val)
         end
       else
         hash.each do |key, val|
@@ -379,7 +399,7 @@ class Baza::Driver::Mysql
             sql << ","
           end
 
-          sql << @baza_db.sqlval(val)
+          sql << @baza.sqlval(val)
         end
       end
     end
@@ -410,13 +430,13 @@ class Baza::Driver::Mysql
 
   #Starts a transaction, yields the database and commits at the end.
   def transaction
-    @baza_db.q("START TRANSACTION")
+    @baza.q("START TRANSACTION")
 
     begin
-      yield @baza_db
-      @baza_db.q("COMMIT")
+      yield @baza
+      @baza.q("COMMIT")
     rescue
-      @baza_db.q("ROLLBACK")
+      @baza.q("ROLLBACK")
       raise
     end
   end

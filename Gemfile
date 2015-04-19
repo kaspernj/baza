@@ -16,8 +16,15 @@ group :development do
   gem "rdoc"
   gem "bundler"
   gem "jeweler"
-  gem "sqlite3"
-  gem "mysql2"
+
+  if RUBY_ENGINE == "jruby"
+    gem "jdbc-sqlite3"
+    gem "activerecord-jdbc-adapter"
+  else
+    gem "sqlite3"
+    gem "mysql2"
+  end
+
   gem "activerecord"
 end
 

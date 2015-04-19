@@ -2,7 +2,7 @@
 class Baza::Driver::Sqlite3::ResultJava
   def initialize(driver, rs)
     @index = 0
-    retkeys = driver.knjdb.opts[:return_keys]
+    retkeys = driver.baza.opts[:return_keys]
 
     if rs
       metadata = rs.getMetaData

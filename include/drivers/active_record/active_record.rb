@@ -90,7 +90,7 @@ class Baza::Driver::ActiveRecord::Result
 
   def enum
     @enum ||= Enumerator.new do |y|
-      @res.each(as: :hash) do |result|
+      @res.each do |result|
         y << result.symbolize_keys
       end
     end
@@ -104,7 +104,7 @@ class Baza::Driver::ActiveRecord::Result
     end
   end
 
-  def each &blk
+  def each(&blk)
     enum.each &blk
   end
 end
