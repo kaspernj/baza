@@ -90,8 +90,8 @@ class Baza::Driver::ActiveRecord::Result
 
   def enum
     @enum ||= Enumerator.new do |y|
-      @res.each do |result|
-        y << result.symbolize_keys
+      each do |data|
+        y << data
       end
     end
   end
@@ -105,7 +105,17 @@ class Baza::Driver::ActiveRecord::Result
   end
 
   def each(&blk)
-    enum.each &blk
+    return unless @res
+
+    if RUBY_ENGINE == "jruby"
+      @res.each do |result|
+        yield result.symbolize_keys
+      end
+    else
+      @res.each(as: :hash) do |result|
+        yield result.symbolize_keys
+      end
+    end
   end
 end
 
