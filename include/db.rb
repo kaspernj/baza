@@ -97,9 +97,9 @@ class Baza::Db
     end
 
     if RUBY_PLATFORM == "java"
-      @opts[:subtype] = "java"
+      @opts[:subtype] ||= :java
     elsif @opts[:type] == "sqlite3" && RUBY_PLATFORM.index("mswin32") != nil
-      @opts[:subtype] = "ironruby"
+      @opts[:subtype] ||= :ironruby
     end
 
     @type_cc = StringCases.snake_to_camel(@opts[:type])

@@ -2,7 +2,7 @@ class Baza::InfoSqlite3
   attr_reader :db
 
   def initialize
-    require "sqlite3"
+    require "sqlite3" unless RUBY_ENGINE == "jruby"
     require "tmpdir"
 
     @path = "#{Dir.tmpdir}/baza_sqlite3_test_#{Time.now.to_f.to_s.hash}.sqlite3"

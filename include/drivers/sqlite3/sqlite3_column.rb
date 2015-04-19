@@ -1,5 +1,5 @@
 #This class handels all the SQLite3-columns.
-class Baza::Driver::Sqlite3::Column
+class Baza::Driver::Sqlite3::Column < Baza::Column
   attr_reader :args
 
   #Constructor. This should not be called manually.

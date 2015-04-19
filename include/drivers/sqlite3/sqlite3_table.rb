@@ -1,4 +1,4 @@
-class Baza::Driver::Sqlite3::Table
+class Baza::Driver::Sqlite3::Table < Baza::Table
   attr_reader :name, :type
 
   def initialize(args)
@@ -8,8 +8,8 @@ class Baza::Driver::Sqlite3::Table
     @type = @data[:type].to_sym
     @tables = args[:tables]
 
-    @list = Wref_map.new
-    @indexes_list = Wref_map.new
+    @list = Wref::Map.new
+    @indexes_list = Wref::Map.new
   end
 
   def maxlength
@@ -84,7 +84,7 @@ class Baza::Driver::Sqlite3::Table
 
     @db.q("PRAGMA table_info(`#{@db.esc_table(name)}`)") do |d_cols|
       column_name = d_cols[:name].to_sym
-      obj = @list.get!(column_name)
+      obj = @list.get(column_name)
 
       unless obj
         obj = Baza::Driver::Sqlite3::Column.new(
@@ -223,6 +223,7 @@ class Baza::Driver::Sqlite3::Table
         end
       end
     end
+
     sql << ");"
     @db.query(sql)
 
@@ -250,20 +251,18 @@ class Baza::Driver::Sqlite3::Table
     @db.query("DROP TABLE `#{temp_name}`")
   end
 
-  def index index_name
+  def index(index_name)
     index_name = index_name.to_sym
 
-    begin
-      return @indexes_list[index_name]
-    rescue Wref::Recycled
-      if @db.opts[:index_append_table_name]
-        tryname = "#{name}__#{index_name}"
+    if index = @indexes_list[index_name]
+      return index
+    end
 
-        begin
-          return @indexes_list[tryname]
-        rescue Wref::Recycled
-          #ignore.
-        end
+    if @db.opts[:index_append_table_name]
+      tryname = "#{name}__#{index_name}"
+
+      if index = @indexes_list[tryname]
+        return index
       end
     end
 
@@ -284,7 +283,7 @@ class Baza::Driver::Sqlite3::Table
 
     @db.q("PRAGMA index_list(`#{@db.esc_table(name)}`)") do |d_indexes|
       next if d_indexes[:Key_name] == "PRIMARY"
-      obj = @indexes_list.get!(d_indexes[:name])
+      obj = @indexes_list.get(d_indexes[:name])
 
       unless obj
         obj = Baza::Driver::Sqlite3::Index.new(
@@ -326,8 +325,8 @@ class Baza::Driver::Sqlite3::Table
         index_data = {name: index_data, columns: [index_data]}
       end
 
-      raise "No name was given in data: '#{index_data}'." if !index_data.key?(:name) or index_data[:name].to_s.strip.empty?
-      raise "No columns was given on index #{index_data[:name]}." if index_data[:columns].empty?
+      raise "No name was given in data: '#{index_data}'." if !index_data.key?(:name) || index_data[:name].to_s.strip.empty?
+      raise "No columns was given on index #{index_data[:name]}." if !index_data[:columns] || index_data[:columns].empty?
 
       name = index_data[:name]
       name = "#{self.name}__#{name}" if @db.opts[:index_append_table_name]
