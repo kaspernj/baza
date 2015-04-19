@@ -4,6 +4,7 @@ rvm:
   - ruby-2.1.2
   - jruby-head
 before_script:
+  - sudo apt-get -f install libmysql-java
   - cp spec/info_mysql_shippable.rb spec/info_mysql.rb
   - cp spec/info_active_record_shippable.rb spec/info_active_record.rb
   - mysql -e 'CREATE DATABASE baza;'
