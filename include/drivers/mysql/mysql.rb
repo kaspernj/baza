@@ -241,7 +241,7 @@ class Baza::Driver::Mysql
           @conn.query_with_result = false
           return Baza::Driver::Mysql::ResultUnbuffered.new(@conn, @opts, @conn.query(str))
         when :mysql2
-          return Baza::Driver::Mysql::ResultMySQL2.new(@conn.query(str, @query_args.merge(:stream => true)))
+          return Baza::Driver::Mysql::ResultMysql2.new(@conn.query(str, @query_args.merge(stream: true)))
         when :java
           if str.match(/^\s*(delete|update|create|drop|insert\s+into)\s+/i)
             stmt = @conn.createStatement

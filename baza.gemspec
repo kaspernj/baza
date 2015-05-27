@@ -44,8 +44,6 @@ Gem::Specification.new do |s|
     "include/drivers/mysql/mysql_sqlspecs.rb",
     "include/drivers/mysql/mysql_table.rb",
     "include/drivers/mysql/mysql_tables.rb",
-    "include/drivers/sqlite3/libknjdb_java_sqlite3.rb",
-    "include/drivers/sqlite3/libknjdb_sqlite3_ironruby.rb",
     "include/drivers/sqlite3/sqlite3.rb",
     "include/drivers/sqlite3/sqlite3_column.rb",
     "include/drivers/sqlite3/sqlite3_columns.rb",
