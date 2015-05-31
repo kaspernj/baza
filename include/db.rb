@@ -1,6 +1,3 @@
-require "knjrbfw"
-Knj.gem_require([:wref, :datet])
-
 #A wrapper of several possible database-types.
 #
 #===Examples
@@ -567,7 +564,8 @@ class Baza::Db
 
       if value.is_a?(Array)
         raise "Array for column '#{key}' was empty." if value.empty?
-        sql << "#{@sep_col}#{key}#{@sep_col} IN (#{Knj::ArrayExt.join(arr: value, sep: ",", surr: "'", callback: proc{|ele| self.esc(ele)})})"
+        values = value.map { |v| "'#{escape(v)}'" }.join(',')
+        sql << "#{@sep_col}#{key}#{@sep_col} IN (#{values})"
       elsif value.is_a?(Hash)
         raise "Dont know how to handle hash."
       else

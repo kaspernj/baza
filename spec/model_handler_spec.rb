@@ -1,14 +1,8 @@
 require "spec_helper"
 
 describe "Objects" do
-  it "should be able to cache rows" do
-    begin
-      require "#{File.dirname(__FILE__)}/../../array_enumerator/lib/array_enumerator"
-    rescue LoadError
-      require "array_enumerator"
-    end
-
-    require "sqlite3" if RUBY_ENGINE != "jruby"
+  before(:all) do
+    require "sqlite3" unless RUBY_ENGINE == "jruby"
     require "tmpdir"
 
     $db_path = "#{Dir.tmpdir}/knjrbfw_objects_cache_test.sqlite3"
@@ -55,6 +49,36 @@ describe "Objects" do
       {:username => "User 5"}
     ])
 
+    class Project < Baza::Model
+      has_many [
+        {:class => :Task, :col => :project_id, :depends => true}
+      ]
+    end
+
+    class Task < Baza::Model
+      has_one [
+        {:class => :Person, :required => true},
+        :Project
+      ]
+    end
+
+    class Person < Baza::Model
+      has_one [:Project]
+
+      has_many [
+        {:class => :Timelog, :autozero => true}
+      ]
+
+      def html
+        return self[:name]
+      end
+    end
+
+    class Timelog < Baza::Model
+    end
+  end
+
+  it "should be able to cache rows" do
     raise "Expected user-ID-cache to be 5 but it wasnt: #{$ob.ids_cache[:User].length}" if $ob.ids_cache[:User].length != 5
 
     user = $ob.get(:User, 4)
@@ -83,7 +107,9 @@ describe "Objects" do
     #Stress it to test threadsafety...
     threads = []
     0.upto(5) do |tc|
-      threads << Knj::Thread.new do
+      threads << Thread.new do
+        Thread.current.abort_on_exception = true
+
         0.upto(5) do |ic|
           user = $ob.add(:User, {:username => "User #{tc}-#{ic}"})
           raise "No user returned." if !user
@@ -123,7 +149,9 @@ describe "Objects" do
 
     threads = []
     0.upto(5) do
-      threads << Knj::Thread.new do
+      threads << Thread.new do
+        Thread.current.abort_on_exception = true
+
         0.upto(5) do
           ret = $ob2.add(:Group, {:groupname => "User 1"}, {:skip_ret => true})
           raise "Expected empty return but got something: #{ret}" if ret
@@ -142,7 +170,9 @@ describe "Objects" do
 
   #Moved from "knjrbfw_spec.rb"
   it "should be able to generate a sample SQLite database and add a sample table, with sample columns and with a sample index to it" do
-    $db_path = "#{Knj::Os.tmpdir}/knjrbfw_test_sqlite3.sqlite3"
+    require 'tmpdir'
+
+    $db_path = "#{Dir.tmpdir}/knjrbfw_test_sqlite3.sqlite3"
     $db = Baza::Db.new(
       :type => :sqlite3,
       :path => $db_path,
@@ -192,7 +222,7 @@ describe "Objects" do
     table = $db.tables[:Project]
 
     indexes = table.indexes
-    raise "Could not find the sample-index 'category_id' that should have been created." if !indexes[:Project__category_id]
+    raise "Could not find the sample-index 'category_id' that should have been created." unless indexes[:Project__category_id]
 
 
     #If we insert a row the ID should increase and the name should be the same as inserted (or something is very very wrong)...
@@ -211,35 +241,6 @@ describe "Objects" do
   end
 
   it "should be able to automatic generate methods on datarow-classes (has_many, has_one)." do
-    class Project < Baza::Model
-      has_many [
-        {:class => :Task, :col => :project_id, :depends => true}
-      ]
-    end
-
-    class Task < Baza::Model
-      has_one [
-        {:class => :Person, :required => true},
-        :Project
-      ]
-    end
-
-    class Person < Baza::Model
-      has_one [:Project]
-
-      has_many [
-        {:class => :Timelog, :autozero => true}
-      ]
-
-      def html
-        return self[:name]
-      end
-    end
-
-    class Timelog < Baza::Model
-
-    end
-
     $ob = Baza::ModelHandler.new(:db => $db, :datarow => true, :require => false)
 
     $ob.add(:Person, {
@@ -312,13 +313,9 @@ describe "Objects" do
   end
 
   it "should be able to generate lists for inputs" do
-    Knj::Web.inputs([{
-      :title => "Test 3",
-      :name => :seltest3,
-      :type => :select,
-      :default => 1,
-      :opts => $ob.list_optshash(:Task)
-    }])
+    list = $ob.list_optshash(:Task)
+    list.length.should eq 1
+    list[1].should eq 'Test task'
   end
 
   it "should be able to connect to objects 'no-html' callback and test it." do
@@ -408,7 +405,8 @@ describe "Objects" do
   end
 
   it "should delete the temp database again." do
-    db_path = "#{Knj::Os.tmpdir}/knjrbfw_test_sqlite3.sqlite3"
+    require 'tmpdir'
+    db_path = "#{Dir.tmpdir}/knjrbfw_test_sqlite3.sqlite3"
     File.unlink(db_path) if File.exists?(db_path)
   end
 end

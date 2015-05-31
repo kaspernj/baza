@@ -1,3 +1,5 @@
+require 'ostruct'
+
 class Baza::ModelHandler
   #This method helps build SQL from Objects-instances list-method. It should not be called directly but only through Objects.list.
   def sqlhelper(list_args, args_def)
@@ -224,14 +226,7 @@ class Baza::ModelHandler
           if val.empty? and db.opts[:type].to_s == "mysql"
             sql_where << " AND false"
           else
-            escape_sql = Knj::ArrayExt.join(
-              :arr => val,
-              :callback => proc{|value|
-                db.escape(value)
-              },
-              :sep => ",",
-              :surr => "'"
-            )
+            escape_sql = val.map { |v| "'#{db.escape(v)}'" }.join(',')
             sql_where << " AND #{table}`#{db.esc_col(key)}` IN (#{escape_sql})"
           end
         elsif val.is_a?(Hash) and val[:type].to_sym == :col
@@ -241,7 +236,7 @@ class Baza::ModelHandler
         elsif val.is_a?(Hash) and val[:type] == :sqlval and val[:val] == :null
           sql_where << " AND #{table}`#{db.esc_col(key)}` IS NULL"
         elsif val.is_a?(Proc)
-          call_args = Knj::Hash_methods.new(:ob => self, :db => db)
+          call_args = OpenStruct.new(:ob => self, :db => db)
           sql_where << " AND #{table}`#{db.esc_col(key)}` = '#{db.esc(val.call(call_args))}'"
         else
           sql_where << " AND #{table}`#{db.esc_col(key)}` = '#{db.esc(val)}'"

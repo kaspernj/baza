@@ -6,7 +6,7 @@ class Baza::Driver::Mysql::Index < Baza::Index
     @columns = []
   end
 
-  #Used to validate in Knj::Wrap_map.
+  #Used to validate in Wref::Map.
   def __object_unique_id__
     return @args[:data][:Key_name]
   end

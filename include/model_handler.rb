@@ -5,7 +5,10 @@ class Baza::ModelHandler
   attr_reader :args, :events, :data, :ids_cache, :ids_cache_should
 
   def initialize(args)
-    require "monitor"
+    require 'array_enumerator' if args[:array_enum]
+    require 'event_handler'
+    require 'monitor'
+    require 'ostruct'
 
     @callbacks = {}
     @args = args
@@ -18,11 +21,8 @@ class Baza::ModelHandler
     @data = {}
     @lock_require = Monitor.new
 
-    Knj.gem_require(:Wref, "wref") if @args[:cache] == :weak and !Kernel.const_defined?(:Wref)
-    require "#{@args[:array_enumerator_path]}array_enumerator" if @args[:array_enum] and !Kernel.const_defined?(:Array_enumerator)
-
     #Set up various events.
-    @events = Knj::Event_handler.new
+    @events = EventHandler.new
     @events.add_event(:name => :no_html, :connections_max => 1)
     @events.add_event(:name => :no_name, :connections_max => 1)
     @events.add_event(:name => :no_date, :connections_max => 1)
@@ -67,7 +67,7 @@ class Baza::ModelHandler
   #Caches all IDs for a specific classname.
   def cache_ids(classname)
     classname = classname.to_sym
-    return nil if !@ids_cache_should or !@ids_cache_should[classname]
+    return nil if !@ids_cache_should || !@ids_cache_should[classname]
 
     newcache = {}
     @args[:db].q("SELECT `#{@args[:col_id]}` FROM `#{classname}` ORDER BY `#{@args[:col_id]}`") do |data|
@@ -270,7 +270,7 @@ class Baza::ModelHandler
       classob = @args[:module].const_get(classname)
     end
 
-    pass_arg = Knj::Hash_methods.new(:ob => self, :db => @args[:db])
+    pass_arg = OpenStruct.new(:ob => self, :db => @args[:db])
     classob.load_columns(pass_arg) if classob.respond_to?(:load_columns)
     classob.datarow_init(pass_arg) if classob.respond_to?(:datarow_init)
   end
@@ -444,7 +444,7 @@ class Baza::ModelHandler
     classob = @args[:module].const_get(classname)
 
     raise "list-function has not been implemented for '#{classname}'." if !classob.respond_to?("list")
-    ret = classob.list(Knj::Hash_methods.new(:args => args, :ob => self, :db => @args[:db]), &block)
+    ret = classob.list(OpenStruct.new(:args => args, :ob => self, :db => @args[:db]), &block)
 
     #If 'ret' is an array and a block is given then the list-method didnt return blocks. We emulate it instead with the following code.
     if block and ret.is_a?(Array)
@@ -485,7 +485,11 @@ class Baza::ModelHandler
       end
     end
 
-    return Knj.handle_return(:enum => enum, :block => block)
+    if block
+      enum.each(&block)
+    else
+      return ArrayEnumerator.new(enum)
+    end
   end
 
   #Returns select-options-HTML for inserting into a HTML-select-element.
@@ -554,7 +558,6 @@ class Baza::ModelHandler
 
   #Returns a hash which can be used to generate HTML-select-elements.
   def list_optshash(classname, args = {})
-    Knj::ArrayExt.hash_sym(args)
     classname = classname.to_sym
 
     if args[:list_args].is_a?(Hash)
@@ -563,11 +566,7 @@ class Baza::ModelHandler
       list_args = {}
     end
 
-    if RUBY_VERSION[0..2] == 1.8 and Php4r.class_exists("Dictionary")
-      list = Dictionary.new
-    else
-      list = {}
-    end
+    list = {}
 
     if args[:addnew] or args[:add]
       list["0"] = _("Add new")
@@ -649,7 +648,7 @@ class Baza::ModelHandler
 
     if @args[:custom]
       classobj = @args[:module].const_get(classname)
-      retob = classobj.add(Knj::Hash_methods.new(
+      retob = classobj.add(OpenStruct.new(
         :ob => self,
         :data => data
       ))
@@ -657,7 +656,7 @@ class Baza::ModelHandler
       classobj = @args[:module].const_get(classname)
 
       #Run the class 'add'-method to check various data.
-      classobj.add(Knj::Hash_methods.new(:ob => self, :db => @args[:db], :data => data)) if classobj.respond_to?(:add)
+      classobj.add(OpenStruct.new(:ob => self, :db => @args[:db], :data => data)) if classobj.respond_to?(:add)
 
       #Check if various required data is given. If not then raise an error telling about it.
       required_data = classobj.required_data
@@ -698,7 +697,7 @@ class Baza::ModelHandler
   def adds(classname, datas)
     if @args[:module].const_get(classname).respond_to?(:add)
       datas.each do |data|
-        @args[:module].const_get(classname).add(Knj::Hash_methods.new(
+        @args[:module].const_get(classname).add(OpenStruct.new(
           :ob => self,
           :db => self.db,
           :data => data
@@ -721,7 +720,7 @@ class Baza::ModelHandler
     #Sometimes this raises the exception but actually responds to the class? Therefore commented out. - knj
     #raise "The class '#{class_obj.name}' has no such method: '#{method_name}' (#{class_obj.methods.sort.join(", ")})." if !class_obj.respond_to?(method_name)
 
-    pass_args = [Knj::Hash_methods.new(:ob => self, :db => self.db)]
+    pass_args = [OpenStruct.new(:ob => self, :db => self.db)]
 
     args.each do |arg|
       pass_args << arg
@@ -888,7 +887,7 @@ class Baza::ModelHandler
     elsif @args[:cache] == :none
       return false
     else
-      return false if !@objects.key?(classn)
+      return false unless @objects.key?(classn)
       @objects[classn] = {}
       GC.start
 
@@ -920,5 +919,3 @@ class Baza::ModelHandler
     return @objects.keys
   end
 end
-
-require "#{$knjpath}objects/objects_sqlhelper"
