@@ -5,9 +5,9 @@ source "http://rubygems.org"
 
 gem "datet", "~> 0.0.25"
 gem "wref", "~> 0.0.8"
-gem "knjrbfw", "~> 0.0.111"
 gem "array_enumerator", "~> 0.0.7"
 gem "string-cases", "~> 0.0.1"
+gem 'event_handler', '~> 0.0.0'
 
 # Add dependencies to develop your gem here.
 # Include everything needed to run rake, tests, features, etc.

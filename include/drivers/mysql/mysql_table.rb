@@ -18,7 +18,7 @@ class Baza::Driver::Mysql::Table < Baza::Table
     @data = @db.q("SHOW TABLE STATUS WHERE `Name` = '#{@db.esc(self.name)}'").fetch
   end
 
-  #Used to validate in Knj::Wrap_map.
+  #Used to validate in Wref::Map.
   def __object_unique_id__
     return @data[:Name]
   end

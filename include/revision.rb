@@ -42,18 +42,18 @@ class Baza::Revision
 
     schema = args[:schema]
     db = args[:db]
-    raise "No 'db' was given." if !db
+    raise "No 'db' was given." unless db
 
     schema.each do |key, val|
       raise "Invalid key for schema: '#{key}' (#{key.class.name})." unless INIT_DB_SCHEMA_ALLOWED_ARGS.include?(key)
     end
 
     #Check for normal bugs and raise apropiate error.
-    raise "'schema' argument was not a Hash: '#{schema.class.name}'." if !schema.is_a?(Hash)
-    raise "No tables given." if !schema.has_key?(:tables)
+    raise "'schema' argument was not a Hash: '#{schema.class.name}'." unless schema.is_a?(Hash)
+    raise "No tables given." unless schema.has_key?(:tables)
 
     #Cache tables to avoid constant reloading.
-    if !args.key?(:tables_cache) or args[:tables_cache]
+    if !args.key?(:tables_cache) || args[:tables_cache]
       puts "Caching tables-list." if args[:debug]
       tables = db.tables.list
     else
@@ -157,7 +157,7 @@ class Baza::Revision
                   callback_data = col_data[:on_before_alter].call(:db => db, :table => table_obj, :col => col_obj, :col_data => col_data)
                   if callback_data and callback_data[:action]
                     if callback_data[:action] == :retry
-                      raise Knj::Errors::Retry
+                      raise Baza::Errors::Retry
                     end
                   end
                 end
@@ -288,7 +288,7 @@ class Baza::Revision
                 puts "Renaming table: '#{table_name_rename}' to '#{table_name}'." if args[:debug]
                 table_rename = db.tables[table_name_rename.to_sym]
                 table_rename.rename(table_name)
-                raise Knj::Errors::Retry
+                raise Baza::Errors::Retry
               rescue Errno::ENOENT
                 next
               end
@@ -317,7 +317,7 @@ class Baza::Revision
 
           rows_init(:db => db, :table => table_obj, :rows => table_data[:rows]) if table_data[:rows]
         end
-      rescue Knj::Errors::Retry
+      rescue Baza::Errors::Retry
         retry
       end
     end

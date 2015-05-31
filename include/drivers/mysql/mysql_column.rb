@@ -9,7 +9,7 @@ class Baza::Driver::Mysql::Column < Baza::Column
     @db = @args[:db]
   end
 
-  #Used to validate in Knj::Wrap_map.
+  #Used to validate in Wref::Map.
   def __object_unique_id__
     return @name
   end

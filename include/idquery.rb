@@ -87,13 +87,7 @@ class Baza::Idquery
       return nil
     end
 
-    ids_sql = Knj::ArrayExt.join(
-      :arr => ids,
-      :callback => proc{|val| @args[:db].esc(val)},
-      :sep => ",",
-      :surr => "'"
-    )
-
+    ids_sql = ids.map { |id| "'#{@args[:db].esc(id)}'" }.join(',')
     query_str = "SELECT * FROM #{table_esc} WHERE #{table_esc}.#{col_esc} IN (#{ids_sql})"
     print "Query: #{query_str}\n" if @debug
 
