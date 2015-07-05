@@ -1,39 +1,45 @@
-#This class handels results when running in JRuby.
 class Baza::Driver::Sqlite3::ResultJava < Baza::ResultBase
-  def initialize(driver, rs)
-    @index = 0
-    retkeys = driver.baza.opts[:return_keys]
+  def initialize(driver, result_set)
+    @result_set = result_set
+    @index = -1
+    @rows = []
 
-    if rs
-      metadata = rs.getMetaData
-      columns_count = metadata.getColumnCount
-
-      @rows = []
-      while rs.next
-        row_data = {}
-        for i in (1..columns_count)
-          col_name = metadata.getColumnName(i).to_sym
-          row_data[col_name] = rs.getString(i)
-        end
-
-        @rows << row_data
-      end
+    if @result_set
+      read_columns
+      read_results
     end
   end
 
-  #Returns a single result.
   def fetch
-    return false unless @rows
-    ret = @rows[@index]
-    return false unless ret
-    @index += 1
-    return ret
+    return @rows[@index += 1]
   end
 
-  #Loops over every result and yields them.
   def each
     while data = fetch
       yield data
+    end
+  end
+
+private
+
+  def read_columns
+    metadata = @result_set.meta_data
+    @columns_count = metadata.column_count
+    @columns = []
+
+    1.upto(@columns_count) do |count|
+      @columns << metadata.column_name(count).to_sym
+    end
+  end
+
+  def read_results
+    while @result_set.next
+      hash = {}
+      @columns_count.times do |count|
+        hash[@columns[count]] = @result_set.string(count + 1)
+      end
+
+      @rows << hash
     end
   end
 end

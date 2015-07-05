@@ -88,6 +88,22 @@ shared_examples_for "a baza driver" do
     raise "Block with should have ran too little: #{block_ran}." if block_ran < rows_count
   end
 
+  it 'does unbuffered queries' do
+    test_table
+
+    10.times do |count|
+      db.insert(:test, text: "Test #{count}")
+    end
+
+    count_results = 0
+    db.q("SELECT * FROM test", type: :unbuffered) do |row|
+      expect(row[:text]).to eq "Test #{count_results}"
+      count_results += 1
+    end
+
+    expect(count_results).to eq 10
+  end
+
   it "should do upserting" do
     test_table.create_columns([{name: "nickname", type: :varchar}])
 
@@ -272,7 +288,7 @@ shared_examples_for "a baza driver" do
           time_start = Time.now.to_f
         end
 
-        buffer.delete(:test_table, {:id => row[:id]})
+        buffer.delete(:test_table, id: row[:id])
 
         if count == 1000
           time_end = Time.now.to_f

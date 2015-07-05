@@ -5,8 +5,9 @@ class Baza::InfoSqlite3
     require "sqlite3" unless RUBY_ENGINE == "jruby"
     require "tmpdir"
 
-    @path = "#{Dir.tmpdir}/baza_sqlite3_test_#{Time.now.to_f.to_s.hash}.sqlite3"
+    @path = "#{Dir.tmpdir}/baza_sqlite3_test_#{Time.now.to_f.to_s.hash}_#{Random.rand}.sqlite3"
     File.unlink(path) if File.exists?(@path)
+
     @db = Baza::Db.new(
       type: :sqlite3,
       path: @path,

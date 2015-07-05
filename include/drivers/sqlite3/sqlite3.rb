@@ -1,14 +1,18 @@
 #This class handels SQLite3-specific behaviour.
 class Baza::Driver::Sqlite3
-  autoload :Table, "#{File.dirname(__FILE__)}/sqlite3_table"
-  autoload :Tables, "#{File.dirname(__FILE__)}/sqlite3_tables"
-  autoload :Column, "#{File.dirname(__FILE__)}/sqlite3_column"
-  autoload :Columns, "#{File.dirname(__FILE__)}/sqlite3_columns"
-  autoload :Index, "#{File.dirname(__FILE__)}/sqlite3_index"
-  autoload :Indexes, "#{File.dirname(__FILE__)}/sqlite3_indexes"
-  autoload :Result, "#{File.dirname(__FILE__)}/sqlite3_result"
-  autoload :ResultJava, "#{File.dirname(__FILE__)}/sqlite3_result_java"
-  autoload :Sqlspecs, "#{File.dirname(__FILE__)}/sqlite3_sqlspecs"
+  path = File.dirname(__FILE__)
+
+  autoload :Table, "#{path}/sqlite3_table"
+  autoload :Tables, "#{path}/sqlite3_tables"
+  autoload :Column, "#{path}/sqlite3_column"
+  autoload :Columns, "#{path}/sqlite3_columns"
+  autoload :Index, "#{path}/sqlite3_index"
+  autoload :Indexes, "#{path}/sqlite3_indexes"
+  autoload :Result, "#{path}/sqlite3_result"
+  autoload :ResultJava, "#{path}/sqlite3_result_java"
+  autoload :Sqlspecs, "#{path}/sqlite3_sqlspecs"
+  autoload :UnbufferedResult, "#{path}/sqlite3_unbuffered_result"
+  autoload :UnbufferedResultJava, "#{path}/sqlite3_unbuffered_result_java"
 
   attr_reader :baza, :conn, :sep_table, :sep_col, :sep_val, :symbolize
   attr_accessor :tables, :cols, :indexes
@@ -69,19 +73,17 @@ class Baza::Driver::Sqlite3
         @conn = ::SQLite3::Database.new(@path, @path)
       else
         @conn = ::SQLite3::Database.open(@path)
-        @conn.results_as_hash = true
-        @conn.type_translation = false
       end
     end
   end
 
   #Executes a query against the driver.
-  def query(string)
+  def query(sql)
     if @subtype == :rhodes
-      return Baza::Driver::Sqlite3::Result.new(self, @conn.execute(string, string))
+      return Baza::Driver::Sqlite3::Result.new(self, @conn.execute(sql, sql))
     elsif @subtype == :java
       begin
-        return Baza::Driver::Sqlite3::ResultJava.new(self, @stat.executeQuery(string))
+        return Baza::Driver::Sqlite3::ResultJava.new(self, @stat.executeQuery(sql))
       rescue java.sql.SQLException => e
         if e.message.to_s.index("query does not return ResultSet") != nil
           return Baza::Driver::Sqlite3::ResultJava.new(self, nil)
@@ -90,12 +92,25 @@ class Baza::Driver::Sqlite3
         end
       end
     else
-      return Baza::Driver::Sqlite3::Result.new(self, @conn.execute(string))
+      return Baza::Driver::Sqlite3::Result.new(self, @conn.prepare(sql))
     end
   end
 
-  #SQLite3 driver doesnt support unbuffered queries??
-  alias query_ubuf query
+  def query_ubuf(sql)
+    if @subtype == :java
+      begin
+        return Baza::Driver::Sqlite3::UnbufferedResultJava.new(self, @stat.executeQuery(sql))
+      rescue java.sql.SQLException => e
+        if e.message.to_s.index("query does not return ResultSet") != nil
+          return Baza::Driver::Sqlite3::UnbufferedResultJava.new(self, nil)
+        else
+          raise e
+        end
+      end
+    else
+      return Baza::Driver::Sqlite3::UnbufferedResult.new(self, @conn.prepare(sql))
+    end
+  end
 
   #Escapes a string to be safe to used in a query.
   def escape(string)

@@ -5,7 +5,7 @@ source "http://rubygems.org"
 
 gem "datet", "~> 0.0.25"
 gem "wref", "~> 0.0.8"
-gem "array_enumerator", "~> 0.0.9"
+gem "array_enumerator", "~> 0.0.10"
 gem "string-cases", "~> 0.0.1"
 gem 'event_handler', '~> 0.0.0'
 
@@ -16,14 +16,13 @@ group :development do
   gem "rdoc"
   gem "bundler"
   gem "jeweler"
+  gem 'pry'
 
-  if RUBY_ENGINE == "jruby"
-    gem "jdbc-sqlite3"
-    gem "activerecord-jdbc-adapter"
-  else
-    gem "sqlite3"
-    gem "mysql2"
-  end
+  gem "jdbc-sqlite3", platform: :jruby
+  gem "activerecord-jdbc-adapter", platform: :jruby
+
+  gem "sqlite3", platform: :ruby
+  gem "mysql2", platform: :ruby
 
   gem "activerecord"
 end

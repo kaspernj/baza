@@ -75,7 +75,7 @@ class Baza::Db
 
     @debug = @opts[:debug]
 
-    self.conn_exec do |driver|
+    conn_exec do |driver|
       @sep_table = driver.sep_table
       @sep_col = driver.sep_col
       @sep_val = driver.sep_val
@@ -245,8 +245,7 @@ class Baza::Db
       loop do
         puts "Copying rows (#{limit_from}, #{limit_incr})." if debug
         ins_arr = []
-        q_rows = self.select(table_name, {}, {limit_from: limit_from, limit_to: limit_incr})
-        while d_rows = q_rows.fetch
+        q_rows = self.select(table_name, {}, {limit_from: limit_from, limit_to: limit_incr}) do |d_rows|
           col_args = nil
 
           if table_args && table_args[:columns]
@@ -333,7 +332,7 @@ class Baza::Db
 
     return sql if args && args[:return_sql]
 
-    self.conn_exec do |driver|
+    conn_exec do |driver|
       begin
         driver.query(sql)
       rescue => e
@@ -389,7 +388,7 @@ class Baza::Db
         end
       end
 
-      self.conn_exec do |driver|
+      conn_exec do |driver|
         return driver.insert_multi(tablename, arr_hashes, args)
       end
     else
@@ -435,7 +434,7 @@ class Baza::Db
 
     return sql if args && args[:return_sql]
 
-    self.conn_exec do |driver|
+    conn_exec do |driver|
       driver.query(sql)
     end
   end
@@ -536,14 +535,8 @@ class Baza::Db
   #
   #===Examples
   # row = db.single(:users, lastname: "Doe")
-  def single(tablename, arr_terms = nil, args = {})
-    args[:limit] = 1
-
-    #Experienced very weird memory leak if this was not done by block. Maybe bug in Ruby 1.9.2? - knj
-    self.select(tablename, arr_terms, args) do |data|
-      return data
-    end
-
+  def single(tablename, terms = nil, args = {})
+    select(tablename, terms, args.merge(limit: 1)) { |data| return data } #Experienced very weird memory leak if this was not done by block. Maybe bug in Ruby 1.9.2? - knj
     return false
   end
 
@@ -562,7 +555,7 @@ class Baza::Db
 
     return sql if args && args[:return_sql]
 
-    self.conn_exec do |driver|
+    conn_exec do |driver|
       driver.query(sql)
     end
 
@@ -653,7 +646,7 @@ class Baza::Db
     end
 
     begin
-      self.conn_exec do |driver|
+      conn_exec do |driver|
         return driver.query(string)
       end
     rescue => e
@@ -671,7 +664,7 @@ class Baza::Db
   def query_ubuf(string, &block)
     ret = nil
 
-    self.conn_exec do |driver|
+    conn_exec do |driver|
       ret = driver.query_ubuf(string, &block)
     end
 
@@ -712,24 +705,24 @@ class Baza::Db
   # db.q('SELECT * FROM users') do |data|
   #   print data[:name]
   # end
-  def q(str, args = nil, &block)
+  def q(sql, args = nil, &block)
     #If the query should be executed in a new connection unbuffered.
-    if args
-      if args[:cloned_ubuf]
-        raise "No block given." unless block
+    if args && args[:cloned_ubuf]
+      raise "No block given." unless block
 
-        self.cloned_conn(clone_args: args[:clone_args]) do |cloned_conn|
-          ret = cloned_conn.query_ubuf(str)
-          ret.each(&block)
-        end
-
-        return nil
-      else
-        raise "Invalid arguments given: '#{args}'."
+      self.cloned_conn(clone_args: args[:clone_args]) do |cloned_conn|
+        ret = cloned_conn.query_ubuf(sql)
+        ret.each(&block)
       end
+
+      return nil
     end
 
-    ret = self.query(str)
+    if args && args[:type] == :unbuffered
+      ret = self.query_ubuf(sql)
+    else
+      ret = self.query(sql)
+    end
 
     if block
       ret.each(&block)
@@ -750,7 +743,7 @@ class Baza::Db
   #===Examples
   # id = db.last_id
   def last_id
-    self.conn_exec do |driver|
+    conn_exec do |driver|
       return driver.last_id
     end
   end
@@ -872,7 +865,7 @@ class Baza::Db
   #===Examples
   # db.method_on_driver
   def method_missing(method_name, *args)
-    self.conn_exec do |driver|
+    conn_exec do |driver|
       if driver.respond_to?(method_name.to_sym)
         return driver.send(method_name, *args)
       end

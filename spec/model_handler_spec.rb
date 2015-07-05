@@ -5,7 +5,7 @@ describe "Objects" do
     require "sqlite3" unless RUBY_ENGINE == "jruby"
     require "tmpdir"
 
-    $db_path = "#{Dir.tmpdir}/knjrbfw_objects_cache_test.sqlite3"
+    $db_path = "#{Dir.tmpdir}/baza_model_handler_test_#{Time.now.to_f}_#{Random.rand}.sqlite3"
     File.unlink($db_path) if File.exists?($db_path)
     $db = Baza::Db.new(:type => :sqlite3, :path => $db_path, :return_keys => "symbols", :debug => false)
 

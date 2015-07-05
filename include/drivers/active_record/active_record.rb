@@ -46,6 +46,8 @@ class Baza::Driver::ActiveRecord
     Baza::Driver::ActiveRecord::Result.new(@conn.execute(str))
   end
 
+  alias query_ubuf query
+
   def escape(str)
     @conn.quote_string(str.to_s)
   end
