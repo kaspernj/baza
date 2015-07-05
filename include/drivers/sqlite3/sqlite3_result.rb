@@ -1,5 +1,7 @@
 #This class handels the result when running MRI (or others).
-class Baza::Driver::Sqlite3::Result
+class Baza::Driver::Sqlite3::Result < Baza::ResultBase
+  SUPPORTS_SYMBOLIZE_KEYS = {}.respond_to?(:symbolize_keys!)
+
   #Constructor. This should not be called manually.
   def initialize(driver, result_array)
     @result_array = result_array
@@ -12,24 +14,21 @@ class Baza::Driver::Sqlite3::Result
     return false unless result_hash
     @index += 1
 
-    ret = {}
-    result_hash.each do |key, val|
-      if (Float(key) rescue false)
-        #do nothing.
-      elsif !key.is_a?(Symbol)
-        ret[key.to_sym] = val
-      else
-        ret[key] = val
-      end
+    # This is much faster if it has been defined
+    return result_hash.symbolize_keys! if result_hash.respond_to?(:symbolize_keys!)
+
+    result_hash.keys.each do |orig_key|
+      key = orig_key.to_sym rescue orig_key
+      result_hash[key] = result_hash.delete(orig_key)
     end
 
-    return ret
+    return result_hash
   end
 
   #Loops over every result yielding them.
   def each
     while data = self.fetch
-      yield(data)
+      yield data
     end
   end
 end

@@ -1,5 +1,5 @@
 #This class controls the unbuffered result for the normal MySQL-driver.
-class Baza::Driver::Mysql::ResultUnbuffered
+class Baza::Driver::Mysql::ResultUnbuffered < Baza::ResultBase
   #Constructor. This should not be called manually.
   def initialize(conn, opts, result)
     @conn = conn
@@ -11,15 +11,6 @@ class Baza::Driver::Mysql::ResultUnbuffered
       @as_hash = false
     else
       raise "Unknown type of result: '#{opts[:result]}'."
-    end
-  end
-
-  #Lods the keys for the object.
-  def load_keys
-    @keys = []
-    keys = @res.fetch_fields
-    keys.each do |key|
-      @keys << key.name.to_sym
     end
   end
 
@@ -67,6 +58,17 @@ class Baza::Driver::Mysql::ResultUnbuffered
   def each
     while data = self.fetch
       yield(data)
+    end
+  end
+
+private
+
+  #Lods the keys for the object.
+  def load_keys
+    @keys = []
+    keys = @res.fetch_fields
+    keys.each do |key|
+      @keys << key.name.to_sym
     end
   end
 end

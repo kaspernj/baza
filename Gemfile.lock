@@ -16,7 +16,7 @@ GEM
       tzinfo (~> 1.1)
     addressable (2.3.6)
     arel (5.0.1.20140414130214)
-    array_enumerator (0.0.7)
+    array_enumerator (0.0.9)
     builder (3.2.2)
     codeclimate-test-reporter (0.4.1)
       simplecov (>= 0.7.1, < 1.0.0)
@@ -102,7 +102,7 @@ PLATFORMS
 
 DEPENDENCIES
   activerecord
-  array_enumerator (~> 0.0.7)
+  array_enumerator (~> 0.0.9)
   bundler
   codeclimate-test-reporter
   datet (~> 0.0.25)

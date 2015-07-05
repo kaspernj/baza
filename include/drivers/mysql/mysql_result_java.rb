@@ -1,5 +1,5 @@
 #This class controls the result for the Java-MySQL-driver.
-class Baza::Driver::Mysql::ResultJava
+class Baza::Driver::Mysql::ResultJava < Baza::ResultBase
   #Constructor. This should not be called manually.
   def initialize(knjdb, opts, result)
     @baza_db = knjdb
@@ -55,7 +55,7 @@ class Baza::Driver::Mysql::ResultJava
 
   def each
     while data = self.fetch
-      yield(data)
+      yield data
     end
   end
 end

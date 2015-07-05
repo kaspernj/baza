@@ -138,7 +138,7 @@ class Baza::Driver::Sqlite3
       end
     else
       @conn.transaction do
-        yield(@baza)
+        yield @baza
       end
     end
   end

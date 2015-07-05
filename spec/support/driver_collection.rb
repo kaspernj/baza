@@ -285,4 +285,37 @@ shared_examples_for "a baza driver" do
 
     test_table.rows_count.should eql(0)
   end
+
+  describe 'results' do
+    before do
+      test_table.insert(text: 'test 1')
+      test_table.insert(text: 'test 2')
+    end
+
+    it '#to_a' do
+      array = db.select(:test).to_a
+      expect(array.length).to eq 2
+    end
+
+    it '#to_a_enum' do
+      array_enum = db.select(:test).to_a_enum
+      count = 0
+      array_enum.each { count += 1 }
+      expect(count).to eq 2
+      expect(array_enum.length).to eq 2
+    end
+
+    it '#to_enum' do
+      enum = db.select(:test).to_enum
+
+      count = 0
+      enum.each { count += 1 }
+      expect(count).to eq 2
+    end
+  end
+
+  it 'counts' do
+    test_table.insert(text: 'test 1')
+    expect(db.count(:test, text: 'test 1')).to eq 1
+  end
 end

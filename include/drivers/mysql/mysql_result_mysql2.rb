@@ -1,5 +1,5 @@
 #This class controls the result for the MySQL2 driver.
-class Baza::Driver::Mysql::ResultMysql2
+class Baza::Driver::Mysql::ResultMysql2 < Baza::ResultBase
   #Constructor. This should not be called manually.
   def initialize(result)
     @result = result

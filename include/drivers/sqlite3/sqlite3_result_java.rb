@@ -1,5 +1,5 @@
 #This class handels results when running in JRuby.
-class Baza::Driver::Sqlite3::ResultJava
+class Baza::Driver::Sqlite3::ResultJava < Baza::ResultBase
   def initialize(driver, rs)
     @index = 0
     retkeys = driver.baza.opts[:return_keys]

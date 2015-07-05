@@ -68,7 +68,7 @@ class Baza::Db
     self.opts = opts if opts != nil
     @int_types = [:int, :bigint, :tinyint, :smallint, :mediumint]
 
-    if !@opts[:threadsafe]
+    unless @opts[:threadsafe]
       require "monitor"
       @mutex = Monitor.new
     end
@@ -80,6 +80,14 @@ class Baza::Db
       @sep_col = driver.sep_col
       @sep_val = driver.sep_val
       @esc_driver = driver
+    end
+
+    if block_given?
+      begin
+        yield self
+      ensure
+        close
+      end
     end
   end
 
@@ -508,6 +516,20 @@ class Baza::Db
     else
       return res
     end
+  end
+
+  def count(tablename, arr_terms = nil)
+    #Set up vars.
+    sql = ""
+    args_q = nil
+
+    sql = "SELECT COUNT(*) AS count FROM #{@sep_table}#{tablename}#{@sep_table}"
+
+    if arr_terms != nil && !arr_terms.empty?
+      sql << " WHERE #{self.makeWhere(arr_terms)}"
+    end
+
+    return q(sql).fetch.fetch(:count).to_i
   end
 
   #Returns a single row from a database.

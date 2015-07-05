@@ -83,42 +83,6 @@ class Baza::Driver::ActiveRecord
   end
 end
 
-class Baza::Driver::ActiveRecord::Result
-  def initialize(res)
-    @res = res
-  end
-
-  def enum
-    @enum ||= Enumerator.new do |y|
-      each do |data|
-        y << data
-      end
-    end
-  end
-
-  def fetch
-    begin
-      return enum.next
-    rescue StopIteration
-      return false
-    end
-  end
-
-  def each(&blk)
-    return unless @res
-
-    if RUBY_ENGINE == "jruby"
-      @res.each do |result|
-        yield result.symbolize_keys
-      end
-    else
-      @res.each(as: :hash) do |result|
-        yield result.symbolize_keys
-      end
-    end
-  end
-end
-
 class Baza::Driver::ActiveRecord::Tables
   def initialize(args)
     @args = args
@@ -157,3 +121,5 @@ class Baza::Driver::ActiveRecord::Indexes
     @proxy_to.__send__(name, *args, &blk)
   end
 end
+
+require_relative 'active_record_result'
