@@ -1,12 +1,12 @@
 #A wrapper of several possible database-types.
 #
 #===Examples
-# db = Baza::Db.new(type: "mysql", subtype: "mysql2", db: "mysql", user: "user", pass: "password")
+# db = Baza::Db.new(type: :mysql2, db: "mysql", user: "user", pass: "password")
 # mysql_table = db.tables['mysql']
 # name = mysql_table.name
 # cols = mysql_table.columns
 #
-# db = Baza::Db.new(type: "sqlite3", path: "some_db.sqlite3")
+# db = Baza::Db.new(type: :sqlite3, path: "some_db.sqlite3")
 #
 # db.q("SELECT * FROM users") do |data|
 #   print data[:name]
@@ -100,8 +100,8 @@ class Baza::Db
     end
 
     if RUBY_PLATFORM == 'java'
-      @opts[:type] = 'sqlite3_java' if @opts[:type] == 'sqlite3'
-      @opts[:type] = 'mysql_java' if @opts[:type] == 'mysql' || @opts[:type] == 'mysql2'
+      @opts[:type] = :sqlite3_java if @opts[:type] == :sqlite3
+      @opts[:type] = :mysql_java if @opts[:type] == :mysql || @opts[:type] == :mysql2
     end
 
     @type_cc = StringCases.snake_to_camel(@opts[:type])

@@ -1,7 +1,7 @@
 #This class helps create models in a framework with Baza::Db and Baza::ModelHandler.
 #===Examples
-#  db = Baza::Db.new(:type => "sqlite3", :path => "somepath.sqlite3")
-#  ob = Baza::ModelHandler.new(:db => db, :datarow => true, :path => "path_of_model_class_files")
+#  db = Baza::Db.new(type: :sqlite3, path: "somepath.sqlite3")
+#  ob = Baza::ModelHandler.new(db: db, datarow: true, path: "path_of_model_class_files")
 #  user = ob.get(:User, 1) #=> <Models::User> that extends <Baza::Datarow>
 class Baza::Model
   @@refs = {}

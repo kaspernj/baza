@@ -1,7 +1,7 @@
 #This class takes a database-schema from a hash and runs it against the database. It then checks that the database matches the given schema.
 #
 #===Examples
-# db = Baza::Db.new(:type => "sqlite3", :path => "test_db.sqlite3")
+# db = Baza::Db.new(type: :sqlite3, path: "test_db.sqlite3")
 # schema = {
 #   "tables" => {
 #     "User" => {
