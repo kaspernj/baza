@@ -1,5 +1,5 @@
 #This class handels SQLite3-specific behaviour.
-class Baza::Driver::Sqlite3
+class Baza::Driver::Sqlite3 < Baza::BaseSqlDriver
   path = File.dirname(__FILE__)
 
   autoload :Table, "#{path}/sqlite3_table"
@@ -14,8 +14,7 @@ class Baza::Driver::Sqlite3
   autoload :UnbufferedResult, "#{path}/sqlite3_unbuffered_result"
   autoload :UnbufferedResultJava, "#{path}/sqlite3_unbuffered_result_java"
 
-  attr_reader :baza, :conn, :sep_table, :sep_col, :sep_val, :symbolize
-  attr_accessor :tables, :cols, :indexes
+  attr_reader :mutex_statement_reader
 
   #Helper to enable automatic registering of database using Baza::Db.from_object
   def self.from_object(args)
@@ -42,14 +41,12 @@ class Baza::Driver::Sqlite3
 
   #Constructor. This should not be called manually.
   def initialize(baza_db)
-    @sep_table = "`"
-    @sep_col = "`"
-    @sep_val = "'"
+    super
 
-    @baza = baza_db
     @path = @baza.opts[:path] if @baza.opts[:path]
     @baza.opts[:subtype] ||= :java if RUBY_ENGINE == "jruby"
     @subtype = @baza.opts[:subtype]
+    @mutex_statement_reader = Mutex.new
 
     if @baza.opts[:conn]
       @conn = @baza.opts[:conn]
@@ -92,7 +89,9 @@ class Baza::Driver::Sqlite3
         end
       end
     else
-      return Baza::Driver::Sqlite3::Result.new(self, @conn.prepare(sql))
+      @mutex_statement_reader.synchronize do
+        return Baza::Driver::Sqlite3::Result.new(self, @conn.prepare(sql))
+      end
     end
   end
 
@@ -119,16 +118,6 @@ class Baza::Driver::Sqlite3
     return string.to_s.gsub(/'/, "''")
   end
 
-  #Escapes a string to be used as a column.
-  def esc_col(string)
-    string = string.to_s
-    raise "Invalid column-string: #{string}" if string.index(@sep_col) != nil
-    return string
-  end
-
-  alias :esc_table :esc_col
-  alias :esc :escape
-
   #Returns the last inserted ID.
   def last_id
     return @conn.last_insert_row_id if @conn.respond_to?(:last_insert_row_id)
@@ -137,38 +126,17 @@ class Baza::Driver::Sqlite3
 
   #Closes the connection to the database.
   def close
-    @conn.close
+    @mutex_statement_reader.synchronize do
+      @conn.close
+    end
   end
 
   #Starts a transaction, yields the database and commits.
   def transaction
-    if @subtype == :java
-      query("BEGIN TRANSACTION")
+    return super if @subtype == :java
 
-      begin
-        yield(@baza)
-        query("COMMIT")
-      rescue => e
-        query("ROLLBACK")
-      end
-    else
-      @conn.transaction do
-        yield @baza
-      end
+    @conn.transaction do
+      yield @baza
     end
-  end
-
-  def insert_multi(tablename, arr_hashes, args = nil)
-    sql = [] if args && args[:return_sql]
-
-    @baza.transaction do
-      arr_hashes.each do |hash|
-        res = @baza.insert(tablename, hash, args)
-        sql << res if args && args[:return_sql]
-      end
-    end
-
-    return sql if args && args[:return_sql]
-    return nil
   end
 end

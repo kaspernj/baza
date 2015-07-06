@@ -470,7 +470,7 @@ class Baza::ModelHandler
 
       if required_data and !required_data.empty?
         required_data.each do |req_data|
-          self.list(args[:class], :cloned_ubuf => true) do |obj|
+          self.list(args[:class]) do |obj|
             puts "Checking #{obj.classname}(#{obj.id}) for required #{req_data[:class]}." if args[:debug]
             id = obj[req_data[:col]]
 

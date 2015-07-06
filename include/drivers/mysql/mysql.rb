@@ -1,4 +1,4 @@
-class Baza::Driver::Mysql
+class Baza::Driver::Mysql < Baza::BaseSqlDriver
   autoload :Table, "#{File.dirname(__FILE__)}/mysql_table"
   autoload :Tables, "#{File.dirname(__FILE__)}/mysql_tables"
   autoload :Column, "#{File.dirname(__FILE__)}/mysql_column"
@@ -11,8 +11,7 @@ class Baza::Driver::Mysql
   autoload :ResultUnbuffered, "#{File.dirname(__FILE__)}/mysql_result_unbuffered"
   autoload :Sqlspecs, "#{File.dirname(__FILE__)}/mysql_sqlspecs"
 
-  attr_reader :baza, :conn, :conns, :sep_table, :sep_col, :sep_val
-  attr_accessor :tables, :cols, :indexes
+  attr_reader :conn, :conns
 
   #Helper to enable automatic registering of database using Baza::Db.from_object
   def self.from_object(args)
@@ -48,11 +47,9 @@ class Baza::Driver::Mysql
   end
 
   def initialize(baza)
-    @baza = baza
+    super
+
     @opts = @baza.opts
-    @sep_table = "`"
-    @sep_col = "`"
-    @sep_val = "'"
 
     require "monitor"
     @mutex = Monitor.new
@@ -95,11 +92,9 @@ class Baza::Driver::Mysql
     @mutex.synchronize do
       case @subtype
         when :mysql
+          require 'mysql'
           @conn = Mysql.real_connect(@baza.opts[:host], @baza.opts[:user], @baza.opts[:pass], @baza.opts[:db], @port)
         when :mysql2
-          require "rubygems"
-          require "mysql2"
-
           args = {
             host: @baza.opts[:host],
             username: @baza.opts[:user],
@@ -127,6 +122,7 @@ class Baza::Driver::Mysql
             if @baza.opts[:conn]
               @conn = @baza.opts[:conn]
             else
+              require "mysql2"
               @conn = Mysql2::Client.new(args)
             end
           rescue => e
@@ -254,8 +250,8 @@ class Baza::Driver::Mysql
 
             return nil
           else
-            stmt = @conn.createStatement(java.sql.ResultSet.TYPE_FORWARD_ONLY, java.sql.ResultSet.CONCUR_READ_ONLY)
-            stmt.setFetchSize(java.lang.Integer::MIN_VALUE)
+            stmt = @conn.create_statement(java.sql.ResultSet.TYPE_FORWARD_ONLY, java.sql.ResultSet.CONCUR_READ_ONLY)
+            stmt.fetch_size = java.lang.Integer::MIN_VALUE
 
             begin
               res = stmt.executeQuery(str)
@@ -291,29 +287,6 @@ class Baza::Driver::Mysql
         raise "Unknown subtype: '#{@subtype}'."
     end
   end
-
-  #An alternative to the MySQL framework's escape. This is copied from the Ruby/MySQL framework at: http://www.tmtm.org/en/ruby/mysql/
-  def escape(string)
-    return string.to_s.gsub(/([\0\n\r\032\'\"\\])/) do
-      case $1
-        when "\0" then "\\0"
-        when "\n" then "\\n"
-        when "\r" then "\\r"
-        when "\032" then "\\Z"
-        else "\\#{$1}"
-      end
-    end
-  end
-
-  #Escapes a string to be safe to use as a column in a query.
-  def esc_col(string)
-    string = string.to_s
-    raise "Invalid column-string: #{string}" if string.include?(@sep_col)
-    return string
-  end
-
-  alias :esc_table :esc_col
-  alias :esc :escape
 
   #Returns the last inserted ID for the connection.
   def last_id
@@ -428,7 +401,6 @@ class Baza::Driver::Mysql
     end
   end
 
-  #Starts a transaction, yields the database and commits at the end.
   def transaction
     @baza.q("START TRANSACTION")
 

@@ -11,18 +11,19 @@ gem 'event_handler', '~> 0.0.0'
 
 # Add dependencies to develop your gem here.
 # Include everything needed to run rake, tests, features, etc.
-group :development do
+group :development, :test do
   gem "rspec"
   gem "rdoc"
   gem "bundler"
   gem "jeweler"
   gem 'pry'
 
-  gem "jdbc-sqlite3", platform: :jruby
-  gem "activerecord-jdbc-adapter", platform: :jruby
+  gem "jdbc-sqlite3", platforms: :jruby
+  gem "activerecord-jdbc-adapter", platforms: :jruby
 
-  gem "sqlite3", platform: :ruby
-  gem "mysql2", platform: :ruby
+  gem "sqlite3", platforms: :ruby
+  gem 'mysql', platforms: :ruby
+  gem "mysql2", platforms: :ruby
 
   gem "activerecord"
 end

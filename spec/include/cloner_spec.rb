@@ -5,6 +5,6 @@ describe Baza::Cloner do
     require 'info_active_record'
     conn = Baza::InfoActiveRecord.connection
     baza_db = Baza::Cloner.from_active_record_connection(conn[:conn])
-    expect(baza_db.query('SELECT 1 AS test').fetch[:test]).to eq 1
+    expect(baza_db.query('SELECT 1 AS test').fetch[:test].to_s).to eq '1'
   end
 end
