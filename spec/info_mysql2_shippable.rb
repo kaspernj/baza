@@ -3,7 +3,7 @@ class Baza::InfoMysql
 
   def initialize
     @db = Baza::Db.new(
-      type: :mysql,
+      type: :mysql2,
       host: "localhost",
       user: "shippa",
       db: "baza"

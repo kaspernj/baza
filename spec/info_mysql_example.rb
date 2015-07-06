@@ -4,7 +4,6 @@ class Baza::InfoMysql
   def initialize
     @db = Baza::Db.new(
       type: :mysql,
-      subtype: :mysql2,
       host: "localhost",
       user: "baza-test",
       pass: "password",

@@ -197,7 +197,10 @@ shared_examples_for "a baza driver" do
   end
 
   it "should be able to make new connections based on given objects" do
-    new_db = Baza::Db.from_object(:object => db.conn.conn)
+    # Mysql doesn't support it...
+    unless db.opts.fetch(:type) == :mysql
+      new_db = Baza::Db.from_object(object: db.conn.conn)
+    end
   end
 
   it "should be able to do ID-queries through the select-method" do
