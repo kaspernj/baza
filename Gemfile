@@ -17,14 +17,12 @@ group :development, :test do
   gem "bundler"
   gem "jeweler"
   gem 'pry'
-
-  gem "jdbc-sqlite3", platforms: :jruby
-  gem "activerecord-jdbc-adapter", platforms: :jruby
-
-  gem "sqlite3", platforms: :ruby
-  gem 'mysql', platforms: :ruby
-  gem "mysql2", platforms: :ruby
-
+  gem 'jdbc-sqlite3', platform: :jruby
+  gem 'jdbc-mysql', platform: :jruby
+  gem 'activerecord-jdbc-adapter', platform: :jruby
+  gem 'sqlite3', platform: :ruby
+  gem 'mysql', platform: :ruby
+  gem 'mysql2', platform: :ruby
   gem "activerecord"
 end
 

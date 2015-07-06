@@ -8,7 +8,7 @@ class Baza::Driver::MysqlJava < Baza::BaseSqlDriver
   autoload :Index, "#{path}/index"
   autoload :Indexes, "#{path}/indexes"
   autoload :Result, "#{path}/result"
-  autoload :ResultUnbuffered, "#{path}/result_unbuffered"
+  autoload :UnbufferedResult, "#{path}/unbuffered_result"
   autoload :Sqlspecs, "#{path}/sqlspecs"
 
   attr_reader :conn, :conns
@@ -20,11 +20,7 @@ class Baza::Driver::MysqlJava < Baza::BaseSqlDriver
         type: :success,
         args: {
           type: :mysql_java,
-          conn: args[:object],
-          query_args: {
-            as: :hash,
-            symbolize_keys: true
-          }
+          conn: args[:object]
         }
       }
     end
@@ -43,7 +39,7 @@ class Baza::Driver::MysqlJava < Baza::BaseSqlDriver
     if @opts[:encoding]
       @encoding = @opts[:encoding]
     else
-      @encoding = "utf8"
+      @encoding = 'utf8'
     end
 
     if @baza.opts.key?(:port)
@@ -78,13 +74,7 @@ class Baza::Driver::MysqlJava < Baza::BaseSqlDriver
         @jdbc_loaded = true
         @conn = @baza.opts[:conn]
       else
-        unless @jdbc_loaded
-          require "java"
-          require "/usr/share/java/mysql-connector-java.jar" if File.exists?("/usr/share/java/mysql-connector-java.jar")
-          import "com.mysql.jdbc.Driver"
-          @jdbc_loaded = true
-        end
-
+        com.mysql.jdbc.Driver
         @conn = java.sql::DriverManager.getConnection("jdbc:mysql://#{@baza.opts[:host]}:#{@port}/#{@baza.opts[:db]}?user=#{@baza.opts[:user]}&password=#{@baza.opts[:pass]}&populateInsertRowWithDefaultValues=true&zeroDateTimeBehavior=round&characterEncoding=#{@encoding}&holdResultsOpenOverStatementClose=true")
       end
 
@@ -117,7 +107,7 @@ class Baza::Driver::MysqlJava < Baza::BaseSqlDriver
 
           begin
             res = stmt.execute_query(str)
-            ret = Baza::Driver::Mysql::ResultJava.new(@baza, @opts, res)
+            ret = Baza::Driver::MysqlJava::Result.new(@baza, @opts, res)
             id = ret.__id__
 
             #If ID is being reused we have to free the result.
@@ -172,7 +162,7 @@ class Baza::Driver::MysqlJava < Baza::BaseSqlDriver
 
         begin
           res = stmt.executeQuery(str)
-          ret = Baza::Driver::MysqlJava::UnbufferedResult.new(@baza, @opts, res)
+          ret = Baza::Driver::MysqlJava::Result.new(@baza, @opts, res)
 
           #Save reference to result and statement, so we can close them when they are garbage collected.
           @java_rs_data[ret.__id__] = {res: res, stmt: stmt}

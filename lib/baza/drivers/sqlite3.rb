@@ -38,6 +38,7 @@ class Baza::Driver::Sqlite3 < Baza::BaseSqlDriver
       @conn = @baza.opts[:conn]
     else
       raise "No path was given." unless @path
+      require 'sqlite3' unless ::Object.const_defined?(:SQLite3)
       @conn = ::SQLite3::Database.open(@path)
     end
   end

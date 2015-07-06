@@ -1,6 +1,6 @@
 require "spec_helper"
 
-describe Baza::Driver::Mysql do
+describe Baza.const_get(:Driver).const_get(:Mysql) do
   it_should_behave_like "a baza driver"
   it_should_behave_like "a baza tables driver"
   it_should_behave_like "a baza columns driver"

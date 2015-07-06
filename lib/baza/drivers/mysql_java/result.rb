@@ -4,15 +4,32 @@ class Baza::Driver::MysqlJava::Result < Baza::ResultBase
   def initialize(knjdb, opts, result)
     @baza_db = knjdb
     @result = result
+  end
 
-    if !opts.key?(:result) || opts[:result] == "hash"
-      @as_hash = true
-    elsif opts[:result] == "array"
-      @as_hash = false
-    else
-      raise "Unknown type of result: '#{opts[:result]}'."
+  def fetch
+    return false unless @result
+    read_meta unless @keys
+
+    unless @result.next
+      @result = nil
+      return false
+    end
+
+    ret = {}
+    @count.times do |count|
+      ret[@keys[count]] = @result.object(count + 1)
+    end
+
+    return ret
+  end
+
+  def each
+    while data = fetch
+      yield data
     end
   end
+
+private
 
   #Reads meta-data about the query like keys and count.
   def read_meta
@@ -23,39 +40,6 @@ class Baza::Driver::MysqlJava::Result < Baza::ResultBase
     @keys = []
     1.upto(@count) do |count|
       @keys << meta.column_label(count).to_sym
-    end
-  end
-
-  def fetch
-    return false unless @result
-    self.read_meta unless @keys
-    status = @result.next
-
-    unless status
-      @result = nil
-      @keys = nil
-      @count = nil
-      return false
-    end
-
-    if @as_hash
-      ret = {}
-      1.upto(@count) do |count|
-        ret[@keys[count - 1]] = @result.object(count)
-      end
-    else
-      ret = []
-      1.upto(@count) do |count|
-        ret << @result.object(count)
-      end
-    end
-
-    return ret
-  end
-
-  def each
-    while data = self.fetch
-      yield data
     end
   end
 end

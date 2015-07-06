@@ -20,7 +20,7 @@ class Baza::Driver::Sqlite3Java < Baza::BaseSqlDriver
       return {
         type: :success,
         args: {
-          type: :sqlite3,
+          type: :sqlite3_java,
           conn: args[:object]
         }
       }
@@ -38,26 +38,22 @@ class Baza::Driver::Sqlite3Java < Baza::BaseSqlDriver
       @conn = @baza.opts[:conn]
       @stat = @conn.create_statement
     else
-      raise "No path was given." unless @path
-
-      if @baza.opts[:sqlite_driver]
-        require @baza.opts[:sqlite_driver]
-      else
-        require "jdbc/sqlite3"
-        ::Jdbc::SQLite3.load_driver
-      end
-
-      require "java"
-      import "org.sqlite.JDBC"
-      @conn = java.sql.DriverManager::getConnection("jdbc:sqlite:#{@baza.opts[:path]}")
-      @stat = @conn.createStatement
+      reconnect
     end
+  end
+
+  def reconnect
+    raise "No path was given." unless @path
+
+    org.sqlite.JDBC
+    @conn = java.sql.DriverManager::getConnection("jdbc:sqlite:#{@baza.opts[:path]}")
+    @stat = @conn.create_statement
   end
 
   #Executes a query against the driver.
   def query(sql)
     begin
-      return Baza::Driver::Sqlite3Java::Result.new(self, @stat.executeQuery(sql))
+      return Baza::Driver::Sqlite3Java::Result.new(self, @stat.execute_query(sql))
     rescue java.sql.SQLException => e
       if e.message.to_s.index("query does not return ResultSet") != nil
         return Baza::Driver::Sqlite3Java::Result.new(self, nil)
@@ -69,7 +65,7 @@ class Baza::Driver::Sqlite3Java < Baza::BaseSqlDriver
 
   def query_ubuf(sql)
     begin
-      return Baza::Driver::Sqlite3Java::UnbufferedResult.new(self, @stat.executeQuery(sql))
+      return Baza::Driver::Sqlite3Java::UnbufferedResult.new(self, @stat.execute_query(sql))
     rescue java.sql.SQLException => e
       if e.message.to_s.index("query does not return ResultSet") != nil
         return Baza::Driver::Sqlite3Java::UnbufferedResult.new(self, nil)

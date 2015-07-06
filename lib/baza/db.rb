@@ -67,7 +67,7 @@ class Baza::Db
     @int_types = [:int, :bigint, :tinyint, :smallint, :mediumint]
 
     unless @opts[:threadsafe]
-      require "monitor"
+      require 'monitor'
       @mutex = Monitor.new
     end
 
@@ -289,10 +289,10 @@ class Baza::Db
     sql = "INSERT INTO #{@sep_table}#{self.esc_table(tablename)}#{@sep_table}"
 
     if !arr_insert || arr_insert.empty?
-      #This is the correct syntax for inserting a blank row in MySQL.
-      if @opts[:type].to_s == "mysql"
+      # This is the correct syntax for inserting a blank row in MySQL.
+      if @opts[:type].to_s.include?("mysql")
         sql << " VALUES ()"
-      elsif @opts[:type].to_s == "sqlite3"
+      elsif @opts[:type].to_s.include?("sqlite3")
         sql << " DEFAULT VALUES"
       else
         raise "Unknown database-type: '#{@opts[:type]}'."
