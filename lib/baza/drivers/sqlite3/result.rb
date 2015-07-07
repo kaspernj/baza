@@ -6,6 +6,13 @@ class Baza::Driver::Sqlite3::Result < Baza::ResultBase
 
     begin
       @statement.execute
+
+      if driver.baza.opts[:type_translation]
+        @types = statement.types
+      elsif driver.baza.opts[:type_translation] === false
+        @types = false
+      end
+
       @columns = statement.columns.map { |column| column.to_sym }
       read_results
       @index = -1
@@ -17,7 +24,16 @@ class Baza::Driver::Sqlite3::Result < Baza::ResultBase
   #Returns a single result.
   def fetch
     array = @results[@index += 1]
-    return hash = Hash[*@columns.zip(array).flatten] if array
+
+    if array
+      if @types
+        array.map!.with_index { |value, index| translate_type(value, @types[index]) } if @types
+      elsif @types === false
+        array.map! { |value| value.to_s }
+      end
+
+      return Hash[*@columns.zip(array).flatten]
+    end
   end
 
   #Loops over every result yielding them.
@@ -36,6 +52,18 @@ private
       array = @statement.step
       break if @statement.done?
       @results << array
+    end
+  end
+
+  def translate_type(value, type)
+    if value
+      if type == 'datetime'
+        return Time.parse(value)
+      elsif type == 'date'
+        return Date.parse(value)
+      else
+        return value
+      end
     end
   end
 end

@@ -1,4 +1,4 @@
-class Baza::Driver::MysqlJava < Baza::BaseSqlDriver
+class Baza::Driver::MysqlJava < Baza::JdbcDriver
   path = "#{File.dirname(__FILE__)}/mysql_java"
 
   autoload :Table, "#{path}/table"
@@ -33,9 +33,6 @@ class Baza::Driver::MysqlJava < Baza::BaseSqlDriver
 
     @opts = @baza.opts
 
-    require "monitor"
-    @mutex = Monitor.new
-
     if @opts[:encoding]
       @encoding = @opts[:encoding]
     else
@@ -52,21 +49,6 @@ class Baza::Driver::MysqlJava < Baza::BaseSqlDriver
     reconnect
   end
 
-  #This method handels the closing of statements and results for the Java MySQL-mode.
-  def java_mysql_resultset_killer(id)
-    data = @java_rs_data[id]
-    return nil unless data
-
-    data[:res].close
-    data[:stmt].close
-    @java_rs_data.delete(id)
-  end
-
-  #Cleans the wref-map holding the tables.
-  def clean
-    tables.clean if tables
-  end
-
   #Respawns the connection to the MySQL-database.
   def reconnect
     @mutex.synchronize do
@@ -78,103 +60,8 @@ class Baza::Driver::MysqlJava < Baza::BaseSqlDriver
         @conn = java.sql::DriverManager.getConnection("jdbc:mysql://#{@baza.opts[:host]}:#{@port}/#{@baza.opts[:db]}?user=#{@baza.opts[:user]}&password=#{@baza.opts[:pass]}&populateInsertRowWithDefaultValues=true&zeroDateTimeBehavior=round&characterEncoding=#{@encoding}&holdResultsOpenOverStatementClose=true")
       end
 
-      query("SET SQL_MODE = ''")
-      query("SET NAMES '#{self.esc(@encoding)}'") if @encoding
-    end
-  end
-
-  #Executes a query and returns the result.
-  def query(str)
-    str = str.to_s
-    str = str.force_encoding("UTF-8") if @encoding == "utf8" and str.respond_to?(:force_encoding)
-    tries = 0
-
-    begin
-      tries += 1
-      @mutex.synchronize do
-        stmt = conn.create_statement
-
-        if str.match(/^\s*(delete|update|create|drop|insert\s+into|alter|truncate)\s+/i)
-          begin
-            stmt.execute(str)
-          ensure
-            stmt.close
-          end
-
-          return nil
-        else
-          id = nil
-
-          begin
-            res = stmt.execute_query(str)
-            ret = Baza::Driver::MysqlJava::Result.new(@baza, @opts, res)
-            id = ret.__id__
-
-            #If ID is being reused we have to free the result.
-            self.java_mysql_resultset_killer(id) if @java_rs_data.key?(id)
-
-            #Save reference to result and statement, so we can close them when they are garbage collected.
-            @java_rs_data[id] = {res: res, stmt: stmt}
-            ObjectSpace.define_finalizer(ret, method(:java_mysql_resultset_killer))
-
-            return ret
-          rescue => e
-            res.close if res
-            stmt.close
-            @java_rs_data.delete(id) if ret && id
-
-            raise e
-          end
-        end
-      end
-    rescue => e
-      if tries <= 3
-        if e.message == "MySQL server has gone away" || e.message == "closed MySQL connection" or e.message == "Can't connect to local MySQL server through socket"
-          sleep 0.5
-          reconnect
-          retry
-        elsif e.message.include?("No operations allowed after connection closed") or e.message == "This connection is still waiting for a result, try again once you have the result" or e.message == "Lock wait timeout exceeded; try restarting transaction"
-          reconnect
-          retry
-        end
-      end
-
-      raise e
-    end
-  end
-
-  #Executes an unbuffered query and returns the result that can be used to access the data.
-  def query_ubuf(str)
-    @mutex.synchronize do
-      if str.match(/^\s*(delete|update|create|drop|insert\s+into)\s+/i)
-        stmt = @conn.createStatement
-
-        begin
-          stmt.execute(str)
-        ensure
-          stmt.close
-        end
-
-        return nil
-      else
-        stmt = @conn.create_statement(java.sql.ResultSet.TYPE_FORWARD_ONLY, java.sql.ResultSet.CONCUR_READ_ONLY)
-        stmt.fetch_size = java.lang.Integer::MIN_VALUE
-
-        begin
-          res = stmt.executeQuery(str)
-          ret = Baza::Driver::MysqlJava::Result.new(@baza, @opts, res)
-
-          #Save reference to result and statement, so we can close them when they are garbage collected.
-          @java_rs_data[ret.__id__] = {res: res, stmt: stmt}
-          ObjectSpace.define_finalizer(ret, method("java_mysql_resultset_killer"))
-
-          return ret
-        rescue => e
-          res.close if res
-          stmt.close
-          raise e
-        end
-      end
+      query_no_result_set("SET SQL_MODE = ''")
+      query_no_result_set("SET NAMES '#{self.esc(@encoding)}'") if @encoding
     end
   end
 
@@ -257,7 +144,7 @@ class Baza::Driver::MysqlJava < Baza::BaseSqlDriver
 
     return sql if args && args[:return_sql]
 
-    self.query(sql)
+    query_no_result_set(sql)
 
     if args && args[:return_id]
       first_id = self.last_id
@@ -278,13 +165,13 @@ class Baza::Driver::MysqlJava < Baza::BaseSqlDriver
   end
 
   def transaction
-    @baza.q("START TRANSACTION")
+    query_no_result_set("START TRANSACTION")
 
     begin
       yield @baza
-      @baza.q("COMMIT")
+      query_no_result_set("COMMIT")
     rescue
-      @baza.q("ROLLBACK")
+      query_no_result_set("ROLLBACK")
       raise
     end
   end

@@ -45,7 +45,7 @@ class Baza::Driver::ActiveRecord
   end
 
   def query(str)
-    Baza::Driver::ActiveRecord::Result.new(@conn.execute(str))
+    Baza::Driver::ActiveRecord::Result.new(self, @conn.execute(str))
   end
 
   alias query_ubuf query

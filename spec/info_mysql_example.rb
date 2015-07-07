@@ -1,14 +1,14 @@
 class Baza::InfoMysql
   attr_reader :db
 
-  def initialize
-    @db = Baza::Db.new(
+  def initialize(args = {})
+    @db = Baza::Db.new({
       type: :mysql,
       host: "localhost",
       user: "baza-test",
       pass: "password",
       db: "baza-test"
-    )
+    }.merge(args))
   end
 
   def before

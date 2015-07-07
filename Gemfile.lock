@@ -140,6 +140,3 @@ DEPENDENCIES
   sqlite3
   string-cases (~> 0.0.1)
   wref (~> 0.0.8)
-
-BUNDLED WITH
-   1.10.5

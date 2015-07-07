@@ -92,7 +92,7 @@ class Baza::QueryBuffer
     end
   end
 
-  private
+private
 
   #Runs the flush in a thread in the background.
   def flush_async

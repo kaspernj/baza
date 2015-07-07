@@ -1,5 +1,5 @@
 #This class handels SQLite3-specific behaviour.
-class Baza::Driver::Sqlite3Java < Baza::BaseSqlDriver
+class Baza::Driver::Sqlite3Java < Baza::JdbcDriver
   path = "#{File.dirname(__FILE__)}/sqlite3_java"
 
   autoload :Table, "#{path}/table"
@@ -32,12 +32,12 @@ class Baza::Driver::Sqlite3Java < Baza::BaseSqlDriver
     super
 
     @path = @baza.opts[:path] if @baza.opts[:path]
-    @mutex_statement_reader = Mutex.new
+    @preload_results = true
 
     if @baza.opts[:conn]
       @conn = @baza.opts[:conn]
-      @stat = @conn.create_statement
     else
+      org.sqlite.JDBC
       reconnect
     end
   end
@@ -45,34 +45,8 @@ class Baza::Driver::Sqlite3Java < Baza::BaseSqlDriver
   def reconnect
     raise "No path was given." unless @path
 
-    org.sqlite.JDBC
-    @conn = java.sql.DriverManager::getConnection("jdbc:sqlite:#{@baza.opts[:path]}")
-    @stat = @conn.create_statement
-  end
-
-  #Executes a query against the driver.
-  def query(sql)
-    begin
-      return Baza::Driver::Sqlite3Java::Result.new(self, @stat.execute_query(sql))
-    rescue java.sql.SQLException => e
-      if e.message.to_s.index("query does not return ResultSet") != nil
-        return Baza::Driver::Sqlite3Java::Result.new(self, nil)
-      else
-        raise e
-      end
-    end
-  end
-
-  def query_ubuf(sql)
-    begin
-      return Baza::Driver::Sqlite3Java::UnbufferedResult.new(self, @stat.execute_query(sql))
-    rescue java.sql.SQLException => e
-      if e.message.to_s.index("query does not return ResultSet") != nil
-        return Baza::Driver::Sqlite3Java::UnbufferedResult.new(self, nil)
-      else
-        raise e
-      end
-    end
+    @stmt = nil
+    @conn = java.sql.DriverManager::getConnection("jdbc:sqlite:#{@path}")
   end
 
   #Escapes a string to be safe to used in a query.
@@ -84,14 +58,18 @@ class Baza::Driver::Sqlite3Java < Baza::BaseSqlDriver
 
   #Returns the last inserted ID.
   def last_id
-    return @conn.last_insert_row_id if @conn.respond_to?(:last_insert_row_id)
-    return query("SELECT last_insert_rowid() AS id").fetch[:id].to_i
+    return query("SELECT LAST_INSERT_ROWID() AS id").fetch[:id].to_i
   end
 
-  #Closes the connection to the database.
-  def close
-    @mutex_statement_reader.synchronize do
-      @conn.close
+  def transaction
+    query_no_result_set("BEGIN TRANSACTION")
+
+    begin
+      yield @baza
+      query_no_result_set("COMMIT")
+    rescue
+      query_no_result_set("ROLLBACK")
+      raise
     end
   end
 end

@@ -39,7 +39,9 @@ class Baza::Driver::Sqlite3 < Baza::BaseSqlDriver
     else
       raise "No path was given." unless @path
       require 'sqlite3' unless ::Object.const_defined?(:SQLite3)
+
       @conn = ::SQLite3::Database.open(@path)
+      @conn.type_translation = false # Type translation is always done in the C ext for SQLite3
     end
   end
 

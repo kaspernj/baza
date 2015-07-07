@@ -74,7 +74,8 @@ class Baza::Driver::Mysql2 < Baza::BaseSqlDriver
       }
 
       #Symbolize keys should also be given here, else table-data wont be symbolized for some reason - knj.
-      @query_args = {symbolize_keys: true}
+      @query_args = {symbolize_keys: true,}
+      @query_args[:cast] = false unless @baza.opts[:type_translation]
       @query_args.merge!(@baza.opts[:query_args]) if @baza.opts[:query_args]
 
       pos_args = [:as, :async, :cast_booleans, :database_timezone, :application_timezone, :cache_rows, :connect_flags, :cast]

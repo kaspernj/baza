@@ -438,7 +438,7 @@ class Baza::Db
 
   #Checks if a given terms exists. If it does, updates it to match data. If not inserts the row.
   def upsert(table, data, terms, args = nil)
-    row = self.select(table, terms, "limit" => 1).fetch
+    row = self.single(table, terms)
 
     if args && args[:buffer]
       obj = args[:buffer]
