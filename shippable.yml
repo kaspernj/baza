@@ -6,7 +6,9 @@ rvm:
 before_script:
   - sudo apt-get -f install libmysql-java
   - cp spec/info_mysql_shippable.rb spec/info_mysql.rb
-  - cp spec/info_active_record_shippable.rb spec/info_active_record.rb
+  - cp spec/info_mysql2_shippable.rb spec/info_mysql2.rb
+  - cp spec/info_active_record_shippable_mysql.rb spec/info_active_record_mysql.rb
+  - cp spec/info_active_record_shippable_mysql2.rb spec/info_active_record_mysql2.rb
   - mysql -e 'CREATE DATABASE baza;'
 script:
   - CODECLIMATE_REPO_TOKEN=98c06de7271764c9cd7bbde7cee4ddfa0d3e7db4bd9933f17779100276672e5f bundle exec rspec

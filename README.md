@@ -176,7 +176,8 @@ puts "Table: #{index.table}"
 
 ## Copying databases
 ```ruby
-db_mysql = Baza::Db.new(type: :mysql, subtype: :mysql2, ...)
+db_mysql = Baza::Db.new(type: :mysql, ...)
+db_mysql2 = Baza::Db.new(type: :mysql2, ...)
 db_sqlite = Baza::Db.new(type: :sqlite3, path: ...)
 
 db_mysql.copy_to(db_sqlite)
@@ -215,7 +216,7 @@ end
 ```
 
 ## Contributing to baza
- 
+
 * Check out the latest master to make sure the feature hasn't been implemented or the bug hasn't been fixed yet.
 * Check out the issue tracker to make sure someone already hasn't requested it and/or contributed it.
 * Fork the project.

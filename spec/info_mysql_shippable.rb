@@ -1,23 +1,13 @@
 class Baza::InfoMysql
   attr_reader :db
 
-  def initialize
-    if RUBY_ENGINE == "jruby"
-      @db = Baza::Db.new(
-        type: :mysql,
-        host: "localhost",
-        user: "shippa",
-        db: "baza"
-      )
-    else
-      @db = Baza::Db.new(
-        type: :mysql,
-        subtype: :mysql2,
-        host: "localhost",
-        user: "shippa",
-        db: "baza"
-      )
-    end
+  def initialize(args = {})
+    @db = Baza::Db.new({
+      type: :mysql,
+      host: "localhost",
+      user: "shippa",
+      db: "baza"
+    }.merge(args))
   end
 
   def before

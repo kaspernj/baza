@@ -1,24 +1,24 @@
 shared_examples_for "a baza driver" do
-  let(:constant){
-    name = described_class.name.split("::").last
-    const_name = "Info#{name.slice(0, 1).upcase}#{name.slice(1, name.length)}"
-    require "#{File.dirname(__FILE__)}/../info_#{StringCases.camel_to_snake(name)}"
-    raise "Constant was not defined: '#{const_name}'." unless Baza.const_defined?(const_name)
-    Baza.const_get(const_name)
-  }
-  let(:driver){ constant.new }
-  let(:driver2){ constant.new }
-  let(:db){ driver.db }
-  let(:db2){ driver2.db }
-  let(:test_table){
+  let(:driver) { constant.new(type_translation: :string) }
+  let(:driver2) { constant.new }
+  let(:db) { driver.db }
+  let(:db2) { driver2.db }
+  let(:db_with_type_translation) { constant.new(type_translation: true, debug: false).db }
+  let(:row) do
+    test_table.insert(text: 'Kasper', number: 30, float: 4.5)
+    db.select(:test, text: 'Kasper').fetch
+  end
+  let(:test_table) do
     db.tables.create("test", {
       columns: [
-        {name: "id", type: :int, autoincr: true, primarykey: true},
-        {name: "text", type: :varchar}
+        {name: 'id', type: :int, autoincr: true, primarykey: true},
+        {name: 'text', type: :varchar},
+        {name: 'number', type: :int, default: 0},
+        {name: 'float', type: :float, default: 0.0}
       ]
     })
     db.tables[:test]
-  }
+  end
 
   before do
     driver.before
@@ -86,6 +86,22 @@ shared_examples_for "a baza driver" do
     end
 
     raise "Block with should have ran too little: #{block_ran}." if block_ran < rows_count
+  end
+
+  it 'does unbuffered queries' do
+    test_table
+
+    10.times do |count|
+      db.insert(:test, text: "Test #{count}")
+    end
+
+    count_results = 0
+    db.q("SELECT * FROM test", type: :unbuffered) do |row|
+      expect(row[:text]).to eq "Test #{count_results}"
+      count_results += 1
+    end
+
+    expect(count_results).to eq 10
   end
 
   it "should do upserting" do
@@ -181,7 +197,10 @@ shared_examples_for "a baza driver" do
   end
 
   it "should be able to make new connections based on given objects" do
-    new_db = Baza::Db.from_object(:object => db.conn.conn)
+    # Mysql doesn't support it...
+    unless db.opts.fetch(:type) == :mysql
+      new_db = Baza::Db.from_object(object: db.conn.conn)
+    end
   end
 
   it "should be able to do ID-queries through the select-method" do
@@ -204,51 +223,56 @@ shared_examples_for "a baza driver" do
     end
 
     count_found = 0
-    db.select(:test_table, nil, :idquery => :idrow) do |row|
+    db.select(:test_table, nil, idquery: :idrow) do |row|
       count_found += 1
 
       row[:name].should eq "Kasper #{count_found}"
     end
 
-    count_found.should eq 10000
+    expect(count_found).to eq 10000
   end
 
   it "should be able to use query buffers" do
     db.tables.create(:test_table, {
-      :columns => [
-        {:name => :id, :type => :int, :autoincr => true, :primarykey => true},
-        {:name => :name, :type => :varchar}
+      columns: [
+        {name: :id, type: :int, autoincr: true, primarykey: true},
+        {name: :name, type: :varchar}
       ]
     })
 
     upsert = false
+    count_inserts = 0
     db.q_buffer do |buffer|
       2500.times do |count|
         if upsert
-          buffer.upsert(:test_table, {:name => "Kasper #{count}"}, {:name => "Kasper #{count}"})
+          buffer.upsert(:test_table, {name: "Kasper #{count}"}, {name: "Kasper #{count}"})
           upsert = false
         else
-          buffer.insert(:test_table, {:name => "Kasper #{count}"})
+          buffer.insert(:test_table, {name: "Kasper #{count}"})
           upsert = true
         end
+
+        count_inserts += 1
       end
     end
 
-    test_table = db.tables[:test_table]
-    test_table.rows_count.should eql(2500)
+    expect(count_inserts).to eq 2500
 
+    test_table = db.tables[:test_table]
+    expect(test_table.rows_count).to eq 2500
+
+    count = 0
     db.q_buffer do |buffer|
-      count = 0
       upsert = false
 
-      db.select(:test_table, {}, :orderby => :id) do |row|
-        row[:name].should eql("Kasper #{count}")
+      db.select(:test_table, {}, orderby: :id) do |row|
+        expect(row[:name]).to eq "Kasper #{count}"
 
         if upsert
-          buffer.upsert(:test_table, {name: "Kasper #{count}-#{count}"}, {id: row[:id]})
+          buffer.upsert(:test_table, {name: "Kasper #{count}-#{count}"}, id: row.fetch(:id))
           upsert = false
         else
-          buffer.update(:test_table, {name: "Kasper #{count}-#{count}"}, {id: row[:id]})
+          buffer.update(:test_table, {name: "Kasper #{count}-#{count}"}, id: row.fetch(:id))
           upsert = true
         end
 
@@ -256,14 +280,18 @@ shared_examples_for "a baza driver" do
       end
     end
 
+    expect(count).to eq 2500
+
     count = 0
-    db.select(:test_table, {}, :orderby => :id) do |row|
-      row[:name].should eq "Kasper #{count}-#{count}"
+    db.select(:test_table, {}, orderby: :id) do |row|
+      expect(row[:name]).to eq "Kasper #{count}-#{count}"
       count += 1
     end
 
+    expect(count).to eq 2500
+
     #Test the flush-async which flushes transactions in a thread asyncronous.
-    db.q_buffer(:flush_async => true) do |buffer|
+    db.q_buffer(flush_async: true) do |buffer|
       count = 0
       db.select(:test_table) do |row|
         count += 1
@@ -272,7 +300,7 @@ shared_examples_for "a baza driver" do
           time_start = Time.now.to_f
         end
 
-        buffer.delete(:test_table, {:id => row[:id]})
+        buffer.delete(:test_table, id: row[:id])
 
         if count == 1000
           time_end = Time.now.to_f
@@ -283,6 +311,68 @@ shared_examples_for "a baza driver" do
       end
     end
 
-    test_table.rows_count.should eql(0)
+    expect(test_table.rows_count).to eq 0
+  end
+
+  describe 'results' do
+    before do
+      test_table.insert(text: 'test 1')
+      test_table.insert(text: 'test 2')
+    end
+
+    it '#to_a' do
+      array = db.select(:test).to_a
+      expect(array.length).to eq 2
+    end
+
+    it '#to_a_enum' do
+      array_enum = db.select(:test).to_a_enum
+      count = 0
+      array_enum.each { count += 1 }
+      expect(count).to eq 2
+      expect(array_enum.length).to eq 2
+    end
+
+    it '#to_enum' do
+      enum = db.select(:test).to_enum
+
+      count = 0
+      enum.each { count += 1 }
+      expect(count).to eq 2
+    end
+  end
+
+  it 'counts' do
+    test_table.insert(text: 'test 1')
+    expect(db.count(:test, text: 'test 1')).to eq 1
+  end
+
+  it 'doesnt do type translation by default' do
+    expect(row.fetch(:text).class).to eq String
+    expect(row.fetch(:number).class).to eq String
+    expect(row.fetch(:float).class).to eq String
+  end
+
+  it 'does type translation' do
+    db_with_type_translation.tables.create(:test, {
+      columns: [
+        {name: "id", type: :int, autoincr: true, primarykey: true},
+        {name: "text", type: :varchar},
+        {name: 'number', type: :int},
+        {name: 'float', type: :float},
+        {name: 'created_at', type: :datetime},
+        {name: 'date', type: :date}
+      ]
+    })
+
+    db_with_type_translation.insert(:test, text: 'Kasper', number: 30, float: 4.5, created_at: Time.now, date: Date.new(2015, 06, 17))
+
+    row = db_with_type_translation.select(:test, text: 'Kasper').fetch
+
+    expect(row.fetch(:text).class).to eq String
+    expect(row.fetch(:number).class).to eq Fixnum
+    expect(row.fetch(:float).class).to eq Float
+    expect(row.fetch(:created_at).class).to eq Time
+    expect(row.fetch(:date).class).to eq Date
   end
 end
