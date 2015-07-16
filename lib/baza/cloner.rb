@@ -1,6 +1,6 @@
 class Baza::Cloner
   def self.from_active_record_connection(connection)
-    if connection.class.name.match('Mysql(2?)Adapter')
+    if connection.class.name.include?('Mysql2Adapter')
       connection = connection.instance_variable_get(:@connection)
 
       config = connection.instance_variable_get(:@query_options)
@@ -12,6 +12,15 @@ class Baza::Cloner
         user: config[:username],
         pass: config[:password],
         db: config[:database]
+      }
+
+      Baza::Db.new(db_args)
+    elsif connection.class.name.include?('MysqlAdapter')
+      connection = connection.instance_variable_get(:@connection)
+
+      db_args = {
+        type: :mysql,
+        conn: connection
       }
 
       Baza::Db.new(db_args)

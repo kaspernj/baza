@@ -1,42 +1,37 @@
-#This class handels the result when running MRI (or others).
+# This class handels the result when running MRI (or others).
 class Baza::Driver::Sqlite3::Result < Baza::ResultBase
-  #Constructor. This should not be called manually.
+  # Constructor. This should not be called manually.
   def initialize(driver, statement)
     @statement = statement
 
     begin
       @statement.execute
-
-      if driver.baza.opts[:type_translation]
-        @types = statement.types
-      elsif driver.baza.opts[:type_translation] === false
-        @types = false
-      end
-
+      @type_translation = driver.baza.opts[:type_translation]
+      @types = statement.types if @type_translation == true
       @columns = statement.columns.map { |column| column.to_sym }
       read_results
       @index = -1
     ensure
-      @statement.close
+      @statement.try(:close)
     end
   end
 
-  #Returns a single result.
+  # Returns a single result.
   def fetch
-    array = @results[@index += 1]
+    row = @results[@index += 1]
 
-    if array
+    if row
       if @types
-        array.map!.with_index { |value, index| translate_type(value, @types[index]) } if @types
-      elsif @types === false
-        array.map! { |value| value.to_s }
+        row.map!.with_index { |value, index| translate_type(value, @types[index]) } if @types
+      elsif @type_translation == :string
+        row.map! { |value| value.to_s }
       end
 
-      return Hash[*@columns.zip(array).flatten]
+      return Hash[*@columns.zip(row).flatten]
     end
   end
 
-  #Loops over every result yielding them.
+  # Loops over every result yielding them.
   def each
     while data = fetch
       yield data
@@ -49,9 +44,9 @@ private
     @results = []
 
     loop do
-      array = @statement.step
+      row = @statement.step
       break if @statement.done?
-      @results << array
+      @results << row
     end
   end
 

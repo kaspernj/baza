@@ -31,7 +31,8 @@ class Baza::Driver::Mysql::Table < Baza::Table
 
   #Returns true if the table is safe to drop.
   def native?
-    return true if @db.q("SELECT DATABASE() AS db").fetch[:db] == "mysql"
+    data = @db.q("SELECT DATABASE() AS db").fetch
+    return true if data[:db] == "mysql"
     return false
   end
 

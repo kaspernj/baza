@@ -1,6 +1,6 @@
 class Baza::Driver::ActiveRecord::Result < Baza::ResultBase
-  def initialize(driver, res)
-    @res = res
+  def initialize(driver, result)
+    @result = result
     @type_translation = driver.baza.opts[:type_translation]
   end
 
@@ -13,17 +13,11 @@ class Baza::Driver::ActiveRecord::Result < Baza::ResultBase
   end
 
   def each
-    return unless @res
+    return unless @result
 
-    if RUBY_PLATFORM == "java"
-      @res.each do |result|
-        yield result.symbolize_keys
-      end
-    else
-      @res.each(as: :hash) do |result|
-        result = Hash[result.map { |k, v| [k, v.to_s] }] if @type_translation === :string
-        yield result.symbolize_keys
-      end
+    @result.each do |result|
+      result = Hash[result.map { |k, v| [k, v.to_s] }] if @type_translation == :string
+      yield result.symbolize_keys
     end
   end
 end

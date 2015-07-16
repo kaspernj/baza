@@ -1,11 +1,4 @@
 shared_examples_for "a baza columns driver" do
-  let(:constant){
-    name = described_class.name.split("::").last
-    const_name = "Info#{name.slice(0, 1).upcase}#{name.slice(1, name.length)}"
-    require "#{File.dirname(__FILE__)}/../info_#{StringCases.camel_to_snake(name)}"
-    raise "Constant was not defined: '#{const_name}'." unless Baza.const_defined?(const_name)
-    Baza.const_get(const_name)
-  }
   let(:driver){ constant.new }
   let(:db){ driver.db }
   let(:test_table){

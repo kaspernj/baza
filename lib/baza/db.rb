@@ -135,14 +135,14 @@ class Baza::Db
   # driver_instance = db.spawn
   def spawn
     raise "No type given (#{@opts.keys.join(",")})." unless @opts[:type]
-    rpath = "#{File.dirname(__FILE__)}/#{"drivers/#{@opts[:type]}/#{@opts[:type]}.rb"}"
-    require rpath if (!@opts.key?(:require) || @opts[:require]) && File.exists?(rpath)
+    rpath = "#{File.dirname(__FILE__)}/drivers/#{@opts[:type]}.rb"
+    require rpath if File.exists?(rpath)
     return Baza::Driver.const_get(@type_cc).new(self)
   end
 
   #Registers a driver to the current thread.
   def get_and_register_thread
-    raise "KnjDB-object is not in threadding mode." unless @conns
+    raise "Baza-object is not in threadding mode" unless @conns
 
     thread_cur = Thread.current
     tid = self.__id__

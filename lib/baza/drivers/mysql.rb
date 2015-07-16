@@ -25,19 +25,23 @@ class Baza::Driver::Mysql < Baza::BaseSqlDriver
     require 'monitor'
     @mutex = Monitor.new
 
-    if @opts[:encoding]
-      @encoding = @opts[:encoding]
+    if baza.opts[:conn]
+      @conn = baza.opts[:conn]
     else
-      @encoding = 'utf8'
-    end
+      if @opts[:encoding]
+        @encoding = @opts[:encoding]
+      else
+        @encoding = 'utf8'
+      end
 
-    if @baza.opts.key?(:port)
-      @port = @baza.opts[:port].to_i
-    else
-      @port = 3306
-    end
+      if @baza.opts.key?(:port)
+        @port = @baza.opts[:port].to_i
+      else
+        @port = 3306
+      end
 
-    reconnect
+      reconnect
+    end
   end
 
   #This method handels the closing of statements and results for the Java MySQL-mode.

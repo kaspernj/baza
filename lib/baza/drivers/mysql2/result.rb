@@ -1,26 +1,26 @@
-#This class controls the result for the MySQL2 driver.
+# This class controls the result for the MySQL2 driver.
 class Baza::Driver::Mysql2::Result < Baza::ResultBase
-  #Constructor. This should not be called manually.
-  def initialize(result)
+  # Constructor. This should not be called manually.
+  def initialize(driver, result)
     @result = result
+    @type_translation = driver.baza.opts[:type_translation]
   end
 
-  #Returns a single result.
+  # Returns a single result.
   def fetch
-    @enum = @result.to_enum if !@enum
-
     begin
-      return @enum.next
+      return to_enum.next
     rescue StopIteration
       return false
     end
   end
 
-  #Loops over every single result yielding it.
+  # Loops over every single result yielding it.
   def each
-    @result.each do |res|
-      next unless res #This sometimes happens when streaming results...
-      yield res
+    @result.each(as: :hash, symbolize_keys: true) do |row|
+      next unless row # This sometimes happens when streaming results...
+      row = Hash[row.map { |k, v| [k, v.to_s] }] if @type_translation == :string
+      yield row
     end
   end
 end

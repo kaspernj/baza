@@ -22,7 +22,6 @@ class Baza::Driver::Mysql2 < Baza::BaseSqlDriver
           type: :mysql2,
           conn: args[:object],
           query_args: {
-            as: :hash,
             symbolize_keys: true
           }
         }
@@ -83,7 +82,7 @@ class Baza::Driver::Mysql2 < Baza::BaseSqlDriver
         args[key] = @baza.opts[key] if @baza.opts.key?(key)
       end
 
-      args[:as] = :array if @opts[:result] == "array"
+      args[:as] = :array
 
       tries = 0
       begin
@@ -119,7 +118,7 @@ class Baza::Driver::Mysql2 < Baza::BaseSqlDriver
     begin
       tries += 1
       @mutex.synchronize do
-        return Baza::Driver::Mysql2::Result.new(@conn.query(str, @query_args))
+        return Baza::Driver::Mysql2::Result.new(self, @conn.query(str, @query_args))
       end
     rescue => e
       if tries <= 3
@@ -140,7 +139,7 @@ class Baza::Driver::Mysql2 < Baza::BaseSqlDriver
   #Executes an unbuffered query and returns the result that can be used to access the data.
   def query_ubuf(str)
     @mutex.synchronize do
-      return Baza::Driver::Mysql2::Result.new(@conn.query(str, @query_args.merge(stream: true)))
+      return Baza::Driver::Mysql2::Result.new(self, @conn.query(str, @query_args.merge(stream: true)))
     end
   end
 

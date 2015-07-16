@@ -61,6 +61,8 @@ class Baza::Driver::Mysql::Result < Baza::ResultBase
     end
   end
 
+private
+
   def translate_value_to_type(value, type_no)
     unless value === nil
       if INT_TYPES[type_no]

@@ -1,8 +1,13 @@
 class Baza::Driver::ActiveRecord
+  path = "#{File.dirname(__FILE__)}/active_record"
+
+  autoload :Tables, "#{path}/tables"
+  autoload :Columns, "#{path}/columns"
+  autoload :Indexes, "#{path}/indexes"
+  autoload :Result, "#{path}/result"
+
   attr_reader :baza, :conn, :sep_table, :sep_col, :sep_val, :symbolize, :conn_type
   attr_accessor :tables, :cols, :indexes
-
-  autoload :Result, "#{File.dirname(__FILE__)}/active_record/result"
 
   def self.from_object(args)
     if args[:object].class.name.include?("ActiveRecord::ConnectionAdapters")
@@ -27,13 +32,23 @@ class Baza::Driver::ActiveRecord
   def initialize(baza)
     @baza = baza
     @conn = @baza.opts[:conn]
+
+    raise 'No conn given' unless @conn
+
     conn_name = @conn.class.name.to_s.downcase
 
-    if conn_name.include?("mysql")
+    if conn_name.include?("mysql2")
+      @sep_table = "`"
+      @sep_col = "`"
+      @sep_val = "'"
+      @conn_type = :mysql2
+      @result_constant = Baza::Driver::Mysql2::Result
+    elsif conn_name.include?("mysql")
       @sep_table = "`"
       @sep_col = "`"
       @sep_val = "'"
       @conn_type = :mysql
+      @result_constant = Baza::Driver::Mysql::Result unless RUBY_PLATFORM == 'java'
     elsif conn_name.include?("sqlite")
       @sep_table = "`"
       @sep_col = "`"
@@ -42,10 +57,12 @@ class Baza::Driver::ActiveRecord
     else
       raise "Unknown type: '#{conn_name}'."
     end
+
+    @result_constant ||= Baza::Driver::ActiveRecord::Result
   end
 
-  def query(str)
-    Baza::Driver::ActiveRecord::Result.new(self, @conn.execute(str))
+  def query(sql)
+    @result_constant.new(self, @conn.execute(sql))
   end
 
   alias query_ubuf query
@@ -71,10 +88,12 @@ class Baza::Driver::ActiveRecord
   end
 
   def transaction
-    if @conn_type == :mysql
+    if @conn_type == :mysql || @conn_type == :mysql2
       query("START TRANSACTION")
     elsif @conn_type == :sqlite3
       query("BEGIN TRANSACTION")
+    else
+      raise "Don't know how to start transaction"
     end
 
     begin
@@ -84,38 +103,5 @@ class Baza::Driver::ActiveRecord
       query("ROLLBACK")
       raise
     end
-  end
-end
-
-class Baza::Driver::ActiveRecord::Tables
-  def initialize(args)
-    @args = args
-    @proxy_to = ::Baza::Driver.const_get(StringCases.snake_to_camel(@args[:db].conn.conn_type)).const_get(:Tables).new(@args)
-  end
-
-  def method_missing(name, *args, &blk)
-    @proxy_to.__send__(name, *args, &blk)
-  end
-end
-
-class Baza::Driver::ActiveRecord::Columns
-  def initialize(args)
-    @args = args
-    @proxy_to = ::Baza::Driver.const_get(StringCases.snake_to_camel(@args[:db].conn.conn_type)).const_get(:Columns).new(@args)
-  end
-
-  def method_missing(name, *args, &blk)
-    @proxy_to.__send__(name, *args, &blk)
-  end
-end
-
-class Baza::Driver::ActiveRecord::Indexes
-  def initialize(args)
-    @args = args
-    @proxy_to = ::Baza::Driver.const_get(StringCases.snake_to_camel(@args[:db].conn.conn_type)).const_get(:Indexes).new(@args)
-  end
-
-  def method_missing(name, *args, &blk)
-    @proxy_to.__send__(name, *args, &blk)
   end
 end
