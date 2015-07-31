@@ -12,7 +12,7 @@ class Baza::Driver::Sqlite3::Result < Baza::ResultBase
       read_results
       @index = -1
     ensure
-      @statement.try(:close)
+      @statement.close
     end
   end
 
