@@ -83,7 +83,7 @@ class Baza::Driver::Sqlite3::Table < Baza::Table
     ret = {}
 
     @db.q("PRAGMA table_info(`#{@db.esc_table(name)}`)") do |d_cols|
-      column_name = d_cols[:name].to_sym
+      column_name = d_cols.fetch(:name).to_sym
       obj = @list.get(column_name)
 
       unless obj
