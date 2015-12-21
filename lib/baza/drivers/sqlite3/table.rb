@@ -74,7 +74,11 @@ class Baza::Driver::Sqlite3::Table < Baza::Table
 
   def column(name)
     list = columns
-    return list[name] if list[name]
+
+    list.each do |name_i, column|
+      return column if name_i.to_s == name.to_s
+    end
+
     raise Errno::ENOENT, "Column not found: #{name}."
   end
 

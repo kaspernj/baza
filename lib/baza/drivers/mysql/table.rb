@@ -52,8 +52,8 @@ class Baza::Driver::Mysql::Table < Baza::Table
       return @list[name]
     end
 
-    columns(name: name) do |col|
-      return col if col.name == name
+    columns(name: name) do |col_i|
+      return col_i if col_i.name == name
     end
 
     raise Errno::ENOENT, "Column not found: '#{name}'."

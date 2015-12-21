@@ -862,11 +862,19 @@ class Baza::Db
   def method_missing(method_name, *args)
     conn_exec do |driver|
       if driver.respond_to?(method_name.to_sym)
-        return driver.send(method_name, *args)
+        return driver.__send__(method_name, *args)
       end
     end
 
-    raise "Method not found: '#{method_name}'."
+    super
+  end
+
+  def database(name)
+    databases.each do |database|
+      return database if database.name.to_s == name.to_s
+    end
+
+    raise "Database not found: #{name}"
   end
 
   def to_s

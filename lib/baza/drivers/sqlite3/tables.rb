@@ -23,7 +23,7 @@ class Baza::Driver::Sqlite3::Tables
     raise Errno::ENOENT, "Table was not found: #{table_name}."
   end
 
-  def list
+  def list(args = {})
     ret = {} unless block_given?
 
     @list_mutex.synchronize do

@@ -33,4 +33,25 @@ class Baza
 
     @default_db
   end
+
+  def self.drivers
+    Enumerator.new do |yielder|
+      Dir.foreach("#{File.dirname(__FILE__)}/baza/drivers") do |file|
+        if (match = file.match(/\A(.+?)\.rb\Z/))
+          load_driver(match[1])
+
+          driver_name = StringCases.snake_to_camel(match[1])
+          yielder << {
+            class: Baza::Driver.const_get(driver_name),
+            snake_name: match[1],
+            camel_name: driver_name
+          }
+        end
+      end
+    end
+  end
+
+  def self.load_driver(name)
+    require_relative "baza/drivers/#{name}.rb"
+  end
 end

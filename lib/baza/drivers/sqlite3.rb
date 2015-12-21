@@ -14,6 +14,13 @@ class Baza::Driver::Sqlite3 < Baza::BaseSqlDriver
 
   attr_reader :mutex_statement_reader
 
+  def self.args
+    [{
+      label: "Path",
+      name: "path"
+    }]
+  end
+
   # Helper to enable automatic registering of database using Baza::Db.from_object
   def self.from_object(args)
     if args[:object].class.name == "SQLite3::Database"
@@ -77,5 +84,15 @@ class Baza::Driver::Sqlite3 < Baza::BaseSqlDriver
   # Starts a transaction, yields the database and commits.
   def transaction
     @conn.transaction { yield @baza }
+  end
+
+  def databases
+    ArrayEnumerator.new do |yielder|
+      yielder << Baza::Database.new(
+        driver: self,
+        baza: @baza,
+        name: "Main"
+      )
+    end
   end
 end
