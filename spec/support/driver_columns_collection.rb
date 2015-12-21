@@ -1,15 +1,13 @@
 shared_examples_for "a baza columns driver" do
-  let(:driver){ constant.new }
-  let(:db){ driver.db }
-  let(:test_table){
-    db.tables.create("test", {
-      columns: [
-        {name: "id", type: :int, autoincr: true, primarykey: true},
-        {name: "text", type: :varchar}
-      ]
-    })
+  let(:driver) { constant.new }
+  let(:db) { driver.db }
+  let(:test_table) do
+    db.tables.create("test", columns: [
+      {name: "id", type: :int, autoincr: true, primarykey: true},
+      {name: "text", type: :varchar}
+    ])
     db.tables[:test]
-  }
+  end
 
   before do
     driver.before
@@ -52,8 +50,8 @@ shared_examples_for "a baza columns driver" do
   it "should be able to drop a column" do
     test_table.column(:text).drop
 
-    expect {
+    expect do
       test_table.column(:text)
-    }.to raise_error(Errno::ENOENT)
+    end.to raise_error(Errno::ENOENT)
   end
 end

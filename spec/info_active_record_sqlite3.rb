@@ -5,7 +5,7 @@ class Baza::InfoActiveRecordSqlite3
     require "active_record"
 
     path = "#{Dir.tmpdir}/baza_sqlite3_test_#{Time.now.to_f.to_s.hash}_#{Random.rand}.sqlite3"
-    File.unlink(path) if File.exists?(path)
+    File.unlink(path) if File.exist?(path)
 
     @conn_pool ||= ::ActiveRecord::Base.establish_connection(
       adapter: "sqlite3",
@@ -13,7 +13,7 @@ class Baza::InfoActiveRecordSqlite3
     )
     @conn ||= @conn_pool.connection
 
-    return {pool: @conn_pool, conn: @conn}
+    {pool: @conn_pool, conn: @conn}
   end
 
   def initialize(args = {})
@@ -21,12 +21,13 @@ class Baza::InfoActiveRecordSqlite3
 
     @db = Baza::Db.new({
       type: :active_record,
-      conn: data[:conn]
+      conn: data[:conn],
+      index_append_table_name: true
     }.merge(args))
   end
 
   def before
-    @db.tables.list.each do |name, table|
+    @db.tables.list.each do |_name, table|
       table.drop
     end
   end

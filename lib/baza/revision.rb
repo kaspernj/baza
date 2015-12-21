@@ -1,4 +1,4 @@
-#This class takes a database-schema from a hash and runs it against the database. It then checks that the database matches the given schema.
+# This class takes a database-schema from a hash and runs it against the database. It then checks that the database matches the given schema.
 #
 #===Examples
 # db = Baza::Db.new(type: :sqlite3, path: "test_db.sqlite3")
@@ -31,12 +31,12 @@ class Baza::Revision
   INIT_DB_ALLOWED_ARGS = [:db, :schema, :tables_cache, :debug]
   INIT_DB_SCHEMA_ALLOWED_ARGS = [:tables]
   INIT_DB_TABLE_ALLOWED_ARGS = [:columns, :indexes, :rows, :renames]
-  #This initializes a database-structure and content based on a schema-hash.
+  # This initializes a database-structure and content based on a schema-hash.
   #===Examples
   # dbrev = Baza::Revision.new
   # dbrev.init_db("db" => db_obj, "schema" => schema_hash)
   def init_db(args)
-    args.each do |key, val|
+    args.each do |key, _val|
       raise "Invalid key: '#{key}' (#{key.class.name})." unless INIT_DB_ALLOWED_ARGS.include?(key)
     end
 
@@ -44,15 +44,15 @@ class Baza::Revision
     db = args[:db]
     raise "No 'db' was given." unless db
 
-    schema.each do |key, val|
+    schema.each do |key, _val|
       raise "Invalid key for schema: '#{key}' (#{key.class.name})." unless INIT_DB_SCHEMA_ALLOWED_ARGS.include?(key)
     end
 
-    #Check for normal bugs and raise apropiate error.
+    # Check for normal bugs and raise apropiate error.
     raise "'schema' argument was not a Hash: '#{schema.class.name}'." unless schema.is_a?(Hash)
-    raise "No tables given." unless schema.has_key?(:tables)
+    raise "No tables given." unless schema.key?(:tables)
 
-    #Cache tables to avoid constant reloading.
+    # Cache tables to avoid constant reloading.
     if !args.key?(:tables_cache) || args[:tables_cache]
       puts "Caching tables-list." if args[:debug]
       tables = db.tables.list
@@ -61,7 +61,7 @@ class Baza::Revision
     end
 
     schema[:tables].each do |table_name, table_data|
-      table_data.each do |key, val|
+      table_data.each do |key, _val|
         raise "Invalid key: '#{key}' (#{key.class.name})." unless INIT_DB_TABLE_ALLOWED_ARGS.include?(key)
       end
 
@@ -72,7 +72,7 @@ class Baza::Revision
           puts "Getting table-object for table: '#{table_name}'." if args[:debug]
           table_obj = db.tables[table_name]
 
-          #Cache indexes- and column-objects to avoid constant reloading.
+          # Cache indexes- and column-objects to avoid constant reloading.
           cols = table_obj.columns
           indexes = table_obj.indexes
 
@@ -86,12 +86,12 @@ class Baza::Revision
                 type = col_data[:type].to_sym
                 dochange = false
 
-                if !first_col and !col_data[:after]
-                  #Try to find out the previous column - if so we can set "after" which makes the column being created in the right order as defined.
-                  if !col_data.has_key?(:after)
+                if !first_col && !col_data[:after]
+                  # Try to find out the previous column - if so we can set "after" which makes the column being created in the right order as defined.
+                  unless col_data.key?(:after)
                     prev_no = table_data[:columns].index(col_data)
-                    if prev_no != nil and prev_no != 0
-                      prev_no = prev_no - 1
+                    if prev_no.nil? && prev_no != 0
+                      prev_no -= 1
                       prev_col_data = table_data[:columns][prev_no]
                       col_data[:after] = prev_col_data[:name]
                     end
@@ -99,7 +99,7 @@ class Baza::Revision
 
                   actual_after = nil
                   set_next = false
-                  cols.each do |col_name, col_iter|
+                  cols.each do |_col_name, col_iter|
                     if col_iter.name == col_obj.name
                       break
                     else
@@ -113,49 +113,49 @@ class Baza::Revision
                   end
                 end
 
-                #BUGFIX: When using SQLite3 the primary-column or a autoincr-column may never change type from int... This will break it!
-                if db.opts[:type] == "sqlite3" and col_obj.type.to_s == "int" and (col_data[:primarykey] or col_data[:autoincr]) and db.int_types.index(col_data[:type].to_s)
+                # BUGFIX: When using SQLite3 the primary-column or a autoincr-column may never change type from int... This will break it!
+                if db.opts[:type] == "sqlite3" && col_obj.type.to_s == "int" && (col_data[:primarykey] || col_data[:autoincr]) && db.int_types.index(col_data[:type].to_s)
                   type = :int
                 end
 
-                if type and col_obj.type.to_s != type
+                if type && col_obj.type.to_s != type
                   print "Type mismatch on #{col_str}: #{col_data[:type]}, #{col_obj.type}\n" if args[:debug]
                   dochange = true
                 end
 
-                if col_data.has_key?(:primarykey) and col_obj.primarykey? != col_data[:primarykey]
+                if col_data.key?(:primarykey) && col_obj.primarykey? != col_data[:primarykey]
                   print "Primary-key mismatch for #{col_str}: #{col_data[:primarykey]}, #{col_obj.primarykey?}\n" if args[:debug]
                   dochange = true
                 end
 
-                if col_data.has_key?(:autoincr) and col_obj.autoincr? != col_data[:autoincr]
+                if col_data.key?(:autoincr) && col_obj.autoincr? != col_data[:autoincr]
                   print "Auto-increment mismatch for #{col_str}: #{col_data[:autoincr]}, #{col_obj.autoincr?}\n" if args[:debug]
                   dochange = true
                 end
 
-                if col_data.has_key?(:maxlength) and col_obj.maxlength.to_s != col_data[:maxlength].to_s
+                if col_data.key?(:maxlength) && col_obj.maxlength.to_s != col_data[:maxlength].to_s
                   print "Maxlength mismatch on #{col_str}: #{col_data[:maxlength]}, #{col_obj.maxlength}\n" if args[:debug]
                   dochange = true
                 end
 
-                if col_data.has_key?(:null) and col_obj.null?.to_s != col_data[:null].to_s
+                if col_data.key?(:null) && col_obj.null?.to_s != col_data[:null].to_s
                   print "Null mismatch on #{col_str}: #{col_data[:null]}, #{col_obj.null?}\n" if args[:debug]
                   dochange = true
                 end
 
-                if col_data.has_key?(:default) and col_obj.default.to_s != col_data[:default].to_s
+                if col_data.key?(:default) && col_obj.default.to_s != col_data[:default].to_s
                   print "Default mismatch on #{col_str}: #{col_data[:default]}, #{col_obj.default}\n" if args[:debug]
                   dochange = true
                 end
 
-                if col_data.has_key?(:comment) and col_obj.respond_to?(:comment) and col_obj.comment.to_s != col_data[:comment].to_s
+                if col_data.key?(:comment) && col_obj.respond_to?(:comment) && col_obj.comment.to_s != col_data[:comment].to_s
                   print "Comment mismatch on #{col_str}: #{col_data[:comment]}, #{col_obj.comment}\n" if args[:debug]
                   dochange = true
                 end
 
-                if col_data.is_a?(Hash) and col_data[:on_before_alter]
-                  callback_data = col_data[:on_before_alter].call(:db => db, :table => table_obj, :col => col_obj, :col_data => col_data)
-                  if callback_data and callback_data[:action]
+                if col_data.is_a?(Hash) && col_data[:on_before_alter]
+                  callback_data = col_data[:on_before_alter].call(db: db, table: table_obj, col: col_obj, col_data: col_data)
+                  if callback_data && callback_data[:action]
                     if callback_data[:action] == :retry
                       raise Baza::Errors::Retry
                     end
@@ -168,7 +168,7 @@ class Baza::Revision
 
                   col_obj.change(col_data_change)
 
-                  #Change has been made - update cache.
+                  # Change has been made - update cache.
                   cols = table_obj.columns
                 end
 
@@ -176,20 +176,20 @@ class Baza::Revision
               rescue Errno::ENOENT => e
                 print "Column not found: #{table_obj.name}.#{col_data[:name]}.\n" if args[:debug]
 
-                if col_data.has_key?(:renames)
-                  raise "'renames' was not an array for column '#{table_obj.name}.#{col_data[:name]}'." if !col_data[:renames].is_a?(Array)
+                if col_data.key?(:renames)
+                  raise "'renames' was not an array for column '#{table_obj.name}.#{col_data[:name]}'." unless col_data[:renames].is_a?(Array)
 
                   rename_found = false
-                  col_data[:renames].each do |col_name|
+                  col_data[:renames].each do |col_name_rename|
                     begin
-                      col_rename = table_obj.column(col_name)
+                      col_rename = table_obj.column(col_name_rename)
                     rescue Errno::ENOENT => e
                       next
                     end
 
-                    print "Rename #{table_obj.name}.#{col_name} to #{table_obj.name}.#{col_data[:name]}\n" if args[:debug]
-                    if col_data.is_a?(Hash) and col_data[:on_before_rename]
-                      col_data[:on_before_rename].call(:db => db, :table => table_obj, :col => col_rename, :col_data => col_data)
+                    print "Rename #{table_obj.name}.#{col_name_rename} to #{table_obj.name}.#{col_data[:name]}\n" if args[:debug]
+                    if col_data.is_a?(Hash) && col_data[:on_before_rename]
+                      col_data[:on_before_rename].call(db: db, table: table_obj, col: col_rename, col_data: col_data)
                     end
 
                     col_data_change = col_data.clone
@@ -197,11 +197,11 @@ class Baza::Revision
 
                     col_rename.change(col_data_change)
 
-                    #Change has been made - update cache.
+                    # Change has been made - update cache.
                     cols = table_obj.columns
 
-                    if col_data.is_a?(Hash) and col_data[:on_after_rename]
-                      col_data[:on_after_rename].call(:db => db, :table => table_obj, :col => col_rename, :col_data => col_data)
+                    if col_data.is_a?(Hash) && col_data[:on_after_rename]
+                      col_data[:on_after_rename].call(db: db, table: table_obj, col: col_rename, col_data: col_data)
                     end
 
                     rename_found = true
@@ -219,10 +219,10 @@ class Baza::Revision
 
                 col_obj = table_obj.create_columns([col_data])
 
-                #Change has been made - update cache.
+                # Change has been made - update cache.
                 cols = table_obj.columns
 
-                oncreated.call(:db => db, :table => table_obj) if oncreated
+                oncreated.call(db: db, table: table_obj) if oncreated
               end
             end
           end
@@ -235,22 +235,22 @@ class Baza::Revision
                 next
               end
 
-              column_data[:callback].call if column_data.is_a?(Hash) and column_data[:callback]
+              column_data[:callback].call if column_data.is_a?(Hash) && column_data[:callback]
               col_obj.drop
             end
           end
 
           if table_data[:indexes]
             table_data[:indexes].each do |index_data|
-              if index_data.is_a?(String) or index_data.is_a?(Symbol)
-                index_data = {:name => index_data, :columns => [index_data]}
+              if index_data.is_a?(String) || index_data.is_a?(Symbol)
+                index_data = {name: index_data, columns: [index_data]}
               end
 
               begin
                 index_obj = table_obj.index(index_data[:name])
 
                 rewrite_index = false
-                rewrite_index = true if index_data.key?(:unique) and index_data[:unique] != index_obj.unique?
+                rewrite_index = true if index_data.key?(:unique) && index_data[:unique] != index_obj.unique?
 
                 if rewrite_index
                   index_obj.drop
@@ -270,7 +270,7 @@ class Baza::Revision
                 next
               end
 
-              if index_data.is_a?(Hash) and index_data[:callback]
+              if index_data.is_a?(Hash) && index_data[:callback]
                 index_data[:callback].call if index_data[:callback]
               end
 
@@ -278,7 +278,7 @@ class Baza::Revision
             end
           end
 
-          rows_init(:db => db, :table => table_obj, :rows => table_data[:rows]) if table_data and table_data[:rows]
+          rows_init(db: db, table: table_obj, rows: table_data[:rows]) if table_data && table_data[:rows]
         rescue Errno::ENOENT => e
           puts "Table did not exist: '#{table_name}'." if args[:debug]
 
@@ -295,13 +295,13 @@ class Baza::Revision
             end
           end
 
-          if !table_data.key?(:columns)
+          unless table_data.key?(:columns)
             puts "Notice: Skipping creation of '#{table_name}' because no columns were given in hash." if args[:debug]
             next
           end
 
           if table_data[:on_create]
-            table_data[:on_create].call(:db => db, :table_name => table_name, :table_data => table_data)
+            table_data[:on_create].call(db: db, table_name: table_name, table_data: table_data)
           end
 
           table_data_create = table_data.clone
@@ -312,10 +312,10 @@ class Baza::Revision
           table_obj = db.tables[table_name.to_sym]
 
           if table_data[:on_create_after]
-            table_data[:on_create_after].call(:db => db, :table_name => table_name, :table_data => table_data)
+            table_data[:on_create_after].call(db: db, table_name: table_name, table_data: table_data)
           end
 
-          rows_init(:db => db, :table => table_obj, :rows => table_data[:rows]) if table_data[:rows]
+          rows_init(db: db, table: table_obj, rows: table_data[:rows]) if table_data[:rows]
         end
       rescue Baza::Errors::Retry
         retry
@@ -326,7 +326,7 @@ class Baza::Revision
       schema[:tables_remove].each do |table_name, table_data|
         begin
           table_obj = db.tables[table_name.to_sym]
-          table_data[:callback].call(:db => db, :table => table_obj) if table_data.is_a?(Hash) and table_data[:callback]
+          table_data[:callback].call(db: db, table: table_obj) if table_data.is_a?(Hash) && table_data[:callback]
           table_obj.drop
         rescue Errno::ENOENT => e
           next
@@ -335,25 +335,25 @@ class Baza::Revision
     end
 
 
-    #Free cache.
+    # Free cache.
     tables.clear if tables
     tables = nil
   end
 
-  private
+private
 
   ROWS_INIT_ALLOWED_ARGS = [:db, :table, :rows]
-  #This method checks if certain rows are present in a table based on a hash.
+  # This method checks if certain rows are present in a table based on a hash.
   def rows_init(args)
-    args.each do |key, val|
+    args.each do |key, _val|
       raise "Invalid key: '#{key}' (#{key.class.name})." unless ROWS_INIT_ALLOWED_ARGS.include?(key)
     end
 
     db = args[:db]
     table = args[:table]
 
-    raise "No db given." if !db
-    raise "No table given." if !table
+    raise "No db given." unless db
+    raise "No table given." unless table
 
     args[:rows].each do |row_data|
       if row_data[:find_by]
@@ -368,7 +368,7 @@ class Baza::Revision
       args[:db].select(table.name, find_by) do |d_rows|
         rows_found += 1
 
-        if Knj::ArrayExt.hash_diff?(Knj::ArrayExt.hash_sym(row_data[:data]), Knj::ArrayExt.hash_sym(d_rows), {"h2_to_h1" => false})
+        if Knj::ArrayExt.hash_diff?(Knj::ArrayExt.hash_sym(row_data[:data]), Knj::ArrayExt.hash_sym(d_rows), "h2_to_h1" => false)
           print "Data was not right - updating row: #{JSON.generate(row_data[:data])}\n" if args[:debug]
           args[:db].update(table.name, row_data[:data], d_rows)
         end

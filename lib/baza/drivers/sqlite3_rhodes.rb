@@ -1,4 +1,4 @@
-#This class handels SQLite3-specific behaviour.
+# This class handels SQLite3-specific behaviour.
 class Baza::Driver::Sqlite3Rhodes < Baza::BaseSqlDriver
   path = "#{File.dirname(__FILE__)}/sqlite3_rhodes"
 
@@ -44,24 +44,24 @@ class Baza::Driver::Sqlite3Rhodes < Baza::BaseSqlDriver
 
   # Executes a query against the driver.
   def query(sql)
-    return Baza::Driver::Sqlite3::Result.new(self, @conn.execute(sql, sql))
+    Baza::Driver::Sqlite3::Result.new(self, @conn.execute(sql, sql))
   end
 
   def query_ubuf(sql)
-    return Baza::Driver::Sqlite3::UnbufferedResult.new(self, @conn.prepare(sql))
+    Baza::Driver::Sqlite3::UnbufferedResult.new(self, @conn.prepare(sql))
   end
 
   # Escapes a string to be safe to used in a query.
   def escape(string)
-    #This code is taken directly from the documentation so we dont have to rely on the SQLite3::Database class. This way it can also be used with JRuby and IronRuby...
-    #http://sqlite-ruby.rubyforge.org/classes/SQLite/Database.html
-    return string.to_s.gsub(/'/, "''")
+    # This code is taken directly from the documentation so we dont have to rely on the SQLite3::Database class. This way it can also be used with JRuby and IronRuby...
+    # http://sqlite-ruby.rubyforge.org/classes/SQLite/Database.html
+    string.to_s.gsub(/'/, "''")
   end
 
   # Returns the last inserted ID.
   def last_id
     return @conn.last_insert_row_id if @conn.respond_to?(:last_insert_row_id)
-    return query("SELECT last_insert_rowid() AS id").fetch[:id].to_i
+    query("SELECT last_insert_rowid() AS id").fetch[:id].to_i
   end
 
   # Closes the connection to the database.

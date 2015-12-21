@@ -6,7 +6,7 @@ class Baza::InfoSqlite3
     require "tmpdir"
 
     @path = "#{Dir.tmpdir}/baza_sqlite3_test_#{Time.now.to_f.to_s.hash}_#{Random.rand}.sqlite3"
-    File.unlink(path) if File.exists?(@path)
+    File.unlink(path) if File.exist?(@path)
 
     @db = Baza::Db.new({
       type: :sqlite3,
@@ -17,7 +17,7 @@ class Baza::InfoSqlite3
   end
 
   def before
-    @db.tables.list.each do |name, table|
+    @db.tables.list.each do |_name, table|
       table.drop
     end
   end

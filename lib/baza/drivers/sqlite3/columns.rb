@@ -1,16 +1,16 @@
-#This class handels the SQLite3-specific behaviour for columns.
+# This class handels the SQLite3-specific behaviour for columns.
 class Baza::Driver::Sqlite3::Columns
   attr_reader :db
 
-  #Constructor. This should not be called manually.
+  # Constructor. This should not be called manually.
   def initialize(args)
     @args = args
   end
 
   DATA_SQL_ALLOWED_KEYS = [:name, :type, :maxlength, :autoincr, :primarykey, :null, :default, :default_func, :renames, :after, :renames]
-  #Returns SQL for a knjdb-compatible hash.
+  # Returns SQL for a knjdb-compatible hash.
   def data_sql(data)
-    data.each do |key, val|
+    data.each do |key, _val|
       raise "Invalid key: '#{key}' (#{key.class.name})." unless DATA_SQL_ALLOWED_KEYS.include?(key)
     end
 
@@ -33,7 +33,7 @@ class Baza::Driver::Sqlite3::Columns
 
     if !data[:null] && data.key?(:null)
       sql << " NOT NULL"
-      data[:default] = 0 if type == :int if !data.key?(:default) || !data[:default]
+      data[:default] = 0 if !data.key?(:default) || !data[:default] && type == :int
     end
 
     if data.key?(:default_func)
@@ -42,6 +42,6 @@ class Baza::Driver::Sqlite3::Columns
       sql << " DEFAULT '#{@args[:db].escape(data[:default])}'"
     end
 
-    return sql
+    sql
   end
 end

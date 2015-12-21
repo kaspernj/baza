@@ -6,7 +6,7 @@ describe "Objects" do
     require "sqlite3" unless RUBY_ENGINE == "jruby"
     require "tmpdir"
 
-    File.unlink(db_path) if File.exists?(db_path)
+    File.unlink(db_path) if File.exist?(db_path)
     db = Baza::Db.new(type: :sqlite3, path: db_path, debug: false)
 
     schema = {
@@ -79,8 +79,8 @@ describe "Objects" do
     ob
   end
 
-  let(:task) { ob.add(:Task, name: 'Test task', person_id: person.id) }
-  let(:person) { ob.add(:Person, name: 'Kasper') }
+  let(:task) { ob.add(:Task, name: "Test task", person_id: person.id) }
+  let(:person) { ob.add(:Person, name: "Kasper") }
   let(:project) { ob.add(:Project) }
 
   before(:all) do
@@ -107,7 +107,7 @@ describe "Objects" do
       ]
 
       def html
-        return self[:name]
+        self[:name]
       end
     end
 
@@ -118,7 +118,7 @@ describe "Objects" do
     expect(ob.ids_cache[:User].length).to eq 5
 
     user = ob.get(:User, 4)
-    raise "No user returned." if !user
+    raise "No user returned." unless user
     ob.delete(user)
 
     expect(ob.ids_cache[:User].length).to eq 4
@@ -141,26 +141,26 @@ describe "Objects" do
     ob.adds(:User, userd)
     users = ob.list(:User).to_a
 
-    #Stress it to test threadsafety...
+    # Stress it to test threadsafety...
     threads = []
     0.upto(5) do |tc|
       threads << Thread.new do
         0.upto(5) do |ic|
-          user = ob.add(:User, {:username => "User #{tc}-#{ic}"})
-          raise "No user returned." if !user
+          user = ob.add(:User, username: "User #{tc}-#{ic}")
+          raise "No user returned." unless user
           ob.delete(user)
 
-          user1 = ob.add(:User, {:username => "User #{tc}-#{ic}-1"})
-          user2 = ob.add(:User, {:username => "User #{tc}-#{ic}-2"})
-          user3 = ob.add(:User, {:username => "User #{tc}-#{ic}-3"})
+          user1 = ob.add(:User, username: "User #{tc}-#{ic}-1")
+          user2 = ob.add(:User, username: "User #{tc}-#{ic}-2")
+          user3 = ob.add(:User, username: "User #{tc}-#{ic}-3")
 
-          raise "Missing user?" if !user1 or !user2 or !user3 or user1.deleted? or user2.deleted? or user3.deleted?
+          raise "Missing user?" if !user1 || !user2 || !user3 || user1.deleted? || user2.deleted? || user3.deleted?
           ob.deletes([user1, user2, user3])
 
           count = 0
-          users.each do |user|
+          users.each do |user_i|
             count += 1
-            user[:username] = "#{user[:username]}." unless user.deleted?
+            user_i[:username] = "#{user_i[:username]}." unless user_i.deleted?
           end
 
           expect(count).to eq 21
@@ -175,9 +175,9 @@ describe "Objects" do
     class Group < Baza::Model; end
 
     ob2 = Baza::ModelHandler.new(
-      :db => db,
-      :datarow => true,
-      :require => false
+      db: db,
+      datarow: true,
+      require: false
     )
 
     threads = []
@@ -186,71 +186,73 @@ describe "Objects" do
         Thread.current.abort_on_exception = true
 
         0.upto(5) do
-          ret = ob2.add(:Group, {groupname: "User 1"}, {skip_ret: true})
+          ret = ob2.add(:Group, {groupname: "User 1"}, skip_ret: true)
           raise "Expected empty return but got something: #{ret}" if ret
         end
       end
     end
 
-    threads.each do |thread|
-      thread.join
-    end
+    threads.each(&:join)
   end
 
   it "should delete the temporary database." do
-    File.unlink(db_path) if File.exists?(db_path)
+    File.unlink(db_path) if File.exist?(db_path)
   end
 
-  #Moved from "knjrbfw_spec.rb"
+  # Moved from "knjrbfw_spec.rb"
   it "should be able to generate a sample SQLite database and add a sample table, with sample columns and with a sample index to it" do
-    require 'tmpdir'
+    require "tmpdir"
 
     db_path = "#{Dir.tmpdir}/knjrbfw_test_sqlite3.sqlite3"
     db = Baza::Db.new(
-      :type => :sqlite3,
-      :path => db_path,
-      :index_append_table_name => true
+      type: :sqlite3,
+      path: db_path,
+      index_append_table_name: true
     )
 
-    db.tables.create("Project", {
-      :columns => [
-        {:name => :id, :type => :int, :autoincr => true, :primarykey => true},
-        {:name => :category_id, :type => :int},
-        {:name => :name, :type => :varchar}
+    db.tables.create(
+      "Project",
+      columns: [
+        {name: :id, type: :int, autoincr: true, primarykey: true},
+        {name: :category_id, type: :int},
+        {name: :name, type: :varchar}
       ],
-      :indexes => [
-        {:name => :category_id, :columns => [:category_id]}
+      indexes: [
+        {name: :category_id, columns: [:category_id]}
       ]
-    })
+    )
 
-    db.tables.create("Task", {
-      :columns => [
-        {:name => :id, :type => :int, :autoincr => true, :primarykey => true},
-        {:name => :project_id, :type => :int},
-        {:name => :person_id, :type => :int},
-        {:name => :name, :type => :varchar}
+    db.tables.create(
+      "Task",
+      columns: [
+        {name: :id, type: :int, autoincr: true, primarykey: true},
+        {name: :project_id, type: :int},
+        {name: :person_id, type: :int},
+        {name: :name, type: :varchar}
       ],
-      :indexes => [
-        {:name => :project_id, :columns => [:project_id]}
+      indexes: [
+        {name: :project_id, columns: [:project_id]}
       ]
-    })
+    )
 
-    db.tables.create("Person", {
-      :columns => [
-        {:name => :id, :type => :int, :autoincr => true, :primarykey => true},
-        {:name => :name, :type => :varchar}
+    db.tables.create(
+      "Person",
+      columns: [
+        {name: :id, type: :int, autoincr: true, primarykey: true},
+        {name: :name, type: :varchar}
       ]
-    })
+    )
 
-    db.tables.create("Timelog", {
-      :columns => [
-        {:name => :id, :type => :int, :autoincr => true, :primarykey => true},
-        {:name => :person_id, :type => :int}
+    db.tables.create(
+      "Timelog",
+      columns: [
+        {name: :id, type: :int, autoincr: true, primarykey: true},
+        {name: :person_id, type: :int}
       ],
-      :indexes => [
+      indexes: [
         :person_id
       ]
-    })
+    )
 
     table = db.tables[:Project]
 
@@ -258,10 +260,8 @@ describe "Objects" do
     raise "Could not find the sample-index 'category_id' that should have been created." unless indexes[:Project__category_id]
 
 
-    #If we insert a row the ID should increase and the name should be the same as inserted (or something is very very wrong)...
-    db.insert("Project", {
-      "name" => "Test project"
-    })
+    # If we insert a row the ID should increase and the name should be the same as inserted (or something is very very wrong)...
+    db.insert("Project", "name" => "Test project")
 
     count = 0
     db.q("SELECT * FROM Project") do |d|
@@ -274,37 +274,35 @@ describe "Objects" do
   end
 
   it "should be able to automatic generate methods on datarow-classes (has_many, has_one)." do
-    ob = Baza::ModelHandler.new(:db => db, :datarow => true, :require => false)
+    ob = Baza::ModelHandler.new(db: db, datarow: true, require: false)
 
-    ob.add(:Person, {
-      :name => "Kasper"
-    })
-    ob.add(:Task, {
-      :name => "Test task",
-      :person_id => person.id,
-      :project_id => project.id
-    })
+    ob.add(:Person, name: "Kasper")
+    ob.add(:Task,
+           name: "Test task",
+           person_id: person.id,
+           project_id: project.id
+    )
 
     begin
-      obb.add(:Task, {:name => "Test task"})
+      obb.add(:Task, name: "Test task")
       raise "Method should fail but didnt."
     rescue
-      #ignore.
+      # Ignore.
     end
 
 
-    #Test 'list_invalid_required'.
-    db.insert(:Task, :name => "Invalid require")
+    # Test 'list_invalid_required'.
+    db.insert(:Task, name: "Invalid require")
     id = db.last_id
     found = false
 
-    ob.list_invalid_required(:class => :Task) do |d|
+    ob.list_invalid_required(class: :Task) do |d|
       raise "Expected object ID to be #{id} but it wasnt: #{d[:obj].id}" if d[:obj].id.to_i != id.to_i
       ob.delete(d[:obj])
       found = true
     end
 
-    raise "Expected to find a task but didnt." if !found
+    raise "Expected to find a task but didnt." unless found
 
 
     ret_proc = []
@@ -324,22 +322,22 @@ describe "Objects" do
       ret_proc << task
     end
 
-    raise "When given a block the return should be nil so it doesnt hold weak-ref-objects in memory but it didnt return nil." if ret_test != nil
+    raise "When given a block the return should be nil so it doesnt hold weak-ref-objects in memory but it didnt return nil." unless ret_test == nil
     raise "list for project with proc should return one task but didnt (#{ret_proc.length})." if ret_proc.length != 1
 
     person = tasks.first.person
     project_second = tasks.first.project
 
-    raise "Returned object was not a person on task." if !person.is_a?(Person)
-    raise "Returned object was not a project on task." if !project_second.is_a?(Project)
+    raise "Returned object was not a person on task." unless person.is_a?(Person)
+    raise "Returned object was not a project on task." unless project_second.is_a?(Project)
 
 
-    #Check that has_many-depending is actually working.
+    # Check that has_many-depending is actually working.
     begin
       ob.delete(project)
       raise "It was possible to delete project 1 even though task 1 depended on it!"
     rescue
-      #this should happen - it should not possible to delete project 1 because task 1 depends on it."
+      # This should happen - it should not possible to delete project 1 because task 1 depends on it."
     end
   end
 
@@ -347,24 +345,24 @@ describe "Objects" do
     task
     list = ob.list_optshash(:Task)
     list.length.should eq 1
-    list[1].should eq 'Test task'
+    list[1].should eq "Test task"
   end
 
   it "should be able to connect to objects 'no-html' callback and test it." do
     task
-    ob.events.connect(:no_html) do |event, classname|
+    ob.events.connect(:no_html) do |_event, classname|
       "[no #{classname.to_s.downcase}]"
     end
 
     expect(task.person_html).to eq "Kasper"
-    task.update(:person_id => 0)
+    task.update(person_id: 0)
     expect(task.person_html).to eq "[no person]"
   end
 
   it "should be able to to multiple additions and delete objects through a buffer" do
     objs = []
     0.upto(500) do
-      objs << {:name => :Kasper}
+      objs << {name: :Kasper}
     end
 
     ob.adds(:Person, objs)
@@ -374,7 +372,7 @@ describe "Objects" do
     db.q_buffer do |buffer|
       ob.list(:Person) do |person|
         count += 1
-        ob.delete(person, :db_buffer => buffer)
+        ob.delete(person, db_buffer: buffer)
       end
 
       buffer.flush
@@ -383,23 +381,15 @@ describe "Objects" do
     raise "Expected count to be #{pers_length} but it wasnt: #{count}" if count != pers_length
 
     persons = ob.list(:Person).to_a
-    raise "Expected persons count to be 0 but it wasnt: #{persons.map{|e| e.data} }" if persons.length > 0
+    raise "Expected persons count to be 0 but it wasnt: #{persons.map(&:data)}" if persons.length > 0
   end
 
   it "should do autozero when deleting objects" do
-    person1 = ob.add(:Person, {
-      :name => "Kasper"
-    })
-    person2 = ob.add(:Person, {
-      :name => "Charlotte"
-    })
+    person1 = ob.add(:Person, name: "Kasper")
+    person2 = ob.add(:Person, name: "Charlotte")
 
-    timelog1 = ob.add(:Timelog, {
-      :person_id => person1.id
-    })
-    timelog2 = ob.add(:Timelog, {
-      :person_id => person2.id
-    })
+    timelog1 = ob.add(:Timelog, person_id: person1.id)
+    timelog2 = ob.add(:Timelog, person_id: person2.id)
 
     ob.delete(person1)
 
@@ -409,36 +399,29 @@ describe "Objects" do
 
   it "should be able to do multiple deletes from ids" do
     ids = []
-    1.upto(10) do |count|
+    1.upto(10) do |_count|
       ids << ob.add(:Person).id
     end
 
-    ob.delete_ids(:class => :Person, :ids => ids)
+    ob.delete_ids(class: :Person, ids: ids)
   end
 
   it "get_or_add" do
-    person1 = ob.add(:Person, {
-      :name => "get_or_add"
-    })
-
-    person2 = ob.get_or_add(:Person, {
-      :name => "get_or_add"
-    })
+    person1 = ob.add(:Person, name: "get_or_add")
+    person2 = ob.get_or_add(:Person, name: "get_or_add")
 
     person2.id.should eql(person1.id)
     person2[:name].should eql("get_or_add")
 
-    person3 = ob.get_or_add(:Person, {
-      :name => "get_or_add3"
-    })
+    person3 = ob.get_or_add(:Person, name: "get_or_add3")
 
     raise "Failure ID was the same" if person3.id == person2.id
     person3[:name].should eql("get_or_add3")
   end
 
   it "should delete the temp database again." do
-    require 'tmpdir'
+    require "tmpdir"
     db_path = "#{Dir.tmpdir}/knjrbfw_test_sqlite3.sqlite3"
-    File.unlink(db_path) if File.exists?(db_path)
+    File.unlink(db_path) if File.exist?(db_path)
   end
 end

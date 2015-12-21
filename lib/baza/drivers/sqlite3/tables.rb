@@ -16,7 +16,7 @@ class Baza::Driver::Sqlite3::Tables
       return ret
     end
 
-    self.list do |table_obj|
+    list do |table_obj|
       return table_obj if table_obj.name == table_name
     end
 
@@ -27,7 +27,7 @@ class Baza::Driver::Sqlite3::Tables
     ret = {} unless block_given?
 
     @list_mutex.synchronize do
-      q_tables = @db.select("sqlite_master", {"type" => "table"}, {orderby: "name"}) do |d_tables|
+      q_tables = @db.select("sqlite_master", {type: "table"}, orderby: "name") do |d_tables|
         next if d_tables[:name] == "sqlite_sequence"
 
         tname = d_tables[:name].to_sym
@@ -57,7 +57,7 @@ class Baza::Driver::Sqlite3::Tables
     end
   end
 
-  def exists_in_list? table
+  def exists_in_list?(table)
     @list.key?(table.name)
   end
 
@@ -73,7 +73,7 @@ class Baza::Driver::Sqlite3::Tables
 
   CREATE_ALLOWED_KEYS = [:indexes, :columns]
   def create(name, data, args = nil)
-    data.each do |key, val|
+    data.each do |key, _val|
       raise "Invalid key: '#{key}' (#{key.class.name})." unless CREATE_ALLOWED_KEYS.include?(key)
     end
 
@@ -81,7 +81,7 @@ class Baza::Driver::Sqlite3::Tables
 
     first = true
     data[:columns].each do |col_data|
-      sql << ", " if !first
+      sql << ", " unless first
       first = false if first
       sql << @db.cols.data_sql(col_data)
     end

@@ -8,11 +8,9 @@ class Baza::Driver::Mysql2::Result < Baza::ResultBase
 
   # Returns a single result.
   def fetch
-    begin
-      return to_enum.next
-    rescue StopIteration
-      return false
-    end
+    return to_enum.next
+  rescue StopIteration
+    return false
   end
 
   # Loops over every single result yielding it.

@@ -96,7 +96,7 @@ private
       hash[@keys[count]] = value
     end
 
-    return hash
+    hash
   end
 
   def translate_type(result, count)

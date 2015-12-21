@@ -1,4 +1,4 @@
-#This class handels SQLite3-specific behaviour.
+# This class handels SQLite3-specific behaviour.
 class Baza::Driver::Sqlite3Java < Baza::JdbcDriver
   path = "#{File.dirname(__FILE__)}/sqlite3_java"
 
@@ -14,7 +14,7 @@ class Baza::Driver::Sqlite3Java < Baza::JdbcDriver
 
   attr_reader :mutex_statement_reader
 
-  #Helper to enable automatic registering of database using Baza::Db.from_object
+  # Helper to enable automatic registering of database using Baza::Db.from_object
   def self.from_object(args)
     if args[:object].class.name == "Java::OrgSqlite::SQLiteConnection"
       return {
@@ -27,7 +27,7 @@ class Baza::Driver::Sqlite3Java < Baza::JdbcDriver
     end
   end
 
-  #Constructor. This should not be called manually.
+  # Constructor. This should not be called manually.
   def initialize(baza_db)
     super
 
@@ -46,19 +46,19 @@ class Baza::Driver::Sqlite3Java < Baza::JdbcDriver
     raise "No path was given." unless @path
 
     @stmt = nil
-    @conn = java.sql.DriverManager::getConnection("jdbc:sqlite:#{@path}")
+    @conn = java.sql.DriverManager.getConnection("jdbc:sqlite:#{@path}")
   end
 
-  #Escapes a string to be safe to used in a query.
+  # Escapes a string to be safe to used in a query.
   def escape(string)
-    #This code is taken directly from the documentation so we dont have to rely on the SQLite3::Database class. This way it can also be used with JRuby and IronRuby...
-    #http://sqlite-ruby.rubyforge.org/classes/SQLite/Database.html
-    return string.to_s.gsub(/'/, "''")
+    # This code is taken directly from the documentation so we dont have to rely on the SQLite3::Database class. This way it can also be used with JRuby and IronRuby...
+    # http://sqlite-ruby.rubyforge.org/classes/SQLite/Database.html
+    string.to_s.gsub(/'/, "''")
   end
 
-  #Returns the last inserted ID.
+  # Returns the last inserted ID.
   def last_id
-    return query("SELECT LAST_INSERT_ROWID() AS id").fetch[:id].to_i
+    query("SELECT LAST_INSERT_ROWID() AS id").fetch[:id].to_i
   end
 
   def transaction

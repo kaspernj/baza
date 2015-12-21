@@ -13,7 +13,7 @@ class Baza::InfoActiveRecordMysql
     )
     conn = conn_pool.connection
 
-    return {pool: conn_pool, conn: conn}
+    {pool: conn_pool, conn: conn}
   end
 
   def initialize(args = {})
@@ -26,7 +26,7 @@ class Baza::InfoActiveRecordMysql
   end
 
   def before
-    @db.tables.list.each do |name, table|
+    @db.tables.list.each do |_name, table|
       table.drop
     end
   end

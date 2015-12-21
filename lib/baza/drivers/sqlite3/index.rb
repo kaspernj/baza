@@ -8,15 +8,15 @@ class Baza::Driver::Sqlite3::Index < Baza::Index
   end
 
   def name
-    return @args[:data][:name]
+    @args[:data][:name]
   end
 
   def table_name
-    return @args[:table_name]
+    @args[:table_name]
   end
 
   def table
-    return @db.tables[table_name]
+    @db.tables[table_name]
   end
 
   def drop
@@ -35,7 +35,7 @@ class Baza::Driver::Sqlite3::Index < Baza::Index
   end
 
   def data
-    return {
+    {
       name: name,
       unique: unique?,
       columns: @columns

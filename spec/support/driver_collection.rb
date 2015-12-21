@@ -5,18 +5,16 @@ shared_examples_for "a baza driver" do
   let(:db2) { driver2.db }
   let(:db_with_type_translation) { constant.new(type_translation: true, debug: false).db }
   let(:row) do
-    test_table.insert(text: 'Kasper', number: 30, float: 4.5)
-    db.select(:test, text: 'Kasper').fetch
+    test_table.insert(text: "Kasper", number: 30, float: 4.5)
+    db.select(:test, text: "Kasper").fetch
   end
   let(:test_table) do
-    db.tables.create("test", {
-      columns: [
-        {name: 'id', type: :int, autoincr: true, primarykey: true},
-        {name: 'text', type: :varchar},
-        {name: 'number', type: :int, default: 0},
-        {name: 'float', type: :float, default: 0.0}
-      ]
-    })
+    db.tables.create("test", columns: [
+      {name: "id", type: :int, autoincr: true, primarykey: true},
+      {name: "text", type: :varchar},
+      {name: "number", type: :int, default: 0},
+      {name: "float", type: :float, default: 0.0}
+    ])
     db.tables[:test]
   end
 
@@ -74,21 +72,21 @@ shared_examples_for "a baza driver" do
     end
 
     block_ran = 0
-    idq = Baza::Idquery.new(db: db, debug: false, table: :test, query: "SELECT id FROM test") do |data|
+    idq = Baza::Idquery.new(db: db, debug: false, table: :test, query: "SELECT id FROM test") do |_data|
       block_ran += 1
     end
 
     raise "Block with should have ran too little: #{block_ran}." if block_ran < rows_count
 
     block_ran = 0
-    db.select(:test, {}, idquery: true) do |data|
+    db.select(:test, {}, idquery: true) do |_data|
       block_ran += 1
     end
 
     raise "Block with should have ran too little: #{block_ran}." if block_ran < rows_count
   end
 
-  it 'does unbuffered queries' do
+  it "does unbuffered queries" do
     test_table
 
     10.times do |count|
@@ -107,7 +105,7 @@ shared_examples_for "a baza driver" do
   it "should do upserting" do
     test_table.create_columns([{name: "nickname", type: :varchar}])
 
-    #Test upserting.
+    # Test upserting.
     data = {text: "upsert - Kasper Johansen"}
     data2 = {text: "upsert - Kasper Nielsen Johansen"}
     sel = {nickname: "upsert - kaspernj"}
@@ -137,22 +135,22 @@ shared_examples_for "a baza driver" do
     dump.dump(str_io)
     str_io.rewind
 
-    #Remember some numbers for validation.
+    # Remember some numbers for validation.
     tables_count = db.tables.list.length
 
-    #Remove everything in the db.
+    # Remove everything in the db.
     db.tables.list do |table|
       table.drop unless table.native?
     end
 
-    #Run the exported SQL.
+    # Run the exported SQL.
     db.transaction do
       str_io.each_line do |sql|
         db.q(sql)
       end
     end
 
-    #Vaildate import.
+    # Vaildate import.
     raise "Not same amount of tables: #{tables_count}, #{db.tables.list.length}" if tables_count != db.tables.list.length
   end
 
@@ -160,29 +158,33 @@ shared_examples_for "a baza driver" do
     test_table
 
     Baza::Revision.new.init_db(db: db, debug: false, schema: {
-      tables: {
-        new_test_table: {
-          renames: [:test]
-        }
-      }
-    })
+                                 tables: {
+                                   new_test_table: {
+                                     renames: [:test]
+                                   }
+                                 }
+                               })
     tables = db.tables.list
     raise "Didnt expect table 'test' to exist but it did." if tables.key?(:test)
-    raise "Expected 'new_test_table' to exist but it didnt." if !tables.key?(:new_test_table)
+    raise "Expected 'new_test_table' to exist but it didnt." unless tables.key?(:new_test_table)
   end
 
   it "should rename columns in revisions" do
     test_table
 
-    Baza::Revision.new.init_db(db: db, debug: false, schema: {
-      tables: {
-        new_test_table: {
-          columns: [
-            {name: :new_name, type: :varchar, renames: [:text]}
-          ]
+    Baza::Revision.new.init_db(
+      db: db,
+      debug: false,
+      schema: {
+        tables: {
+          new_test_table: {
+            columns: [
+              {name: :new_name, type: :varchar, renames: [:text]}
+            ]
+          }
         }
       }
-    })
+    )
     columns = db.tables[:new_test_table].columns
     raise "Didnt expect 'text' to exist but it did." if columns.key?(:text)
     raise "Expected 'new_name'-column to exist but it didnt." unless columns.key?(:new_name)
@@ -190,10 +192,10 @@ shared_examples_for "a baza driver" do
 
   it "should generate proper sql" do
     time = Time.new(1985, 6, 17, 10, 30)
-    db.insert(:test, {:date => time}, :return_sql => true).should eql("INSERT INTO `test` (`date`) VALUES ('1985-06-17 10:30:00')")
+    db.insert(:test, {date: time}, return_sql: true).should eql("INSERT INTO `test` (`date`) VALUES ('1985-06-17 10:30:00')")
 
     date = Date.new(1985, 6, 17)
-    db.insert(:test, {:date => date}, :return_sql => true).should eql("INSERT INTO `test` (`date`) VALUES ('1985-06-17')")
+    db.insert(:test, {date: date}, return_sql: true).should eql("INSERT INTO `test` (`date`) VALUES ('1985-06-17')")
   end
 
   it "should be able to make new connections based on given objects" do
@@ -204,12 +206,10 @@ shared_examples_for "a baza driver" do
   end
 
   it "should be able to do ID-queries through the select-method" do
-    db.tables.create(:test_table, {
-      :columns => [
-        {:name => :idrow, :type => :int, :autoincr => true, :primarykey => true},
-        {:name => :name, :type => :varchar}
-      ]
-    })
+    db.tables.create(:test_table, columns: [
+      {name: :idrow, type: :int, autoincr: true, primarykey: true},
+      {name: :name, type: :varchar}
+    ])
 
     count = 0
     100.times do
@@ -229,26 +229,24 @@ shared_examples_for "a baza driver" do
       row[:name].should eq "Kasper #{count_found}"
     end
 
-    expect(count_found).to eq 10000
+    expect(count_found).to eq 10_000
   end
 
   it "should be able to use query buffers" do
-    db.tables.create(:test_table, {
-      columns: [
-        {name: :id, type: :int, autoincr: true, primarykey: true},
-        {name: :name, type: :varchar}
-      ]
-    })
+    db.tables.create(:test_table, columns: [
+      {name: :id, type: :int, autoincr: true, primarykey: true},
+      {name: :name, type: :varchar}
+    ])
 
     upsert = false
     count_inserts = 0
     db.q_buffer do |buffer|
       2500.times do |count|
         if upsert
-          buffer.upsert(:test_table, {name: "Kasper #{count}"}, {name: "Kasper #{count}"})
+          buffer.upsert(:test_table, {name: "Kasper #{count}"}, name: "Kasper #{count}")
           upsert = false
         else
-          buffer.insert(:test_table, {name: "Kasper #{count}"})
+          buffer.insert(:test_table, name: "Kasper #{count}")
           upsert = true
         end
 
@@ -290,34 +288,31 @@ shared_examples_for "a baza driver" do
 
     expect(count).to eq 2500
 
-    #Test the flush-async which flushes transactions in a thread asyncronous.
+    # Test the flush-async which flushes transactions in a thread asyncronous.
     db.q_buffer(flush_async: true) do |buffer|
       count = 0
       db.select(:test_table) do |row|
         count += 1
 
-        if count == 1000
-          time_start = Time.now.to_f
-        end
+        time_start = Time.now.to_f if count == 1000
 
         buffer.delete(:test_table, id: row[:id])
 
-        if count == 1000
-          time_end = Time.now.to_f
+        next unless count == 1000
+        time_end = Time.now.to_f
 
-          time_spent = time_end - time_start
-          raise "Too much time spent: '#{time_spent}'." if time_spent > 0.01
-        end
+        time_spent = time_end - time_start
+        raise "Too much time spent: '#{time_spent}'." if time_spent > 0.01
       end
     end
 
     expect(test_table.rows_count).to eq 0
   end
 
-  describe 'results' do
+  describe "results" do
     before do
-      test_table.insert(text: 'test 1')
-      test_table.insert(text: 'test 2')
+      test_table.insert(text: "test 1")
+      test_table.insert(text: "test 2")
     end
 
     it '#to_a' do
@@ -342,32 +337,30 @@ shared_examples_for "a baza driver" do
     end
   end
 
-  it 'counts' do
-    test_table.insert(text: 'test 1')
-    expect(db.count(:test, text: 'test 1')).to eq 1
+  it "counts" do
+    test_table.insert(text: "test 1")
+    expect(db.count(:test, text: "test 1")).to eq 1
   end
 
-  it 'doesnt do type translation by default' do
+  it "doesnt do type translation by default" do
     expect(row.fetch(:text).class).to eq String
     expect(row.fetch(:number).class).to eq String
     expect(row.fetch(:float).class).to eq String
   end
 
-  it 'does type translation' do
-    db_with_type_translation.tables.create(:test, {
-      columns: [
-        {name: "id", type: :int, autoincr: true, primarykey: true},
-        {name: "text", type: :varchar},
-        {name: 'number', type: :int},
-        {name: 'float', type: :float},
-        {name: 'created_at', type: :datetime},
-        {name: 'date', type: :date}
-      ]
-    })
+  it "does type translation" do
+    db_with_type_translation.tables.create(:test, columns: [
+      {name: "id", type: :int, autoincr: true, primarykey: true},
+      {name: "text", type: :varchar},
+      {name: "number", type: :int},
+      {name: "float", type: :float},
+      {name: "created_at", type: :datetime},
+      {name: "date", type: :date}
+    ])
 
-    db_with_type_translation.insert(:test, text: 'Kasper', number: 30, float: 4.5, created_at: Time.now, date: Date.new(2015, 06, 17))
+    db_with_type_translation.insert(:test, text: "Kasper", number: 30, float: 4.5, created_at: Time.now, date: Date.new(2015, 06, 17))
 
-    row = db_with_type_translation.select(:test, text: 'Kasper').fetch
+    row = db_with_type_translation.select(:test, text: "Kasper").fetch
 
     expect(row.fetch(:text).class).to eq String
     expect(row.fetch(:number).class).to eq Fixnum

@@ -1,10 +1,10 @@
 require "monitor"
 
-#This class handels various MySQL-table-specific behaviour.
+# This class handels various MySQL-table-specific behaviour.
 class Baza::Driver::Mysql::Tables
   attr_reader :db, :list
 
-  #Constructor. This should not be called manually.
+  # Constructor. This should not be called manually.
   def initialize(args)
     @args = args
     @db = @args[:db]
@@ -13,12 +13,12 @@ class Baza::Driver::Mysql::Tables
     @list_should_be_reloaded = true
   end
 
-  #Cleans the wref-map.
+  # Cleans the wref-map.
   def clean
     @list.clean
   end
 
-  #Returns a table by the given table-name.
+  # Returns a table by the given table-name.
   def [](table_name)
     table_name = table_name.to_sym
 
@@ -38,7 +38,7 @@ class Baza::Driver::Mysql::Tables
     raise Errno::ENOENT, "Table was not found: '#{table_name}' (#{table_name.class.name}) (tables: #{tables})."
   end
 
-  #Yields the tables of the current database.
+  # Yields the tables of the current database.
   def list(args = {})
     ret = {} unless block_given?
 
@@ -76,7 +76,7 @@ class Baza::Driver::Mysql::Tables
   end
 
   CREATE_ALLOWED_KEYS = [:columns, :indexes, :temp, :return_sql]
-  #Creates a new table by the given name and data.
+  # Creates a new table by the given name and data.
   def create(name, data, args = nil)
     raise "No columns was given for '#{name}'." if !data[:columns] || data[:columns].empty?
 
@@ -94,13 +94,11 @@ class Baza::Driver::Mysql::Tables
 
     if data[:indexes] && !data[:indexes].empty?
       sql << ", "
-      sql << Baza::Driver::Mysql::Table.create_indexes(data[:indexes], {
-        db: @db,
-        return_sql: true,
-        create: false,
-        on_table: false,
-        table_name: name
-      })
+      sql << Baza::Driver::Mysql::Table.create_indexes(data[:indexes],         db: @db,
+                                                                               return_sql: true,
+                                                                               create: false,
+                                                                               on_table: false,
+                                                                               table_name: name)
     end
 
     sql << ")"
@@ -109,7 +107,7 @@ class Baza::Driver::Mysql::Tables
     @db.query(sql)
   end
 
-  private
+private
 
   def add_to_list(table)
     raise "Already exists: '#{table.name}'." if @list.key?(table.name) && @list[table.name].__id__ != table.__id__

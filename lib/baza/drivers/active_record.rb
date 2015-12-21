@@ -26,14 +26,14 @@ class Baza::Driver::ActiveRecord
       }
     end
 
-    return nil
+    nil
   end
 
   def initialize(baza)
     @baza = baza
     @conn = @baza.opts[:conn]
 
-    raise 'No conn given' unless @conn
+    raise "No conn given" unless @conn
 
     conn_name = @conn.class.name.to_s.downcase
 
@@ -48,7 +48,7 @@ class Baza::Driver::ActiveRecord
       @sep_col = "`"
       @sep_val = "'"
       @conn_type = :mysql
-      @result_constant = Baza::Driver::Mysql::Result unless RUBY_PLATFORM == 'java'
+      @result_constant = Baza::Driver::Mysql::Result unless RUBY_PLATFORM == "java"
     elsif conn_name.include?("sqlite")
       @sep_table = "`"
       @sep_col = "`"
@@ -65,7 +65,7 @@ class Baza::Driver::ActiveRecord
     @result_constant.new(self, @conn.execute(sql))
   end
 
-  alias query_ubuf query
+  alias_method :query_ubuf, :query
 
   def escape(str)
     @conn.quote_string(str.to_s)
@@ -74,13 +74,13 @@ class Baza::Driver::ActiveRecord
   def esc_col(string)
     string = string.to_s
     raise "Invalid column-string: #{string}" if string.include?(@sep_col)
-    return string
+    string
   end
 
   def esc_table(string)
     string = string.to_s
     raise "Invalid column-string: #{string}" if string.include?(@sep_col)
-    return string
+    string
   end
 
   def close

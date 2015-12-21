@@ -8,7 +8,7 @@ class Baza::Driver::Sqlite3::Result < Baza::ResultBase
       @statement.execute
       @type_translation = driver.baza.opts[:type_translation]
       @types = statement.types if @type_translation == true
-      @columns = statement.columns.map { |column| column.to_sym }
+      @columns = statement.columns.map(&:to_sym)
       read_results
       @index = -1
     ensure
@@ -24,7 +24,7 @@ class Baza::Driver::Sqlite3::Result < Baza::ResultBase
       if @types
         row.map!.with_index { |value, index| translate_type(value, @types[index]) } if @types
       elsif @type_translation == :string
-        row.map! { |value| value.to_s }
+        row.map!(&:to_s)
       end
 
       return Hash[*@columns.zip(row).flatten]
@@ -52,9 +52,9 @@ private
 
   def translate_type(value, type)
     if value
-      if type == 'datetime'
+      if type == "datetime"
         return Time.parse(value)
-      elsif type == 'date'
+      elsif type == "date"
         return Date.parse(value)
       else
         return value

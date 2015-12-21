@@ -1,4 +1,4 @@
-#This class controls the results for the normal MySQL-driver.
+# This class controls the results for the normal MySQL-driver.
 class Baza::Driver::Mysql::Result < Baza::ResultBase
   INT_TYPES = {
     ::Mysql::Field::TYPE_DECIMAL => true,
@@ -18,7 +18,7 @@ class Baza::Driver::Mysql::Result < Baza::ResultBase
     ::Mysql::Field::TYPE_DATE => true
   }
 
-  #Constructor. This should not be called manually.
+  # Constructor. This should not be called manually.
   def initialize(driver, result)
     @driver = driver
     @result = result
@@ -36,7 +36,7 @@ class Baza::Driver::Mysql::Result < Baza::ResultBase
     end
   end
 
-  #Returns a single result as a hash with symbols as keys.
+  # Returns a single result as a hash with symbols as keys.
   def fetch
     fetched = nil
     @mutex.synchronize do
@@ -51,10 +51,10 @@ class Baza::Driver::Mysql::Result < Baza::ResultBase
       end
     end
 
-    return Hash[*@keys.zip(fetched).flatten]
+    Hash[*@keys.zip(fetched).flatten]
   end
 
-  #Loops over every result yielding it.
+  # Loops over every result yielding it.
   def each
     while data = fetch
       yield data

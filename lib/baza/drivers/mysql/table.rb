@@ -14,35 +14,35 @@ class Baza::Driver::Mysql::Table < Baza::Table
   end
 
   def reload
-    @data = @db.q("SHOW TABLE STATUS WHERE `Name` = '#{@db.esc(self.name)}'").fetch
+    @data = @db.q("SHOW TABLE STATUS WHERE `Name` = '#{@db.esc(name)}'").fetch
   end
 
-  #Used to validate in Wref::Map.
+  # Used to validate in Wref::Map.
   def __object_unique_id__
-    return @data[:Name]
+    @data[:Name]
   end
 
   def drop
-    raise "Cant drop native table: '#{self.name}'." if self.native?
-    @db.query("DROP TABLE `#{@db.esc_table(self.name)}`")
+    raise "Cant drop native table: '#{name}'." if self.native?
+    @db.query("DROP TABLE `#{@db.esc_table(name)}`")
     @tables.__send__(:remove_from_list, self)
-    return nil
+    nil
   end
 
-  #Returns true if the table is safe to drop.
+  # Returns true if the table is safe to drop.
   def native?
     data = @db.q("SELECT DATABASE() AS db").fetch
     return true if data[:db] == "mysql"
-    return false
+    false
   end
 
   def optimize
-    @db.query("OPTIMIZE TABLE `#{@db.esc_table(self.name)}`")
-    return self
+    @db.query("OPTIMIZE TABLE `#{@db.esc_table(name)}`")
+    self
   end
 
   def rows_count
-    return @db.q("SELECT COUNT(*) AS count FROM `#{@db.esc_table(self.name)}`").fetch[:count].to_i
+    @db.q("SELECT COUNT(*) AS count FROM `#{@db.esc_table(name)}`").fetch[:count].to_i
   end
 
   def column(name)
@@ -52,7 +52,7 @@ class Baza::Driver::Mysql::Table < Baza::Table
       return @list[name]
     end
 
-    self.columns(:name => name) do |col|
+    columns(name: name) do |col|
       return col if col.name == name
     end
 
@@ -144,14 +144,14 @@ class Baza::Driver::Mysql::Table < Baza::Table
   def create_columns(col_arr)
     @db.transaction do
       col_arr.each do |col_data|
-        sql = "ALTER TABLE `#{self.name}` ADD COLUMN #{@db.cols.data_sql(col_data)};"
+        sql = "ALTER TABLE `#{name}` ADD COLUMN #{@db.cols.data_sql(col_data)};"
         @db.query(sql)
       end
     end
   end
 
   def create_indexes(index_arr, args = {})
-    return Baza::Driver::Mysql::Table.create_indexes(index_arr, args.merge(:table_name => self.name, :db => @db))
+    Baza::Driver::Mysql::Table.create_indexes(index_arr, args.merge(table_name: name, db: @db))
   end
 
   def self.create_indexes(index_arr, args = {})
@@ -163,13 +163,9 @@ class Baza::Driver::Mysql::Table < Baza::Table
     end
 
     index_arr.each do |index_data|
-      if !args[:return_sql]
-        sql = ""
-      end
+      sql = "" unless args[:return_sql]
 
-      if args[:create] || !args.key?(:create)
-        sql << "CREATE"
-      end
+      sql << "CREATE" if args[:create] || !args.key?(:create)
 
       if index_data.is_a?(String) || index_data.is_a?(Symbol)
         index_data = {name: index_data, columns: [index_data]}
@@ -197,7 +193,7 @@ class Baza::Driver::Mysql::Table < Baza::Table
 
       first = true
       index_data[:columns].each do |col_name|
-        sql << ", " if !first
+        sql << ", " unless first
         first = false if first
 
         sql << "`#{db.esc_col(col_name)}`"
@@ -205,9 +201,7 @@ class Baza::Driver::Mysql::Table < Baza::Table
 
       sql << ")"
 
-      if !args[:return_sql]
-        db.query(sql)
-      end
+      db.query(sql) unless args[:return_sql]
     end
 
     if args[:return_sql]
@@ -228,28 +222,28 @@ class Baza::Driver::Mysql::Table < Baza::Table
     @name = newname
     @tables.__send__(:add_to_list, self)
 
-    @list.each do |name, column|
+    @list.each do |_name, column|
       column.args[:table_name] = newname
     end
 
-    @indexes_list.each do |name, index|
+    @indexes_list.each do |_name, index|
       index.args[:table_name] = newname
     end
   end
 
   def truncate
-    @db.query("TRUNCATE `#{@db.esc_table(self.name)}`")
-    return self
+    @db.query("TRUNCATE `#{@db.esc_table(name)}`")
+    self
   end
 
   def data
     ret = {
-      name: self.name,
+      name: name,
       columns: [],
       indexes: []
     }
 
-    columns.each do |name, column|
+    columns.each do |_name, column|
       ret[:columns] << column.data
     end
 
@@ -257,11 +251,11 @@ class Baza::Driver::Mysql::Table < Baza::Table
       ret[:indexes] << index.data if name != "PRIMARY"
     end
 
-    return ret
+    ret
   end
 
   def insert(data)
-    @db.insert(self.name, data)
+    @db.insert(name, data)
   end
 
   def clone(newname, args = {})
@@ -288,9 +282,7 @@ class Baza::Driver::Mysql::Table < Baza::Table
         col_data.delete(:primarykey)
       end
 
-      if args[:all_cols_storage]
-        col_data[:storage] = args[:all_cols_storage]
-      end
+      col_data[:storage] = args[:all_cols_storage] if args[:all_cols_storage]
 
       sql << @db.cols.data_sql(col_data)
     end
@@ -313,15 +305,15 @@ class Baza::Driver::Mysql::Table < Baza::Table
     sql << " ENGINE=#{args[:engine]}" if args[:engine]
     sql << ";"
 
-    #Create table.
+    # Create table.
     @db.query(sql)
 
 
-    #Insert data of previous data in a single query.
-    @db.query("INSERT INTO `#{@db.esc_table(newname)}` SELECT * FROM `#{@db.esc_table(self.name)}`")
+    # Insert data of previous data in a single query.
+    @db.query("INSERT INTO `#{@db.esc_table(newname)}` SELECT * FROM `#{@db.esc_table(name)}`")
 
 
-    #Create indexes.
+    # Create indexes.
     new_table = @db.tables[newname]
     indexes_list = []
     indexes do |index|
@@ -331,19 +323,19 @@ class Baza::Driver::Mysql::Table < Baza::Table
     new_table.create_indexes(indexes_list)
 
 
-    #Return new table.
-    return new_table
+    # Return new table.
+    new_table
   end
 
-  #Returns the current engine of the table.
+  # Returns the current engine of the table.
   def engine
-    return @data[:Engine]
+    @data[:Engine]
   end
 
-  #Changes the engine for a table.
+  # Changes the engine for a table.
   def engine=(newengine)
     raise "Invalid engine: '#{newengine}'." unless newengine.to_s.match(/^[A-z]+$/)
-    @db.query("ALTER TABLE `#{@db.esc_table(self.name)}` ENGINE = #{newengine}") if self.engine.to_s != newengine.to_s
+    @db.query("ALTER TABLE `#{@db.esc_table(name)}` ENGINE = #{newengine}") if engine.to_s != newengine.to_s
     @data[:Engine] = newengine
   end
 

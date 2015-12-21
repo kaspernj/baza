@@ -1,9 +1,9 @@
-#This class takes a lot of IDs and runs a query against them.
+# This class takes a lot of IDs and runs a query against them.
 class Baza::Idquery
-  #An array containing all the IDs that will be looked up.
+  # An array containing all the IDs that will be looked up.
   attr_reader :ids
 
-  #Constructor.
+  # Constructor.
   #===Examples
   # idq = Baza::Idquery(db: db, table: :users)
   # idq.ids + [1, 5, 9]
@@ -17,7 +17,7 @@ class Baza::Idquery
 
     if @args[:query]
       @args[:db].q(@args[:query]) do |data|
-        @args[:col] = data.keys.first if !@args[:col]
+        @args[:col] = data.keys.first unless @args[:col]
 
         if data.is_a?(Array)
           @ids << data.first
@@ -27,56 +27,56 @@ class Baza::Idquery
       end
     end
 
-    @args[:col] = :id if !@args[:col]
-    @args[:size] = 200 if !@args[:size]
+    @args[:col] = :id unless @args[:col]
+    @args[:size] = 200 unless @args[:size]
 
     if block
-      raise "No query was given but a block was." if !@args[:query]
-      self.each(&block)
+      raise "No query was given but a block was." unless @args[:query]
+      each(&block)
     end
   end
 
-  #Fetches results.
+  # Fetches results.
   #===Examples
   # data = idq.fetch #=> Hash
   def fetch
-    return nil if !@args
+    return nil unless @args
 
     if @res
       data = @res.fetch if @res
-      @res = nil if !data
+      @res = nil unless data
       return data if data
     end
 
-    @res = new_res if !@res
-    if !@res
+    @res = new_res unless @res
+    unless @res
       destroy
       return nil
     end
 
     data = @res.fetch
-    if !data
+    unless data
       destroy
       return nil
     end
 
-    return data
+    data
   end
 
-  #Yields a block for every result.
+  # Yields a block for every result.
   #===Examples
   # idq.each do |data|
   #   print "Name: #{data[:name]}\n"
   # end
   def each
-    while data = self.fetch
+    while data = fetch
       yield(data)
     end
   end
 
-  private
+private
 
-  #Spawns a new database-result to read from.
+  # Spawns a new database-result to read from.
   def new_res
     table_esc = "`#{@args[:db].esc_table(@args[:table])}`"
     col_esc = "`#{@args[:db].esc_col(@args[:col])}`"
@@ -87,14 +87,14 @@ class Baza::Idquery
       return nil
     end
 
-    ids_sql = ids.map { |id| "'#{@args[:db].esc(id)}'" }.join(',')
+    ids_sql = ids.map { |id| "'#{@args[:db].esc(id)}'" }.join(",")
     query_str = "SELECT * FROM #{table_esc} WHERE #{table_esc}.#{col_esc} IN (#{ids_sql})"
     print "Query: #{query_str}\n" if @debug
 
-    return @args[:db].q(query_str)
+    @args[:db].q(query_str)
   end
 
-  #Removes all variables on the object. This is done when no more results are available.
+  # Removes all variables on the object. This is done when no more results are available.
   def destroy
     @args = nil
     @ids = nil
