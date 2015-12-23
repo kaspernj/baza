@@ -17,7 +17,7 @@ class Baza::Database
 
   def tables
     ArrayEnumerator.new do |yielder|
-      baza.tables.list(database: name).each do |_name, table|
+      baza.tables.list(database: name) do |table|
         yielder << table
       end
     end

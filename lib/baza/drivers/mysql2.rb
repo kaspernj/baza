@@ -137,7 +137,7 @@ class Baza::Driver::Mysql2 < Baza::MysqlBaseDriver
   end
 
   # Executes an unbuffered query and returns the result that can be used to access the data.
-  def query_ubuf(str)
+  def query_ubuf(str, _args = nil, &_blk)
     @mutex.synchronize do
       return Baza::Driver::Mysql2::Result.new(self, @conn.query(str, @query_args.merge(stream: true)))
     end

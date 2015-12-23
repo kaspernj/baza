@@ -57,8 +57,8 @@ shared_examples_for "a baza driver" do
     rev.init_db(schema: schema, debug: false, db: db)
 
     test_table = db.tables[:test_table]
-    test_table.columns.keys.should include :age
-    test_table.columns.keys.should include :nickname
+    expect(test_table.columns.map(&:name)).to include "age"
+    expect(test_table.columns.map(&:name)).to include "nickname"
   end
 
   it "should do id-queries" do
@@ -157,16 +157,22 @@ shared_examples_for "a baza driver" do
   it "should rename tables in revisions" do
     test_table
 
-    Baza::Revision.new.init_db(db: db, debug: false, schema: {
-                                 tables: {
-                                   new_test_table: {
-                                     renames: [:test]
-                                   }
-                                 }
-                               })
-    tables = db.tables.list
-    raise "Didnt expect table 'test' to exist but it did." if tables.key?(:test)
-    raise "Expected 'new_test_table' to exist but it didnt." unless tables.key?(:new_test_table)
+    Baza::Revision.new.init_db(
+      db: db,
+      debug: false,
+      schema: {
+        tables: {
+          new_test_table: {
+            renames: [:test]
+          }
+        }
+      }
+    )
+
+    tables = db.tables.list.map(&:name)
+
+    expect(tables).to_not include "test"
+    expect(tables).to include "new_test_table"
   end
 
   it "should rename columns in revisions" do
@@ -185,9 +191,10 @@ shared_examples_for "a baza driver" do
         }
       }
     )
-    columns = db.tables[:new_test_table].columns
-    raise "Didnt expect 'text' to exist but it did." if columns.key?(:text)
-    raise "Expected 'new_name'-column to exist but it didnt." unless columns.key?(:new_name)
+
+    columns = db.tables[:new_test_table].columns.map(&:name)
+    expect(columns).to_not include "text"
+    expect(columns).to include "new_name"
   end
 
   it "should generate proper sql" do
@@ -201,7 +208,7 @@ shared_examples_for "a baza driver" do
   it "should be able to make new connections based on given objects" do
     # Mysql doesn't support it...
     unless db.opts.fetch(:type) == :mysql
-      new_db = Baza::Db.from_object(object: db.conn.conn)
+      new_db = Baza::Db.from_object(object: db.driver.conn)
     end
   end
 

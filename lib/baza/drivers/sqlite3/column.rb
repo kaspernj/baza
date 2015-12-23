@@ -10,7 +10,7 @@ class Baza::Driver::Sqlite3::Column < Baza::Column
 
   # Returns the name of the column.
   def name
-    @args[:data][:name].to_sym
+    @args[:data][:name]
   end
 
   def table_name
@@ -100,7 +100,7 @@ class Baza::Driver::Sqlite3::Column < Baza::Column
 
   # Returns true if the column is auto-increasing.
   def autoincr?
-    return true if @args[:data][:pk].to_i == 1 && @args[:data][:type].to_sym == :integer
+    return true if @args[:data][:pk].to_i == 1 && @args[:data][:type].to_s == "integer"
     false
   end
 
@@ -111,13 +111,13 @@ class Baza::Driver::Sqlite3::Column < Baza::Column
 
   def reload
     @db.q("PRAGMA table_info(`#{@db.esc_table(table_name)}`)") do |data|
-      next unless data[:name] == @args[:data][:name]
+      next unless data.fetch(:name) == name
       @args[:data] = data
       @type = nil
-      return
+      return nil
     end
 
-    raise "Could not find data for column: #{table_name}.#{name}"
+    raise Baza::Errors::ColumnNotFound, "Could not find data for column: #{table_name}.#{name}"
   end
 
   # Changes data on the column. Like the name, type, maxlength or whatever.
@@ -136,11 +136,11 @@ class Baza::Driver::Sqlite3::Column < Baza::Column
 
     new_table = table.copy(
       alter_columns: {
-        name.to_sym => newdata
+        name => newdata
       }
     )
 
-    @args[:data][:name] = newdata[:name].to_s
+    @args[:data][:name] = newdata.fetch(:name).to_s
     reload
   end
 end

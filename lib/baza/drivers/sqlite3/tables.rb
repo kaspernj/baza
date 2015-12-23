@@ -10,28 +10,31 @@ class Baza::Driver::Sqlite3::Tables
   end
 
   def [](table_name)
-    table_name = table_name.to_sym
+    table_name = table_name.to_s
 
     if ret = @list.get(table_name)
       return ret
     end
 
-    list do |table_obj|
-      return table_obj if table_obj.name == table_name
+    list(name: table_name) do |table|
+      return table if table.name == table_name
     end
 
-    raise Errno::ENOENT, "Table was not found: #{table_name}."
+    raise Baza::Errors::TableNotFound, "Table was not found: #{table_name}."
   end
 
   def list(args = {})
-    ret = {} unless block_given?
+    ret = [] unless block_given?
 
     @list_mutex.synchronize do
-      q_tables = @db.select("sqlite_master", {type: "table"}, orderby: "name") do |d_tables|
-        next if d_tables[:name] == "sqlite_sequence"
+      tables_args = {type: "table"}
+      tables_args[:name] = args.fetch(:name) if args[:name]
 
-        tname = d_tables[:name].to_sym
-        obj = @list.get(tname)
+      q_tables = @db.select("sqlite_master", tables_args, orderby: "name") do |d_tables|
+        table_name = d_tables.fetch(:name)
+        next if table_name == "sqlite_sequence"
+
+        obj = @list.get(table_name)
 
         unless obj
           obj = Baza::Driver::Sqlite3::Table.new(
@@ -39,13 +42,13 @@ class Baza::Driver::Sqlite3::Tables
             data: d_tables,
             tables: self
           )
-          @list[tname] = obj
+          @list[table_name] = obj
         end
 
         if block_given?
-          yield(obj)
+          yield obj
         else
-          ret[tname] = obj
+          ret << obj
         end
       end
     end
@@ -73,14 +76,16 @@ class Baza::Driver::Sqlite3::Tables
 
   CREATE_ALLOWED_KEYS = [:indexes, :columns]
   def create(name, data, args = nil)
-    data.each do |key, _val|
+    data.each_key do |key|
       raise "Invalid key: '#{key}' (#{key.class.name})." unless CREATE_ALLOWED_KEYS.include?(key)
     end
+
+    raise "No columns given" if data.fetch(:columns).empty?
 
     sql = "CREATE TABLE `#{name}` ("
 
     first = true
-    data[:columns].each do |col_data|
+    data.fetch(:columns).each do |col_data|
       sql << ", " unless first
       first = false if first
       sql << @db.cols.data_sql(col_data)
@@ -94,13 +99,13 @@ class Baza::Driver::Sqlite3::Tables
       @db.query(sql)
     end
 
-    if data.key?(:indexes) && data[:indexes]
+    if data[:indexes]
       table_obj = self[name]
 
       if args && args[:return_sql]
-        ret += table_obj.create_indexes(data[:indexes], return_sql: true)
+        ret += table_obj.create_indexes(data.fetch(:indexes), return_sql: true)
       else
-        table_obj.create_indexes(data[:indexes])
+        table_obj.create_indexes(data.fetch(:indexes))
       end
     end
 

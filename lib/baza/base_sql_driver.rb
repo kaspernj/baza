@@ -38,14 +38,69 @@ class Baza::BaseSqlDriver
   alias_method :esc_table, :esc_col
 
   def transaction
-    query("BEGIN TRANSACTION")
+    @baza.q("BEGIN TRANSACTION")
 
     begin
       yield @baza
-      query("COMMIT")
+      @baza.q("COMMIT")
     rescue => e
-      query("ROLLBACK")
+      @baza.q("ROLLBACK")
     end
+  end
+
+  # Simply inserts data into a table.
+  #
+  #===Examples
+  # db.insert(:users, name: "John", lastname: "Doe")
+  # id = db.insert(:users, {name: "John", lastname: "Doe"}, return_id: true)
+  # sql = db.insert(:users, {name: "John", lastname: "Doe"}, return_sql: true) #=> "INSERT INTO `users` (`name`, `lastname`) VALUES ('John', 'Doe')"
+  def insert(tablename, arr_insert, args = nil)
+    sql = "INSERT INTO #{@sep_table}#{esc_table(tablename)}#{@sep_table}"
+
+    if !arr_insert || arr_insert.empty?
+      # This is the correct syntax for inserting a blank row in MySQL.
+      if @baza.opts.fetch(:type).to_s.include?("mysql")
+        sql << " VALUES ()"
+      elsif @baza.opts.fetch(:type).to_s.include?("sqlite3")
+        sql << " DEFAULT VALUES"
+      else
+        raise "Unknown database-type: '#{@baza.opts.fetch(:type)}'."
+      end
+    else
+      sql << " ("
+
+      first = true
+      arr_insert.each_key do |key|
+        if first
+          first = false
+        else
+          sql << ", "
+        end
+
+        sql << "#{@baza.sep_col}#{@baza.esc_col(key)}#{@baza.sep_col}"
+      end
+
+      sql << ") VALUES ("
+
+      first = true
+      arr_insert.each_value do |value|
+        if first
+          first = false
+        else
+          sql << ", "
+        end
+
+        sql << @baza.sqlval(value)
+      end
+
+      sql << ")"
+    end
+
+    return sql if args && args[:return_sql]
+
+    @baza.query(sql)
+    return @baza.last_id if args && args[:return_id]
+    nil
   end
 
   def insert_multi(tablename, arr_hashes, args = nil)

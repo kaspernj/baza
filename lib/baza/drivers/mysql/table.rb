@@ -3,23 +3,24 @@ class Baza::Driver::Mysql::Table < Baza::Table
 
   def initialize(args)
     @args = args
-    @db = args[:db]
-    @data = args[:data]
+    @db = args.fetch(:db)
+    @data = args.fetch(:data)
     @list = Wref::Map.new
     @indexes_list = Wref::Map.new
-    @name = @data[:Name].to_sym
-    @tables = args[:tables]
-
-    raise "Could not figure out name from: '#{@data}'." if @data[:Name].to_s.strip.empty?
+    @name = @data.fetch(:Name)
+    @tables = args.fetch(:tables)
   end
 
   def reload
-    @data = @db.q("SHOW TABLE STATUS WHERE `Name` = '#{@db.esc(name)}'").fetch
+    data = @db.q("SHOW TABLE STATUS WHERE `Name` = '#{@db.esc(name)}'").fetch
+    raise Baza::Errors::TableNotFound unless data
+    @data = data
+    self
   end
 
   # Used to validate in Wref::Map.
   def __object_unique_id__
-    @data[:Name]
+    name
   end
 
   def drop
@@ -32,7 +33,7 @@ class Baza::Driver::Mysql::Table < Baza::Table
   # Returns true if the table is safe to drop.
   def native?
     data = @db.q("SELECT DATABASE() AS db").fetch
-    return true if data[:db] == "mysql"
+    return true if data.fetch(:db) == "mysql"
     false
   end
 
@@ -42,11 +43,11 @@ class Baza::Driver::Mysql::Table < Baza::Table
   end
 
   def rows_count
-    @db.q("SELECT COUNT(*) AS count FROM `#{@db.esc_table(name)}`").fetch[:count].to_i
+    @db.q("SELECT COUNT(*) AS count FROM `#{@db.esc_table(name)}`").fetch.fetch(:count).to_i
   end
 
   def column(name)
-    name = name.to_sym
+    name = name.to_s
 
     if col = @list.get(name)
       return @list[name]
@@ -56,17 +57,17 @@ class Baza::Driver::Mysql::Table < Baza::Table
       return col_i if col_i.name == name
     end
 
-    raise Errno::ENOENT, "Column not found: '#{name}'."
+    raise Baza::Errors::ColumnNotFound, "Column not found: '#{name}'"
   end
 
   def columns(args = nil)
     @db.cols
-    ret = {}
+    ret = []
     sql = "SHOW FULL COLUMNS FROM `#{@db.esc_table(name)}`"
     sql << " WHERE `Field` = '#{@db.esc(args[:name])}'" if args && args.key?(:name)
 
     @db.q(sql) do |d_cols|
-      column_name = d_cols[:Field].to_sym
+      column_name = d_cols.fetch(:Field)
       obj = @list.get(name)
 
       unless obj
@@ -79,9 +80,9 @@ class Baza::Driver::Mysql::Table < Baza::Table
       end
 
       if block_given?
-        yield(obj)
+        yield obj
       else
-        ret[column_name] = obj
+        ret << obj
       end
     end
 
@@ -94,14 +95,14 @@ class Baza::Driver::Mysql::Table < Baza::Table
 
   def indexes(args = nil)
     @db.indexes
-    ret = {}
+    ret = []
 
     sql = "SHOW INDEX FROM `#{@db.esc_table(name)}`"
     sql << " WHERE `Key_name` = '#{@db.esc(args[:name])}'" if args && args.key?(:name)
 
     @db.q(sql) do |d_indexes|
       next if d_indexes[:Key_name] == "PRIMARY"
-      obj = @indexes_list.get(d_indexes[:Key_name].to_s)
+      obj = @indexes_list.get(d_indexes[:Key_name])
 
       unless obj
         obj = Baza::Driver::Mysql::Index.new(
@@ -110,13 +111,13 @@ class Baza::Driver::Mysql::Table < Baza::Table
           data: d_indexes
         )
         obj.columns << d_indexes[:Column_name]
-        @indexes_list[d_indexes[:Key_name].to_s] = obj
+        @indexes_list[d_indexes[:Key_name]] = obj
       end
 
       if block_given?
         yield obj
       else
-        ret[d_indexes[:Key_name].to_s] = obj
+        ret << obj
       end
     end
 
@@ -134,11 +135,11 @@ class Baza::Driver::Mysql::Table < Baza::Table
       return index
     end
 
-    indexes(name: name) do |index|
-      return index if index.name.to_s == name
+    indexes(name: name) do |index_i|
+      return index_i if index_i.name == name
     end
 
-    raise Errno::ENOENT, "Index not found: #{name}."
+    raise Baza::Errors::IndexNotFound, "Index not found: #{name}."
   end
 
   def create_columns(col_arr)
@@ -212,7 +213,7 @@ class Baza::Driver::Mysql::Table < Baza::Table
   end
 
   def rename(newname)
-    newname = newname.to_sym
+    newname = newname.to_s
     oldname = name
 
     @tables.__send__(:remove_from_list, self)
@@ -243,12 +244,12 @@ class Baza::Driver::Mysql::Table < Baza::Table
       indexes: []
     }
 
-    columns.each do |_name, column|
+    columns do |column|
       ret[:columns] << column.data
     end
 
-    indexes.each do |name, index|
-      ret[:indexes] << index.data if name != "PRIMARY"
+    indexes do |index|
+      ret[:indexes] << index.data unless index.name == "PRIMARY"
     end
 
     ret

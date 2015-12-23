@@ -8,11 +8,11 @@ class Baza::Driver::Sqlite3::Index < Baza::Index
   end
 
   def name
-    @args[:data][:name]
+    @args.fetch(:data).fetch(:name)
   end
 
   def table_name
-    @args[:table_name]
+    @args.fetch(:table_name)
   end
 
   def table
@@ -47,6 +47,19 @@ class Baza::Driver::Sqlite3::Index < Baza::Index
   end
 
   def unique?
-    @args[:data][:unique].to_i == 1
+    @args.fetch(:data).fetch(:unique).to_i == 1
+  end
+
+  def reload
+    data = nil
+    @db.query("PRAGMA index_list(`#{@db.esc_table(name)}`)") do |d_indexes|
+      next unless d_indexes.fetch(:name) == name
+      data = d_indexes
+      break
+    end
+
+    raise Baza::Errors::IndexNotFound unless data
+    @args[:data] = data
+    self
   end
 end

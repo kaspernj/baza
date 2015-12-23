@@ -127,7 +127,7 @@ class Baza::Model
           end
         end
 
-        colname = "#{name.to_s.split("::").last.to_s.downcase}_id".to_sym if colname.to_s.empty?
+        colname = "#{name.to_s.split("::").last.to_s.downcase}_id" if colname.to_s.empty?
 
         if val[:depends]
           @depending_data = [] unless @depending_data
@@ -157,7 +157,7 @@ class Baza::Model
       end
 
       raise "No classname given." unless classname
-      methodname = "#{StringCases.camel_to_snake(classname)}s".to_sym unless methodname
+      methodname = "#{StringCases.camel_to_snake(classname)}s" unless methodname
       raise "No column was given for '#{name}' regarding has-many-class: '#{classname}'." unless colname
 
       if val.is_a?(Hash) && val.key?(:where)
@@ -415,7 +415,7 @@ class Baza::Model
     sql << " WHERE 1=1"
     sql << ret[:sql_where]
 
-    args.each do |key, _val|
+    args.each_key do |key|
       case key
       when "return_sql"
         # Ignore

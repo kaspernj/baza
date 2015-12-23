@@ -5,8 +5,8 @@ class Baza::Driver::Mysql::Column < Baza::Column
   # Constructor. Should not be called manually.
   def initialize(args)
     @args = args
-    @name = @args[:data][:Field].to_sym
-    @db = @args[:db]
+    @name = @args.fetch(:data).fetch(:Field)
+    @db = @args.fetch(:db)
   end
 
   # Used to validate in Wref::Map.
@@ -15,7 +15,7 @@ class Baza::Driver::Mysql::Column < Baza::Column
   end
 
   def table_name
-    @args[:table_name]
+    @args.fetch(:table_name)
   end
 
   # Returns the table-object that this column belongs to.
@@ -37,7 +37,9 @@ class Baza::Driver::Mysql::Column < Baza::Column
   end
 
   def reload
-    @args[:data] = @db.query("SHOW FULL COLUMNS FROM `#{@db.esc_table(table_name)}` WHERE `Field` = '#{@db.esc(name)}'").fetch
+    data = @db.query("SHOW FULL COLUMNS FROM `#{@db.esc_table(table_name)}` WHERE `Field` = '#{@db.esc(name)}'").fetch
+    raise Baza::Errors::ColumnNotFound unless data
+    @args[:data] = data
     @type = nil
   end
 
@@ -104,7 +106,7 @@ class Baza::Driver::Mysql::Column < Baza::Column
 
   # Drops the column from the table.
   def drop
-    @args[:db].query("ALTER TABLE `#{@db.esc_table(@args[:table_name])}` DROP COLUMN `#{@db.esc_col(name)}`")
+    @args.fetch(:db).query("ALTER TABLE `#{@db.esc_table(table_name)}` DROP COLUMN `#{@db.esc_col(name)}`")
     table.__send__(:remove_column_from_list, self)
     nil
   end
@@ -126,7 +128,7 @@ class Baza::Driver::Mysql::Column < Baza::Column
 
     table.__send__(:remove_column_from_list, self) if drop_add
     @db.query("ALTER TABLE #{table_escape} CHANGE #{col_escaped} #{@args[:db].cols.data_sql(newdata)}")
-    @name = newdata[:name].to_sym
+    @name = newdata[:name].to_s
     reload
     table.__send__(:add_column_to_list, self) if drop_add
   end

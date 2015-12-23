@@ -37,7 +37,7 @@ describe Baza::Driver::Sqlite3 do
       table1.insert(testname: "TestRow#{count}")
     end
 
-    expect { table2 = db2.tables[:test_table] }.to raise_error(Errno::ENOENT)
+    expect { table2 = db2.tables[:test_table] }.to raise_error(Baza::Errors::TableNotFound)
 
     db.copy_to(db2)
 

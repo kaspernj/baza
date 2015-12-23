@@ -20,27 +20,22 @@ class Baza::Driver::Mysql::Tables
 
   # Returns a table by the given table-name.
   def [](table_name)
-    table_name = table_name.to_sym
+    table_name = table_name.to_s
 
     if table = @list[table_name]
       return table
     end
 
-    tables = []
-    list(name: table_name) do |table_obj|
-      return table_obj if table_obj.name == table_name
+    list(name: table_name) do |table|
+      return table if table.name == table_name
     end
 
-    list do |table_obj|
-      tables << table_obj.name
-    end
-
-    raise Errno::ENOENT, "Table was not found: '#{table_name}' (#{table_name.class.name}) (tables: #{tables})."
+    raise Baza::Errors::TableNotFound, "Table was not found: '#{table_name}'"
   end
 
   # Yields the tables of the current database.
   def list(args = {})
-    ret = {} unless block_given?
+    ret = [] unless block_given?
 
     sql = "SHOW TABLE STATUS"
     sql << " WHERE `Name` = '#{@db.esc(args[:name])}'" if args[:name]
@@ -48,7 +43,7 @@ class Baza::Driver::Mysql::Tables
     @list_mutex.synchronize do
       @db.q(sql) do |d_tables|
         raise "No name was given from: #{d_tables}" unless d_tables.is_a?(Hash) && d_tables[:Name]
-        name = d_tables[:Name].to_sym
+        name = d_tables[:Name]
         obj = @list.get(name)
 
         unless obj
@@ -61,9 +56,9 @@ class Baza::Driver::Mysql::Tables
         end
 
         if block_given?
-          yield(obj)
+          yield obj
         else
-          ret[name] = obj
+          ret << obj
         end
       end
     end

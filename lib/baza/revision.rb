@@ -173,7 +173,7 @@ class Baza::Revision
                 end
 
                 first_col = false
-              rescue Errno::ENOENT => e
+              rescue Baza::Errors::ColumnNotFound => e
                 print "Column not found: #{table_obj.name}.#{col_data[:name]}.\n" if args[:debug]
 
                 if col_data.key?(:renames)
@@ -183,7 +183,7 @@ class Baza::Revision
                   col_data[:renames].each do |col_name_rename|
                     begin
                       col_rename = table_obj.column(col_name_rename)
-                    rescue Errno::ENOENT => e
+                    rescue Baza::Errors::ColumnNotFound
                       next
                     end
 
@@ -231,7 +231,7 @@ class Baza::Revision
             table_data[:columns_remove].each do |column_name, column_data|
               begin
                 col_obj = table_obj.column(column_name)
-              rescue Errno::ENOENT => e
+              rescue Baza::Errors::ColumnNotFound => e
                 next
               end
 
@@ -256,7 +256,7 @@ class Baza::Revision
                   index_obj.drop
                   table_obj.create_indexes([index_data])
                 end
-              rescue Errno::ENOENT => e
+              rescue Baza::Errors::IndexNotFound => e
                 table_obj.create_indexes([index_data])
               end
             end
@@ -266,7 +266,7 @@ class Baza::Revision
             table_data[:indexes_remove].each do |index_name, index_data|
               begin
                 index_obj = table_obj.index(index_name)
-              rescue Errno::ENOENT => e
+              rescue Baza::Errors::IndexNotFound => e
                 next
               end
 
@@ -279,7 +279,7 @@ class Baza::Revision
           end
 
           rows_init(db: db, table: table_obj, rows: table_data[:rows]) if table_data && table_data[:rows]
-        rescue Errno::ENOENT => e
+        rescue Baza::Errors::TableNotFound => e
           puts "Table did not exist: '#{table_name}'." if args[:debug]
 
           if table_data.key?(:renames)
@@ -289,7 +289,7 @@ class Baza::Revision
                 table_rename = db.tables[table_name_rename.to_sym]
                 table_rename.rename(table_name)
                 raise Baza::Errors::Retry
-              rescue Errno::ENOENT
+              rescue Baza::Errors::TableNotFound
                 next
               end
             end
@@ -328,7 +328,7 @@ class Baza::Revision
           table_obj = db.tables[table_name.to_sym]
           table_data[:callback].call(db: db, table: table_obj) if table_data.is_a?(Hash) && table_data[:callback]
           table_obj.drop
-        rescue Errno::ENOENT => e
+        rescue Baza::Errors::TableNotFound => e
           next
         end
       end

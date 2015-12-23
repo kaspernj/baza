@@ -10,7 +10,7 @@ class Baza::Driver::Sqlite3::Columns
   DATA_SQL_ALLOWED_KEYS = [:name, :type, :maxlength, :autoincr, :primarykey, :null, :default, :default_func, :renames, :after, :renames]
   # Returns SQL for a knjdb-compatible hash.
   def data_sql(data)
-    data.each do |key, _val|
+    data.each_key do |key|
       raise "Invalid key: '#{key}' (#{key.class.name})." unless DATA_SQL_ALLOWED_KEYS.include?(key)
     end
 

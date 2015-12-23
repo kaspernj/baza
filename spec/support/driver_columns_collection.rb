@@ -18,16 +18,14 @@ shared_examples_for "a baza columns driver" do
   end
 
   it "renames columns for renamed tables" do
-    # Load up columns to make them set table-name.
-    test_table.columns.each do |name, column|
-    end
+    test_table.columns # Load up columns to make them set table-name.
 
     test_table.rename("test2")
-    test_table.columns[:text].change(name: "text2")
+    test_table.column(:text).change(name: "text2")
 
     table = db.tables[:test2]
-    column = table.columns[:text2]
-    column.table.name.should eq :test2
+    column = table.column(:text2)
+    column.table.name.should eq "test2"
   end
 
   it "should create columns right" do
@@ -44,7 +42,7 @@ shared_examples_for "a baza columns driver" do
 
     col_text.type.should eq :int
     col_text.default.should eq "5"
-    col_text.name.should eq :text2
+    col_text.name.should eq "text2"
   end
 
   it "should be able to drop a column" do
@@ -52,6 +50,6 @@ shared_examples_for "a baza columns driver" do
 
     expect do
       test_table.column(:text)
-    end.to raise_error(Errno::ENOENT)
+    end.to raise_error(Baza::Errors::ColumnNotFound)
   end
 end

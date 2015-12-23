@@ -154,7 +154,15 @@ describe "Objects" do
           user2 = ob.add(:User, username: "User #{tc}-#{ic}-2")
           user3 = ob.add(:User, username: "User #{tc}-#{ic}-3")
 
-          raise "Missing user?" if !user1 || !user2 || !user3 || user1.deleted? || user2.deleted? || user3.deleted?
+          expect(user1).to_not eq nil
+          expect(user1.deleted?).to eq false
+
+          expect(user2).to_not eq nil
+          expect(user2.deleted?).to eq false
+
+          expect(user3).to_not eq nil
+          expect(user3.deleted?).to eq false
+
           ob.deletes([user1, user2, user3])
 
           count = 0
@@ -257,11 +265,11 @@ describe "Objects" do
     table = db.tables[:Project]
 
     indexes = table.indexes
-    raise "Could not find the sample-index 'category_id' that should have been created." unless indexes[:Project__category_id]
+    raise "Could not find the sample-index 'category_id' that should have been created." unless indexes.any? { |index| index.name == "Project__category_id" }
 
 
     # If we insert a row the ID should increase and the name should be the same as inserted (or something is very very wrong)...
-    db.insert("Project", "name" => "Test project")
+    db.insert("Project", name: "Test project")
 
     count = 0
     db.q("SELECT * FROM Project") do |d|
@@ -277,11 +285,7 @@ describe "Objects" do
     ob = Baza::ModelHandler.new(db: db, datarow: true, require: false)
 
     ob.add(:Person, name: "Kasper")
-    ob.add(:Task,
-           name: "Test task",
-           person_id: person.id,
-           project_id: project.id
-    )
+    ob.add(:Task, name: "Test task", person_id: person.id, project_id: project.id)
 
     begin
       obb.add(:Task, name: "Test task")

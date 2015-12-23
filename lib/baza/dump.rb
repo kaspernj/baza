@@ -26,7 +26,7 @@ class Baza::Dump
     if @args[:tables]
       tables = @args[:tables]
     else
-      tables = @args[:db].tables.list.values
+      tables = @args[:db].tables.list
     end
 
     if @on_status
@@ -96,7 +96,7 @@ class Baza::Dump
 
 
     # If a primary column is found then use IDQuery. Otherwise use cloned unbuffered query.
-    args = {idquery: prim_col.name.to_sym} if prim_col
+    args = {idquery: prim_col.name} if prim_col
 
 
     # Clone the connecting with array-results and execute query.

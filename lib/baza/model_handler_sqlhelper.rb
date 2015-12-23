@@ -425,7 +425,7 @@ class Baza::ModelHandler
         sql_joins << ret[:sql_where]
 
         # If any of the join-arguments are left, then we should throw an error.
-        join_args.each do |key, _val|
+        join_args.each_key do |key|
           raise "Invalid key '#{key}' when trying to join table '#{table_name}' on table '#{args_def[:table]}'."
         end
       end

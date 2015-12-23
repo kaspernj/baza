@@ -12,7 +12,7 @@
 #   print data[:name]
 # end
 class Baza::Db
-  attr_reader :sep_col, :sep_table, :sep_val, :opts, :conn, :conns, :int_types
+  attr_reader :sep_col, :sep_table, :sep_val, :opts, :driver, :int_types
 
   # Returns an array containing hashes of information about each registered driver.
   def self.drivers
@@ -61,23 +61,15 @@ class Baza::Db
   end
 
   def initialize(opts)
-    @conn = opts.delete(:driver) if opts[:driver]
+    @driver = opts.delete(:driver) if opts[:driver]
     self.opts = opts unless opts.nil?
     @int_types = [:int, :bigint, :tinyint, :smallint, :mediumint]
 
-    unless @opts[:threadsafe]
-      require "monitor"
-      @mutex = Monitor.new
-    end
-
     @debug = @opts[:debug]
-
-    conn_exec do |driver|
-      @sep_table = driver.sep_table
-      @sep_col = driver.sep_col
-      @sep_val = driver.sep_val
-      @esc_driver = driver
-    end
+    @driver = spawn
+    @sep_table = @driver.sep_table
+    @sep_col = @driver.sep_col
+    @sep_val = @driver.sep_val
 
     return unless block_given?
 
@@ -104,28 +96,6 @@ class Baza::Db
     end
 
     @type_cc = StringCases.snake_to_camel(@opts[:type])
-    connect
-  end
-
-  # Actually connects to the database. This is useually done automatically.
-  def connect
-    if @opts[:threadsafe]
-      @conns = Knj::Threadhandler.new
-
-      @conns.on_spawn_new do
-        spawn
-      end
-
-      @conns.on_inactive do |data|
-        data[:obj].close
-      end
-
-      @conns.on_activate do |data|
-        data[:obj].reconnect
-      end
-    else
-      @conn = spawn
-    end
   end
 
   # Spawns a new driver (useally done automatically).
@@ -163,37 +133,10 @@ class Baza::Db
     end
   end
 
-  # Frees the current driver from the current thread.
-  def free_thread
-    thread_cur = Thread.current
-    tid = __id__
-
-    return if !thread_cur[:baza] || !thread_cur[:baza].key?(tid)
-
-    db = thread_cur[:baza][tid]
-    thread_cur[:baza].delete(tid)
-    @conns.free(db) if @conns
-  end
-
-  # Clean up various memory-stuff if possible.
-  def clean
-    if @conns
-      @conns.objects.each do |data|
-        data[:object].clean if data[:object].respond_to?("clean")
-      end
-    elsif @conn
-      @conn.clean if @conn.respond_to?("clean")
-    end
-  end
-
   # The all driver-database-connections.
   def close
-    @conn.close if @conn
-    @conns.destroy if @conns
-
-    @conn = nil
-    @conns = nil
-
+    @driver.close if @driver
+    @driver = nil
     @closed = true
   end
 
@@ -228,7 +171,7 @@ class Baza::Db
 
     data[:tables].each do |table|
       table_args = nil
-      table_args = args[:tables][table[:name.to_sym]] if args && args[:tables] && args[:tables][table[:name].to_sym]
+      table_args = args[:tables][table[:name]] if args && args[:tables] && args[:tables][table[:name].to_sym]
       next if table_args && table_args[:skip]
       table.delete(:indexes) if table.key?(:indexes) && args[:skip_indexes]
 
@@ -247,7 +190,7 @@ class Baza::Db
 
           if table_args && table_args[:columns]
             d_rows.each do |col_name, _col_data|
-              col_args = table_args[:columns][col_name.to_sym] if table_args && table_args[:columns]
+              col_args = table_args[:columns][col_name] if table_args && table_args[:columns]
               d_rows[col_name] = "" if col_args && col_args[:empty]
             end
           end
@@ -270,76 +213,15 @@ class Baza::Db
   # tables_hash = data['tables']
   def data
     tables_ret = []
-    tables.list.each do |_name, table|
+    tables.list do |table|
       tables_ret << table.data
     end
 
-    {
-      tables: tables_ret
-    }
+    {tables: tables_ret}
   end
 
-  # Simply inserts data into a table.
-  #
-  #===Examples
-  # db.insert(:users, name: "John", lastname: "Doe")
-  # id = db.insert(:users, {name: "John", lastname: "Doe"}, return_id: true)
-  # sql = db.insert(:users, {name: "John", lastname: "Doe"}, return_sql: true) #=> "INSERT INTO `users` (`name`, `lastname`) VALUES ('John', 'Doe')"
-  def insert(tablename, arr_insert, args = nil)
-    sql = "INSERT INTO #{@sep_table}#{esc_table(tablename)}#{@sep_table}"
-
-    if !arr_insert || arr_insert.empty?
-      # This is the correct syntax for inserting a blank row in MySQL.
-      if @opts[:type].to_s.include?("mysql")
-        sql << " VALUES ()"
-      elsif @opts[:type].to_s.include?("sqlite3")
-        sql << " DEFAULT VALUES"
-      else
-        raise "Unknown database-type: '#{@opts[:type]}'."
-      end
-    else
-      sql << " ("
-
-      first = true
-      arr_insert.each do |key, _value|
-        if first
-          first = false
-        else
-          sql << ", "
-        end
-
-        sql << "#{@sep_col}#{esc_col(key)}#{@sep_col}"
-      end
-
-      sql << ") VALUES ("
-
-      first = true
-      arr_insert.each do |_key, value|
-        if first
-          first = false
-        else
-          sql << ", "
-        end
-
-        sql << sqlval(value)
-      end
-
-      sql << ")"
-    end
-
-    return sql if args && args[:return_sql]
-
-    conn_exec do |driver|
-      begin
-        driver.query(sql)
-      rescue => e
-        add_sql_to_error(e, sql) if @opts[:sql_to_error]
-        raise e
-      end
-
-      return driver.last_id if args && args[:return_id]
-      return nil
-    end
+  def insert(table_name, data, args = nil)
+    @driver.insert(table_name, data, args)
   end
 
   def add_sql_to_error(error, sql)
@@ -373,9 +255,9 @@ class Baza::Db
   def insert_multi(tablename, arr_hashes, args = nil)
     return false if arr_hashes.empty?
 
-    if @esc_driver.respond_to?(:insert_multi)
+    if @driver.respond_to?(:insert_multi)
       if args && args[:return_sql]
-        res = @esc_driver.insert_multi(tablename, arr_hashes, args)
+        res = @driver.insert_multi(tablename, arr_hashes, args)
         if res.is_a?(String)
           return [res]
         elsif res.is_a?(Array)
@@ -385,9 +267,7 @@ class Baza::Db
         end
       end
 
-      conn_exec do |driver|
-        return driver.insert_multi(tablename, arr_hashes, args)
-      end
+      @driver.insert_multi(tablename, arr_hashes, args)
     else
       transaction do
         arr_hashes.each do |hash|
@@ -429,9 +309,7 @@ class Baza::Db
 
     return sql if args && args[:return_sql]
 
-    conn_exec do |driver|
-      driver.query(sql)
-    end
+    query(sql)
   end
 
   # Checks if a given terms exists. If it does, updates it to match data. If not inserts the row.
@@ -533,8 +411,8 @@ class Baza::Db
   #===Examples
   # row = db.single(:users, lastname: "Doe")
   def single(tablename, terms = nil, args = {})
-    select(tablename, terms, args.merge(limit: 1)) { |data| return data } # Experienced very weird memory leak if this was not done by block. Maybe bug in Ruby 1.9.2? - knj
-    false
+    # Experienced very weird memory leak if this was not done by block. Maybe bug in Ruby 1.9.2? - knj
+    select(tablename, terms, args.merge(limit: 1)).fetch
   end
 
   alias_method :selectsingle, :single
@@ -552,10 +430,7 @@ class Baza::Db
 
     return sql if args && args[:return_sql]
 
-    conn_exec do |driver|
-      driver.query(sql)
-    end
-
+    query(sql)
     nil
   end
 
@@ -588,43 +463,6 @@ class Baza::Db
     sql
   end
 
-  # Returns a driver-object based on the current thread and free driver-objects.
-  #
-  #===Examples
-  # db.conn_exec do |driver|
-  #   str = driver.escape('something̈́')
-  # end
-  def conn_exec
-    raise "Call to closed database" if @closed
-
-    if tcur = Thread.current && Thread.current[:baza]
-      tid = __id__
-
-      if tcur[:baza].key?(tid)
-        yield(tcur[:baza][tid])
-        return nil
-      end
-    end
-
-    if @conns
-      conn = @conns.get_and_lock
-
-      begin
-        yield(conn)
-        return nil
-      ensure
-        @conns.free(conn)
-      end
-    elsif @conn
-      @mutex.synchronize do
-        yield(@conn)
-        return nil
-      end
-    end
-
-    raise "Could not figure out which driver to use?"
-  end
-
   # Executes a query and returns the result.
   #
   #===Examples
@@ -632,7 +470,7 @@ class Baza::Db
   # while data = res.fetch
   #   print data[:name]
   # end
-  def query(string)
+  def query(string, args = nil, &block)
     if @debug
       print "SQL: #{string}\n"
 
@@ -642,15 +480,30 @@ class Baza::Db
       end
     end
 
-    begin
-      conn_exec do |driver|
-        return driver.query(string)
+    # If the query should be executed in a new connection unbuffered.
+    if args && args[:cloned_ubuf]
+      raise "No block given." unless block
+
+      cloned_conn(clone_args: args[:clone_args]) do |cloned_conn|
+        return cloned_conn.query_ubuf(string, args, &block)
       end
-    rescue => e
-      e.message << " (SQL: #{string})" if @opts[:sql_to_error]
-      raise e
+
+      return nil
     end
+
+    return query_ubuf(string, args, &block) if args && args[:type] == :unbuffered
+
+    ret = @driver.query(string)
+
+    if block && ret
+      ret.each(&block)
+      return nil
+    end
+
+    ret
   end
+
+  alias q query
 
   # Execute an ubuffered query and returns the result.
   #
@@ -658,12 +511,8 @@ class Baza::Db
   # db.query_ubuf('SELECT * FROM users') do |data|
   #   print data[:name]
   # end
-  def query_ubuf(string, &block)
-    ret = nil
-
-    conn_exec do |driver|
-      ret = driver.query_ubuf(string, &block)
-    end
+  def query_ubuf(string, args = nil, &block)
+    ret = @driver.query_ubuf(string)
 
     if block
       ret.each(&block)
@@ -682,11 +531,7 @@ class Baza::Db
   #   end
   # end
   def cloned_conn(args = nil, &_block)
-    clone_conn_args = {
-      threadsafe: false
-    }
-
-    clone_conn_args.merge!(args[:clone_args]) if args && args[:clone_args]
+    clone_conn_args = args[:clone_args] || {}
     dbconn = clone_conn(clone_conn_args)
 
     begin
@@ -694,39 +539,6 @@ class Baza::Db
     ensure
       dbconn.close
     end
-  end
-
-  # Executes a query and returns the result. If a block is given the result is iterated over that block instead and it returns nil.
-  #
-  #===Examples
-  # db.q('SELECT * FROM users') do |data|
-  #   print data[:name]
-  # end
-  def q(sql, args = nil, &block)
-    # If the query should be executed in a new connection unbuffered.
-    if args && args[:cloned_ubuf]
-      raise "No block given." unless block
-
-      cloned_conn(clone_args: args[:clone_args]) do |cloned_conn|
-        ret = cloned_conn.query_ubuf(sql)
-        ret.each(&block)
-      end
-
-      return nil
-    end
-
-    if args && args[:type] == :unbuffered
-      ret = query_ubuf(sql)
-    else
-      ret = query(sql)
-    end
-
-    if block
-      ret.each(&block)
-      return nil
-    end
-
-    ret
   end
 
   # Yields a query-buffer and flushes at the end of the block given.
@@ -740,9 +552,7 @@ class Baza::Db
   #===Examples
   # id = db.last_id
   def last_id
-    conn_exec do |driver|
-      return driver.last_id
-    end
+    @driver.last_id
   end
 
   # Escapes a string to be safe-to-use in a query-string.
@@ -750,27 +560,27 @@ class Baza::Db
   #===Examples
   # db.q("INSERT INTO users (name) VALUES ('#{db.esc('John')}')")
   def escape(string)
-    @esc_driver.escape(string)
+    @driver.escape(string)
   end
 
   alias_method :esc, :escape
 
   # Escapes the given string to be used as a column.
   def esc_col(str)
-    @esc_driver.esc_col(str)
+    @driver.esc_col(str)
   end
 
   # Escapes the given string to be used as a table.
   def esc_table(str)
-    @esc_driver.esc_table(str)
+    @driver.esc_table(str)
   end
 
   # Returns a string which can be used in SQL with the current driver.
   #===Examples
   # str = db.date_out(Time.now) #=> "2012-05-20 22:06:09"
   def date_out(date_obj = Datet.new, args = {})
-    if @esc_driver.respond_to?(:date_out)
-      return @esc_driver.date_out(date_obj, args)
+    if @driver.respond_to?(:date_out)
+      return @driver.date_out(date_obj, args)
     end
 
     Datet.in(date_obj).dbstr(args)
@@ -780,7 +590,7 @@ class Baza::Db
   #===Examples
   # db.date_in('2012-05-20 22:06:09') #=> 2012-05-20 22:06:09 +0200
   def date_in(date_obj)
-    return @esc_driver.date_in(date_obj) if @esc_driver.respond_to?(:date_in)
+    return @driver.date_in(date_obj) if @driver.respond_to?(:date_in)
 
     Datet.in(date_obj)
   end
@@ -837,10 +647,7 @@ class Baza::Db
   #   db.insert(:users, name: "Kasper")
   # end
   def transaction(&block)
-    conn_exec do |driver|
-      driver.transaction(&block)
-    end
-
+    @driver.transaction(&block)
     nil
   end
 
@@ -855,20 +662,6 @@ class Baza::Db
     nil
   end
 
-  # Proxies the method to the driver.
-  #
-  #===Examples
-  # db.method_on_driver
-  def method_missing(method_name, *args)
-    conn_exec do |driver|
-      if driver.respond_to?(method_name.to_sym)
-        return driver.__send__(method_name, *args)
-      end
-    end
-
-    super
-  end
-
   def database(name)
     databases.each do |database|
       return database if database.name.to_s == name.to_s
@@ -877,8 +670,12 @@ class Baza::Db
     raise "Database not found: #{name}"
   end
 
+  def databases
+    @driver.databases
+  end
+
   def to_s
-    "#<Baza::Db driver \"#{@opts[:type]}\">"
+    "#<Baza::Db driver=\"#{@opts[:type]}\">"
   end
 
   def inspect

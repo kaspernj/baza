@@ -36,13 +36,13 @@ shared_examples_for "a baza indexes driver" do
 
     table = db.tables[:test2]
     index = table.index(:index_on_text2)
-    index.table.name.should eq :test2
+    expect(index.table.name).to eq "test2"
   end
 
   it "should raise an error when index is not found" do
     expect do
       test_table.index("index_that_doesnt_exist")
-    end.to raise_error(Errno::ENOENT)
+    end.to raise_error(Baza::Errors::IndexNotFound)
   end
 
   describe "#unique?" do

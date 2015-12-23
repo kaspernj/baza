@@ -1,4 +1,4 @@
-class Baza::Driver::ActiveRecord
+class Baza::Driver::ActiveRecord < Baza::BaseSqlDriver
   path = "#{File.dirname(__FILE__)}/active_record"
 
   autoload :Tables, "#{path}/tables"
@@ -6,7 +6,7 @@ class Baza::Driver::ActiveRecord
   autoload :Indexes, "#{path}/indexes"
   autoload :Result, "#{path}/result"
 
-  attr_reader :baza, :conn, :sep_table, :sep_col, :sep_val, :symbolize, :conn_type
+  attr_reader :baza, :conn, :sep_table, :sep_col, :sep_val, :symbolize, :driver_type
   attr_accessor :tables, :cols, :indexes
 
   def self.from_object(args)
@@ -31,7 +31,7 @@ class Baza::Driver::ActiveRecord
 
   def initialize(baza)
     @baza = baza
-    @conn = @baza.opts[:conn]
+    @conn = @baza.opts.fetch(:conn)
 
     raise "No conn given" unless @conn
 
@@ -41,19 +41,19 @@ class Baza::Driver::ActiveRecord
       @sep_table = "`"
       @sep_col = "`"
       @sep_val = "'"
-      @conn_type = :mysql2
+      @driver_type = :mysql2
       @result_constant = Baza::Driver::Mysql2::Result
     elsif conn_name.include?("mysql")
       @sep_table = "`"
       @sep_col = "`"
       @sep_val = "'"
-      @conn_type = :mysql
+      @driver_type = :mysql
       @result_constant = Baza::Driver::Mysql::Result unless RUBY_PLATFORM == "java"
     elsif conn_name.include?("sqlite")
       @sep_table = "`"
       @sep_col = "`"
       @sep_val = "'"
-      @conn_type = :sqlite3
+      @driver_type = :sqlite3
     else
       raise "Unknown type: '#{conn_name}'."
     end
@@ -88,9 +88,9 @@ class Baza::Driver::ActiveRecord
   end
 
   def transaction
-    if @conn_type == :mysql || @conn_type == :mysql2
+    if @driver_type == :mysql || @driver_type == :mysql2
       query("START TRANSACTION")
-    elsif @conn_type == :sqlite3
+    elsif @driver_type == :sqlite3
       query("BEGIN TRANSACTION")
     else
       raise "Don't know how to start transaction"

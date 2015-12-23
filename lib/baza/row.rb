@@ -54,7 +54,7 @@ class Baza::Row
     last_id = id
     data = db.single(@args[:table], @args[:col_id] => id)
     unless data
-      raise Errno::ENOENT.new("Could not find any data for the object with ID: '#{last_id}' in the table '#{@args[:table]}'.")
+      raise Errno::ENOENT, "Could not find any data for the object with ID: '#{last_id}' in the table '#{@args[:table]}'."
     end
 
     @data = {}
