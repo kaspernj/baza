@@ -8,8 +8,9 @@ class Baza::Driver::Pg::Databases
       begin
         __send__(:[], args.fetch(:name).to_s)
         return true
+      # rubocop:disable Lint/HandleExceptions
       rescue Baza::Errors::DatabaseNotFound
-        # Ignore
+        # rubocop:enable Lint/HandleExceptions
       end
     end
 

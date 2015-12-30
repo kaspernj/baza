@@ -11,7 +11,9 @@ shared_examples_for "a baza databases driver" do
   it "renames database" do
     begin
       db.databases["renamed-db"].drop
+    # rubocop:disable Lint/HandleExceptions
     rescue Baza::Errors::DatabaseNotFound
+      # rubocop:enable Lint/HandleExceptions
       # Ignore - it shouldn't exist
     end
 

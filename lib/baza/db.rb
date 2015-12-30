@@ -513,7 +513,7 @@ class Baza::Db
     ret
   end
 
-  alias q query
+  alias_method :q, :query
 
   # Execute an ubuffered query and returns the result.
   #
@@ -521,7 +521,7 @@ class Baza::Db
   # db.query_ubuf('SELECT * FROM users') do |data|
   #   print data[:name]
   # end
-  def query_ubuf(string, args = nil, &block)
+  def query_ubuf(string, _args = nil, &block)
     ret = @driver.query_ubuf(string)
 
     if block
