@@ -10,7 +10,7 @@ class Baza::ResultBase
   end
 
   def to_a_enum
-    require 'array_enumerator'
+    require "array_enumerator"
     @a_enum ||= ArrayEnumerator.new(to_enum)
   end
 
@@ -20,6 +20,6 @@ class Baza::ResultBase
       array << row_data
     end
 
-    return array
+    array
   end
 end

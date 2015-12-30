@@ -13,22 +13,20 @@ class Baza::InfoActiveRecord
     )
     @conn ||= @conn_pool.connection
 
-    return {pool: @conn_pool, conn: @conn}
+    {pool: @conn_pool, conn: @conn}
   end
 
   def initialize
     data = Baza::InfoActiveRecord.connection
 
-    @db = Baza::Db.new(
+    @db = Baza::Db.new({
       type: :active_record,
       conn: data[:conn]
-    )
+    }.merge(args))
   end
 
   def before
-    @db.tables.list.each do |name, table|
-      table.drop
-    end
+    @db.tables.list(&:drop)
   end
 
   def after

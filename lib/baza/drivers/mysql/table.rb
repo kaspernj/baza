@@ -2,71 +2,71 @@ class Baza::Driver::Mysql::Table < Baza::Table
   attr_reader :list, :name
 
   def initialize(args)
-    @args = args
-    @db = args[:db]
-    @data = args[:data]
+    @db = args.fetch(:db)
+    @data = args.fetch(:data)
     @list = Wref::Map.new
     @indexes_list = Wref::Map.new
-    @name = @data[:Name].to_sym
-    @tables = args[:tables]
-
-    raise "Could not figure out name from: '#{@data}'." if @data[:Name].to_s.strip.empty?
+    @name = @data.fetch(:name)
+    @tables = args.fetch(:tables)
   end
 
   def reload
-    @data = @db.q("SHOW TABLE STATUS WHERE `Name` = '#{@db.esc(self.name)}'").fetch
+    data = @db.q("SHOW TABLE STATUS WHERE `Name` = '#{@db.esc(name)}'").fetch
+    raise Baza::Errors::TableNotFound unless data
+    @data = data
+    self
   end
 
-  #Used to validate in Wref::Map.
+  # Used to validate in Wref::Map.
   def __object_unique_id__
-    return @data[:Name]
+    name
   end
 
   def drop
-    raise "Cant drop native table: '#{self.name}'." if self.native?
-    @db.query("DROP TABLE `#{@db.esc_table(self.name)}`")
+    raise "Cant drop native table: '#{name}'." if self.native?
+    @db.query("DROP TABLE `#{@db.escape_table(name)}`")
     @tables.__send__(:remove_from_list, self)
-    return nil
+    nil
   end
 
-  #Returns true if the table is safe to drop.
+  # Returns true if the table is safe to drop.
   def native?
     data = @db.q("SELECT DATABASE() AS db").fetch
-    return true if data[:db] == "mysql"
-    return false
+    return true if data.fetch(:db) == "mysql"
+    false
   end
 
   def optimize
-    @db.query("OPTIMIZE TABLE `#{@db.esc_table(self.name)}`")
-    return self
+    @db.query("OPTIMIZE TABLE `#{@db.escape_table(name)}`")
+    self
   end
 
   def rows_count
-    return @db.q("SELECT COUNT(*) AS count FROM `#{@db.esc_table(self.name)}`").fetch[:count].to_i
+    @db.query("SELECT COUNT(*) AS count FROM `#{@db.escape_table(name)}`").fetch.fetch(:count).to_i
   end
 
   def column(name)
-    name = name.to_sym
+    name = name.to_s
 
     if col = @list.get(name)
       return @list[name]
     end
 
-    self.columns(:name => name) do |col|
-      return col if col.name == name
+    columns(name: name) do |col_i|
+      return col_i if col_i.name == name
     end
 
-    raise Errno::ENOENT, "Column not found: '#{name}'."
+    raise Baza::Errors::ColumnNotFound, "Column not found: '#{name}'"
   end
 
   def columns(args = nil)
     @db.cols
-    ret = {}
-    sql = "SHOW FULL COLUMNS FROM `#{@db.esc_table(name)}`"
-    sql << " WHERE `Field` = '#{@db.esc(args[:name])}'" if args && args.key?(:name)
+    ret = []
+    sql = "SHOW FULL COLUMNS FROM `#{@db.escape_table(name)}`"
+    sql << " WHERE `Field` = '#{@db.esc(args.fetch(:name))}'" if args && args.key?(:name)
 
     @db.q(sql) do |d_cols|
-      column_name = d_cols[:Field].to_sym
+      column_name = d_cols.fetch(:Field)
       obj = @list.get(name)
 
       unless obj
@@ -79,9 +79,9 @@ class Baza::Driver::Mysql::Table < Baza::Table
       end
 
       if block_given?
-        yield(obj)
+        yield obj
       else
-        ret[column_name] = obj
+        ret << obj
       end
     end
 
@@ -94,14 +94,15 @@ class Baza::Driver::Mysql::Table < Baza::Table
 
   def indexes(args = nil)
     @db.indexes
-    ret = {}
+    ret = []
 
-    sql = "SHOW INDEX FROM `#{@db.esc_table(name)}`"
-    sql << " WHERE `Key_name` = '#{@db.esc(args[:name])}'" if args && args.key?(:name)
+    sql = "SHOW INDEX FROM `#{@db.escape_table(name)}`"
+    sql << " WHERE `Key_name` = '#{@db.esc(args.fetch(:name))}'" if args && args.key?(:name)
 
-    @db.q(sql) do |d_indexes|
+    @db.query(sql) do |d_indexes|
       next if d_indexes[:Key_name] == "PRIMARY"
-      obj = @indexes_list.get(d_indexes[:Key_name].to_s)
+      index_name = d_indexes.fetch(:Key_name)
+      obj = @indexes_list.get(index_name)
 
       unless obj
         obj = Baza::Driver::Mysql::Index.new(
@@ -109,14 +110,14 @@ class Baza::Driver::Mysql::Table < Baza::Table
           db: @db,
           data: d_indexes
         )
-        obj.columns << d_indexes[:Column_name]
-        @indexes_list[d_indexes[:Key_name].to_s] = obj
+        obj.columns << d_indexes.fetch(:Column_name)
+        @indexes_list[index_name] = obj
       end
 
       if block_given?
         yield obj
       else
-        ret[d_indexes[:Key_name].to_s] = obj
+        ret << obj
       end
     end
 
@@ -134,24 +135,24 @@ class Baza::Driver::Mysql::Table < Baza::Table
       return index
     end
 
-    indexes(name: name) do |index|
-      return index if index.name.to_s == name
+    indexes(name: name) do |index_i|
+      return index_i if index_i.name == name
     end
 
-    raise Errno::ENOENT, "Index not found: #{name}."
+    raise Baza::Errors::IndexNotFound, "Index not found: #{name}."
   end
 
   def create_columns(col_arr)
     @db.transaction do
       col_arr.each do |col_data|
-        sql = "ALTER TABLE `#{self.name}` ADD COLUMN #{@db.cols.data_sql(col_data)};"
+        sql = "ALTER TABLE `#{name}` ADD COLUMN #{@db.cols.data_sql(col_data)};"
         @db.query(sql)
       end
     end
   end
 
   def create_indexes(index_arr, args = {})
-    return Baza::Driver::Mysql::Table.create_indexes(index_arr, args.merge(:table_name => self.name, :db => @db))
+    Baza::Driver::Mysql::Table.create_indexes(index_arr, args.merge(table_name: name, db: @db))
   end
 
   def self.create_indexes(index_arr, args = {})
@@ -163,20 +164,16 @@ class Baza::Driver::Mysql::Table < Baza::Table
     end
 
     index_arr.each do |index_data|
-      if !args[:return_sql]
-        sql = ""
-      end
+      sql = "" unless args[:return_sql]
 
-      if args[:create] || !args.key?(:create)
-        sql << "CREATE"
-      end
+      sql << "CREATE" if args[:create] || !args.key?(:create)
 
       if index_data.is_a?(String) || index_data.is_a?(Symbol)
         index_data = {name: index_data, columns: [index_data]}
       end
 
       raise "No name was given: '#{index_data}'." if !index_data.key?(:name) || index_data[:name].to_s.strip.empty?
-      raise "No columns was given on index: '#{index_data[:name]}'." if !index_data[:columns] || index_data[:columns].empty?
+      raise "No columns was given on index: '#{index_data.fetch(:name)}'." if !index_data[:columns] || index_data[:columns].empty?
 
       if args[:return_sql]
         if first
@@ -187,87 +184,81 @@ class Baza::Driver::Mysql::Table < Baza::Table
       end
 
       sql << " UNIQUE" if index_data[:unique]
-      sql << " INDEX `#{db.esc_col(index_data[:name])}`"
+      sql << " INDEX `#{db.escape_column(index_data.fetch(:name))}`"
 
       if args[:on_table] || !args.key?(:on_table)
-        sql << " ON `#{db.esc_table(args[:table_name])}`"
+        sql << " ON `#{db.escape_table(args.fetch(:table_name))}`"
       end
 
       sql << " ("
 
       first = true
       index_data[:columns].each do |col_name|
-        sql << ", " if !first
+        sql << ", " unless first
         first = false if first
 
-        sql << "`#{db.esc_col(col_name)}`"
+        sql << "`#{db.escape_column(col_name)}`"
       end
 
       sql << ")"
 
-      if !args[:return_sql]
-        db.query(sql)
-      end
+      db.query(sql) unless args[:return_sql]
     end
 
-    if args[:return_sql]
-      return sql
-    else
-      return nil
-    end
+    sql if args[:return_sql]
   end
 
   def rename(newname)
-    newname = newname.to_sym
+    newname = newname.to_s
     oldname = name
 
     @tables.__send__(:remove_from_list, self)
-    @db.query("ALTER TABLE `#{@db.esc_table(oldname)}` RENAME TO `#{@db.esc_table(newname)}`")
+    @db.query("ALTER TABLE `#{@db.escape_table(oldname)}` RENAME TO `#{@db.escape_table(newname)}`")
 
-    @data[:Name] = newname
+    @data[:name] = newname
     @name = newname
     @tables.__send__(:add_to_list, self)
 
-    @list.each do |name, column|
+    @list.each do |_name, column|
       column.args[:table_name] = newname
     end
 
-    @indexes_list.each do |name, index|
-      index.args[:table_name] = newname
+    @indexes_list.each do |_name, index|
+      index.table_name = newname
     end
   end
 
   def truncate
-    @db.query("TRUNCATE `#{@db.esc_table(self.name)}`")
-    return self
+    @db.query("TRUNCATE `#{@db.escape_table(name)}`")
+    self
   end
 
   def data
     ret = {
-      name: self.name,
+      name: name,
       columns: [],
       indexes: []
     }
 
-    columns.each do |name, column|
+    columns do |column|
       ret[:columns] << column.data
     end
 
-    indexes.each do |name, index|
-      ret[:indexes] << index.data if name != "PRIMARY"
+    indexes do |index|
+      ret[:indexes] << index.data unless index.name == "PRIMARY"
     end
 
-    return ret
+    ret
   end
 
   def insert(data)
-    @db.insert(self.name, data)
+    @db.insert(name, data)
   end
 
   def clone(newname, args = {})
     raise "Invalid name." if newname.to_s.strip.empty?
 
-    sql = "CREATE TABLE `#{@db.esc_table(newname)}` ("
+    sql = "CREATE TABLE `#{@db.escape_table(newname)}` ("
     first = true
     pkey_found = false
     pkeys = []
@@ -288,9 +279,7 @@ class Baza::Driver::Mysql::Table < Baza::Table
         col_data.delete(:primarykey)
       end
 
-      if args[:all_cols_storage]
-        col_data[:storage] = args[:all_cols_storage]
-      end
+      col_data[:storage] = args[:all_cols_storage] if args[:all_cols_storage]
 
       sql << @db.cols.data_sql(col_data)
     end
@@ -302,7 +291,7 @@ class Baza::Driver::Mysql::Table < Baza::Table
       pkeys.each do |pkey|
         sql << ", " unless first
         first = false if first
-        sql << "`#{@db.esc_col(pkey)}`"
+        sql << "`#{@db.escape_column(pkey)}`"
       end
 
       sql << ")"
@@ -313,15 +302,15 @@ class Baza::Driver::Mysql::Table < Baza::Table
     sql << " ENGINE=#{args[:engine]}" if args[:engine]
     sql << ";"
 
-    #Create table.
+    # Create table.
     @db.query(sql)
 
 
-    #Insert data of previous data in a single query.
-    @db.query("INSERT INTO `#{@db.esc_table(newname)}` SELECT * FROM `#{@db.esc_table(self.name)}`")
+    # Insert data of previous data in a single query.
+    @db.query("INSERT INTO `#{@db.escape_table(newname)}` SELECT * FROM `#{@db.escape_table(name)}`")
 
 
-    #Create indexes.
+    # Create indexes.
     new_table = @db.tables[newname]
     indexes_list = []
     indexes do |index|
@@ -331,20 +320,20 @@ class Baza::Driver::Mysql::Table < Baza::Table
     new_table.create_indexes(indexes_list)
 
 
-    #Return new table.
-    return new_table
+    # Return new table.
+    new_table
   end
 
-  #Returns the current engine of the table.
+  # Returns the current engine of the table.
   def engine
-    return @data[:Engine]
+    @data[:engine]
   end
 
-  #Changes the engine for a table.
+  # Changes the engine for a table.
   def engine=(newengine)
     raise "Invalid engine: '#{newengine}'." unless newengine.to_s.match(/^[A-z]+$/)
-    @db.query("ALTER TABLE `#{@db.esc_table(self.name)}` ENGINE = #{newengine}") if self.engine.to_s != newengine.to_s
-    @data[:Engine] = newengine
+    @db.query("ALTER TABLE `#{@db.escape_table(name)}` ENGINE = #{newengine}") if engine.to_s != newengine.to_s
+    @data[:engine] = newengine
   end
 
 private

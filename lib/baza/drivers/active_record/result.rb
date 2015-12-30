@@ -5,11 +5,9 @@ class Baza::Driver::ActiveRecord::Result < Baza::ResultBase
   end
 
   def fetch
-    begin
-      return to_enum.next
-    rescue StopIteration
-      return false
-    end
+    return to_enum.next
+  rescue StopIteration
+    return false
   end
 
   def each

@@ -1,30 +1,30 @@
-#This class handels all the SQLite3-columns.
+# This class handels all the SQLite3-columns.
 class Baza::Driver::Sqlite3::Column < Baza::Column
   attr_reader :args
 
-  #Constructor. This should not be called manually.
+  # Constructor. This should not be called manually.
   def initialize(args)
     @args = args
     @db = @args[:db]
   end
 
-  #Returns the name of the column.
+  # Returns the name of the column.
   def name
-    return @args[:data][:name].to_sym
+    @args[:data][:name]
   end
 
   def table_name
     @args[:table_name]
   end
 
-  #Returns the columns table-object.
+  # Returns the columns table-object.
   def table
-    return @db.tables[table_name]
+    @db.tables[table_name]
   end
 
-  #Returns the data of the column as a hash in knjdb-format.
+  # Returns the data of the column as a hash in knjdb-format.
   def data
-    return {
+    {
       type: type,
       name: name,
       null: null?,
@@ -35,9 +35,9 @@ class Baza::Driver::Sqlite3::Column < Baza::Column
     }
   end
 
-  #Returns the type of the column.
+  # Returns the type of the column.
   def type
-    if !@type
+    unless @type
       if match = @args[:data][:type].match(/^([A-z]+)$/)
         @maxlength = false
         type = match[0].to_sym
@@ -50,8 +50,8 @@ class Baza::Driver::Sqlite3::Column < Baza::Column
       elsif match = @args[:data][:type].match(/^(.+)\((\d+)\)$/)
         @maxlength = match[2]
         type = match[1].to_sym
-      elsif @args[:data].key?(:type) and @args[:data][:type].to_s == ""
-        #A type can actually be empty in SQLite... Wtf?
+      elsif @args[:data].key?(:type) && @args[:data][:type].to_s == ""
+        # A type can actually be empty in SQLite... Wtf?
         return @args[:data][:type]
       end
 
@@ -64,23 +64,23 @@ class Baza::Driver::Sqlite3::Column < Baza::Column
       raise "Still not type? (#{@args[:data]})" if @type.to_s.strip.empty?
     end
 
-    return @type
+    @type
   end
 
-  #Returns true if the column allows null. Otherwise false.
+  # Returns true if the column allows null. Otherwise false.
   def null?
     return false if @args[:data][:notnull].to_i == 1
-    return true
+    true
   end
 
-  #Returns the maxlength of the column.
+  # Returns the maxlength of the column.
   def maxlength
-    self.type if !@maxlength
+    type unless @maxlength
     return @maxlength if @maxlength
-    return false
+    false
   end
 
-  #Returns the default value of the column.
+  # Returns the default value of the column.
   def default
     def_val = @args[:data][:dflt_value]
 
@@ -89,38 +89,38 @@ class Baza::Driver::Sqlite3::Column < Baza::Column
     end
 
     return false if @args[:data][:dflt_value].to_s.empty?
-    return def_val
+    def_val
   end
 
-  #Returns true if the column is the primary key.
+  # Returns true if the column is the primary key.
   def primarykey?
     return false if @args[:data][:pk].to_i == 0
-    return true
+    true
   end
 
-  #Returns true if the column is auto-increasing.
+  # Returns true if the column is auto-increasing.
   def autoincr?
-    return true if @args[:data][:pk].to_i == 1 && @args[:data][:type].to_sym == :integer
-    return false
+    return true if @args[:data][:pk].to_i == 1 && @args[:data][:type].to_s == "integer"
+    false
   end
 
-  #Drops the column from the table.
+  # Drops the column from the table.
   def drop
     table.copy(drops: name)
   end
 
   def reload
-    @db.q("PRAGMA table_info(`#{@db.esc_table(table_name)}`)") do |data|
-      next unless data[:name] == @args[:data][:name]
+    @db.q("PRAGMA table_info(`#{@db.escape_table(table_name)}`)") do |data|
+      next unless data.fetch(:name) == name
       @args[:data] = data
       @type = nil
-      return
+      return nil
     end
 
-    raise "Could not find data for column: #{table_name}.#{name}"
+    raise Baza::Errors::ColumnNotFound, "Could not find data for column: #{table_name}.#{name}"
   end
 
-  #Changes data on the column. Like the name, type, maxlength or whatever.
+  # Changes data on the column. Like the name, type, maxlength or whatever.
   def change(data)
     newdata = data.clone
 
@@ -136,11 +136,11 @@ class Baza::Driver::Sqlite3::Column < Baza::Column
 
     new_table = table.copy(
       alter_columns: {
-        name.to_sym => newdata
+        name => newdata
       }
     )
 
-    @args[:data][:name] = newdata[:name].to_s
+    @args[:data][:name] = newdata.fetch(:name).to_s
     reload
   end
 end

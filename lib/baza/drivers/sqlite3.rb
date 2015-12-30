@@ -1,7 +1,9 @@
-#This class handels SQLite3-specific behaviour.
+# This class handels SQLite3-specific behaviour.
 class Baza::Driver::Sqlite3 < Baza::BaseSqlDriver
   path = "#{File.dirname(__FILE__)}/sqlite3"
 
+  autoload :Database, "#{path}/database"
+  autoload :Databases, "#{path}/databases"
   autoload :Table, "#{path}/table"
   autoload :Tables, "#{path}/tables"
   autoload :Column, "#{path}/column"
@@ -14,7 +16,14 @@ class Baza::Driver::Sqlite3 < Baza::BaseSqlDriver
 
   attr_reader :mutex_statement_reader
 
-  #Helper to enable automatic registering of database using Baza::Db.from_object
+  def self.args
+    [{
+      label: "Path",
+      name: "path"
+    }]
+  end
+
+  # Helper to enable automatic registering of database using Baza::Db.from_object
   def self.from_object(args)
     if args[:object].class.name == "SQLite3::Database"
       return {
@@ -27,7 +36,7 @@ class Baza::Driver::Sqlite3 < Baza::BaseSqlDriver
     end
   end
 
-  #Constructor. This should not be called manually.
+  # Constructor. This should not be called manually.
   def initialize(baza_db)
     super
 
@@ -38,14 +47,14 @@ class Baza::Driver::Sqlite3 < Baza::BaseSqlDriver
       @conn = @baza.opts[:conn]
     else
       raise "No path was given." unless @path
-      require 'sqlite3' unless ::Object.const_defined?(:SQLite3)
+      require "sqlite3" unless ::Object.const_defined?(:SQLite3)
 
       @conn = ::SQLite3::Database.open(@path)
       @conn.type_translation = false # Type translation is always done in the C ext for SQLite3
     end
   end
 
-  #Executes a query against the driver.
+  # Executes a query against the driver.
   def query(sql)
     @mutex_statement_reader.synchronize do
       return Baza::Driver::Sqlite3::Result.new(self, @conn.prepare(sql))
@@ -53,29 +62,33 @@ class Baza::Driver::Sqlite3 < Baza::BaseSqlDriver
   end
 
   def query_ubuf(sql)
-    return Baza::Driver::Sqlite3::UnbufferedResult.new(self, @conn.prepare(sql))
+    Baza::Driver::Sqlite3::UnbufferedResult.new(self, @conn.prepare(sql))
   end
 
-  #Escapes a string to be safe to used in a query.
+  # Escapes a string to be safe to used in a query.
   def escape(string)
-    #This code is taken directly from the documentation so we dont have to rely on the SQLite3::Database class. This way it can also be used with JRuby and IronRuby...
-    #http://sqlite-ruby.rubyforge.org/classes/SQLite/Database.html
-    return string.to_s.gsub(/'/, "''")
+    # This code is taken directly from the documentation so we dont have to rely on the SQLite3::Database class. This way it can also be used with JRuby and IronRuby...
+    # http://sqlite-ruby.rubyforge.org/classes/SQLite/Database.html
+    string.to_s.gsub(/'/, "''")
   end
 
-  #Returns the last inserted ID.
+  # Returns the last inserted ID.
   def last_id
     return @conn.last_insert_row_id if @conn.respond_to?(:last_insert_row_id)
-    return query("SELECT last_insert_rowid() AS id").fetch[:id].to_i
+    query("SELECT last_insert_rowid() AS id").fetch[:id].to_i
   end
 
-  #Closes the connection to the database.
+  # Closes the connection to the database.
   def close
     @mutex_statement_reader.synchronize { @conn.close }
   end
 
-  #Starts a transaction, yields the database and commits.
+  # Starts a transaction, yields the database and commits.
   def transaction
     @conn.transaction { yield @baza }
+  end
+
+  def supports_multiple_databases?
+    false
   end
 end

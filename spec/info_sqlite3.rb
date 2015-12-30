@@ -6,18 +6,19 @@ class Baza::InfoSqlite3
     require "tmpdir"
 
     @path = "#{Dir.tmpdir}/baza_sqlite3_test_#{Time.now.to_f.to_s.hash}_#{Random.rand}.sqlite3"
-    File.unlink(path) if File.exists?(@path)
+    File.unlink(path) if File.exist?(@path)
 
     @db = Baza::Db.new({
       type: :sqlite3,
       path: @path,
       index_append_table_name: true,
-      sql_to_error: true
+      sql_to_error: true,
+      debug: false
     }.merge(args))
   end
 
   def before
-    @db.tables.list.each do |name, table|
+    @db.tables.list do |table|
       table.drop
     end
   end

@@ -1,5 +1,5 @@
 class Baza::Driver::Sqlite3Java::UnbufferedResult < Baza::ResultBase
-  def initialize(driver, result_set)
+  def initialize(_driver, result_set)
     @result_set = result_set
 
     if @result_set
@@ -22,7 +22,7 @@ class Baza::Driver::Sqlite3Java::UnbufferedResult < Baza::ResultBase
       hash[@columns[count]] = @result_set.string(count + 1)
     end
 
-    return hash
+    hash
   end
 
   def each

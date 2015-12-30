@@ -2,7 +2,8 @@ shared_examples_for "a baza indexes driver" do
   let(:driver) { constant.new }
   let(:db) { driver.db }
   let(:test_table) do
-    db.tables.create("test", {
+    db.tables.create(
+      "test",
       columns: [
         {name: "id", type: :int, autoincr: true, primarykey: true},
         {name: "text", type: :varchar},
@@ -12,7 +13,7 @@ shared_examples_for "a baza indexes driver" do
         :text,
         {name: :email, unique: true, columns: [:email]}
       ]
-    })
+    )
     db.tables[:test]
   end
 
@@ -35,13 +36,13 @@ shared_examples_for "a baza indexes driver" do
 
     table = db.tables[:test2]
     index = table.index(:index_on_text2)
-    index.table.name.should eq :test2
+    expect(index.table.name).to eq "test2"
   end
 
-  it "should raise an error when index is not found" do
-    expect {
+  it "raises an error when an index isn't found" do
+    expect do
       test_table.index("index_that_doesnt_exist")
-    }.to raise_error(Errno::ENOENT)
+    end.to raise_error(Baza::Errors::IndexNotFound)
   end
 
   describe "#unique?" do

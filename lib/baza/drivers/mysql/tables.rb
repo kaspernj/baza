@@ -1,10 +1,10 @@
 require "monitor"
 
-#This class handels various MySQL-table-specific behaviour.
+# This class handels various MySQL-table-specific behaviour.
 class Baza::Driver::Mysql::Tables
   attr_reader :db, :list
 
-  #Constructor. This should not be called manually.
+  # Constructor. This should not be called manually.
   def initialize(args)
     @args = args
     @db = @args[:db]
@@ -13,57 +13,57 @@ class Baza::Driver::Mysql::Tables
     @list_should_be_reloaded = true
   end
 
-  #Cleans the wref-map.
+  # Cleans the wref-map.
   def clean
     @list.clean
   end
 
-  #Returns a table by the given table-name.
+  # Returns a table by the given table-name.
   def [](table_name)
-    table_name = table_name.to_sym
+    table_name = table_name.to_s
 
     if table = @list[table_name]
       return table
     end
 
-    tables = []
-    list(name: table_name) do |table_obj|
-      return table_obj if table_obj.name == table_name
+    list(name: table_name) do |table_i|
+      return table_i if table_i.name == table_name
     end
 
-    list do |table_obj|
-      tables << table_obj.name
-    end
-
-    raise Errno::ENOENT, "Table was not found: '#{table_name}' (#{table_name.class.name}) (tables: #{tables})."
+    raise Baza::Errors::TableNotFound, "Table was not found: '#{table_name}'"
   end
 
-  #Yields the tables of the current database.
+  # Yields the tables of the current database.
   def list(args = {})
-    ret = {} unless block_given?
+    ret = [] unless block_given?
 
-    sql = "SHOW TABLE STATUS"
-    sql << " WHERE `Name` = '#{@db.esc(args[:name])}'" if args[:name]
+    where_args = {}
+    where_args["TABLE_NAME"] = args.fetch(:name) if args[:name]
+
+    if args[:database]
+      where_args["TABLE_SCHEMA"] = args.fetch(:database)
+    else
+      where_args["TABLE_SCHEMA"] = @db.opts.fetch(:db)
+    end
 
     @list_mutex.synchronize do
-      @db.q(sql) do |d_tables|
-        raise "No name was given from: #{d_tables}" unless d_tables.is_a?(Hash) && d_tables[:Name]
-        name = d_tables[:Name].to_sym
+      @db.select([:information_schema, :tables], where_args) do |d_tables|
+        name = d_tables.fetch(:TABLE_NAME)
         obj = @list.get(name)
 
         unless obj
           obj = Baza::Driver::Mysql::Table.new(
             db: @db,
-            data: d_tables,
+            data: {name: name, engine: d_tables.fetch(:ENGINE)},
             tables: self
           )
           @list[name] = obj
         end
 
         if block_given?
-          yield(obj)
+          yield obj
         else
-          ret[name] = obj
+          ret << obj
         end
       end
     end
@@ -76,7 +76,7 @@ class Baza::Driver::Mysql::Tables
   end
 
   CREATE_ALLOWED_KEYS = [:columns, :indexes, :temp, :return_sql]
-  #Creates a new table by the given name and data.
+  # Creates a new table by the given name and data.
   def create(name, data, args = nil)
     raise "No columns was given for '#{name}'." if !data[:columns] || data[:columns].empty?
 
@@ -94,13 +94,11 @@ class Baza::Driver::Mysql::Tables
 
     if data[:indexes] && !data[:indexes].empty?
       sql << ", "
-      sql << Baza::Driver::Mysql::Table.create_indexes(data[:indexes], {
-        db: @db,
-        return_sql: true,
-        create: false,
-        on_table: false,
-        table_name: name
-      })
+      sql << Baza::Driver::Mysql::Table.create_indexes(data[:indexes],         db: @db,
+                                                                               return_sql: true,
+                                                                               create: false,
+                                                                               on_table: false,
+                                                                               table_name: name)
     end
 
     sql << ")"
@@ -109,7 +107,7 @@ class Baza::Driver::Mysql::Tables
     @db.query(sql)
   end
 
-  private
+private
 
   def add_to_list(table)
     raise "Already exists: '#{table.name}'." if @list.key?(table.name) && @list[table.name].__id__ != table.__id__

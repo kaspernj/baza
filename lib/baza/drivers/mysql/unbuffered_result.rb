@@ -1,6 +1,6 @@
-#This class controls the unbuffered result for the normal MySQL-driver.
+# This class controls the unbuffered result for the normal MySQL-driver.
 class Baza::Driver::Mysql::UnbufferedResult < Baza::ResultBase
-  #Constructor. This should not be called manually.
+  # Constructor. This should not be called manually.
   def initialize(conn, opts, result)
     @conn = conn
     @result = result
@@ -14,7 +14,7 @@ class Baza::Driver::Mysql::UnbufferedResult < Baza::ResultBase
     end
   end
 
-  #Returns a single result.
+  # Returns a single result.
   def fetch
     if @enum
       begin
@@ -48,7 +48,7 @@ class Baza::Driver::Mysql::UnbufferedResult < Baza::ResultBase
     end
   end
 
-  #Loops over every single result yielding it.
+  # Loops over every single result yielding it.
   def each
     while row = fetch
       yield row
@@ -57,7 +57,7 @@ class Baza::Driver::Mysql::UnbufferedResult < Baza::ResultBase
 
 private
 
-  #Lods the keys for the object.
+  # Lods the keys for the object.
   def load_keys
     @keys = []
     keys = @res.fetch_fields

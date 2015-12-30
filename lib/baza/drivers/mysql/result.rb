@@ -1,4 +1,4 @@
-#This class controls the results for the normal MySQL-driver.
+# This class controls the results for the normal MySQL-driver.
 class Baza::Driver::Mysql::Result < Baza::ResultBase
   INT_TYPES = {
     ::Mysql::Field::TYPE_DECIMAL => true,
@@ -18,25 +18,25 @@ class Baza::Driver::Mysql::Result < Baza::ResultBase
     ::Mysql::Field::TYPE_DATE => true
   }
 
-  #Constructor. This should not be called manually.
+  # Constructor. This should not be called manually.
   def initialize(driver, result)
     @driver = driver
     @result = result
     @mutex = Mutex.new
     @type_translation = driver.baza.opts[:type_translation]
 
-    if @result
-      @keys = []
-      @types = [] if @type_translation
+    return unless @result
 
-      @result.fetch_fields.each do |key|
-        @keys << key.name.to_sym
-        @types << key.type if @type_translation
-      end
+    @keys = []
+    @types = [] if @type_translation
+
+    @result.fetch_fields.each do |key|
+      @keys << key.name.to_sym
+      @types << key.type if @type_translation
     end
   end
 
-  #Returns a single result as a hash with symbols as keys.
+  # Returns a single result as a hash with symbols as keys.
   def fetch
     fetched = nil
     @mutex.synchronize do
@@ -51,10 +51,10 @@ class Baza::Driver::Mysql::Result < Baza::ResultBase
       end
     end
 
-    return Hash[*@keys.zip(fetched).flatten]
+    Hash[*@keys.zip(fetched).flatten]
   end
 
-  #Loops over every result yielding it.
+  # Loops over every result yielding it.
   def each
     while data = fetch
       yield data
@@ -64,18 +64,18 @@ class Baza::Driver::Mysql::Result < Baza::ResultBase
 private
 
   def translate_value_to_type(value, type_no)
-    unless value === nil
-      if INT_TYPES[type_no]
-        return value.to_i
-      elsif FLOAT_TYPES[type_no]
-        return value.to_f
-      elsif TIME_TYPES[type_no]
-        return Time.parse(value)
-      elsif DATE_TYPES[type_no]
-        return Date.parse(value)
-      else
-        return value.to_s
-      end
+    return if value == nil
+
+    if INT_TYPES[type_no]
+      return value.to_i
+    elsif FLOAT_TYPES[type_no]
+      return value.to_f
+    elsif TIME_TYPES[type_no]
+      return Time.parse(value)
+    elsif DATE_TYPES[type_no]
+      return Date.parse(value)
+    else
+      return value.to_s
     end
   end
 end
