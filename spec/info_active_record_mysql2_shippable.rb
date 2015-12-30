@@ -16,7 +16,7 @@ class Baza::InfoActiveRecordMysql2
   end
 
   def initialize(args = {})
-    data = Baza::InfoActiveRecord.connection
+    data = Baza::InfoActiveRecordMysql2.connection
 
     @db = Baza::Db.new({
       type: :active_record,
