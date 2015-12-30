@@ -15,13 +15,13 @@ class Baza::InfoActiveRecordMysql
     {pool: conn_pool, conn: conn}
   end
 
-  def initialize
+  def initialize(args = {})
     data = Baza::InfoActiveRecord.connection
 
-    @db = Baza::Db.new(
+    @db = Baza::Db.new({
       type: :active_record,
       conn: data[:conn]
-    )
+    }.merge(args))
   end
 
   def before
