@@ -81,7 +81,7 @@ private
         stmt.close if stmt
         @java_rs_data.delete(id) if result && id
 
-        if e.message == 'query does not return ResultSet'
+        if e.message == "query does not return ResultSet"
           return query_no_result_set(sql)
         else
           raise e
@@ -91,12 +91,10 @@ private
   end
 
   def query_no_result_set(sql)
-    begin
-      stmt = @conn.create_statement
-      stmt.execute(sql)
-      return nil
-    ensure
-      stmt.close if stmt
-    end
+    stmt = @conn.create_statement
+    stmt.execute(sql)
+    return nil
+  ensure
+    stmt.close if stmt
   end
 end

@@ -1,6 +1,10 @@
+Baza.load_driver("mysql")
+
 class Baza::Driver::MysqlJava < Baza::JdbcDriver
   path = "#{File.dirname(__FILE__)}/mysql_java"
 
+  autoload :Database, "#{path}/database"
+  autoload :Databases, "#{path}/databases"
   autoload :Table, "#{path}/table"
   autoload :Tables, "#{path}/tables"
   autoload :Column, "#{path}/column"
@@ -13,7 +17,7 @@ class Baza::Driver::MysqlJava < Baza::JdbcDriver
 
   attr_reader :conn, :conns
 
-  #Helper to enable automatic registering of database using Baza::Db.from_object
+  # Helper to enable automatic registering of database using Baza::Db.from_object
   def self.from_object(args)
     if args[:object].class.name == "Java::ComMysqlJdbc::JDBC4Connection"
       return {
@@ -25,7 +29,7 @@ class Baza::Driver::MysqlJava < Baza::JdbcDriver
       }
     end
 
-    return nil
+    nil
   end
 
   def initialize(baza)
@@ -36,7 +40,7 @@ class Baza::Driver::MysqlJava < Baza::JdbcDriver
     if @opts[:encoding]
       @encoding = @opts[:encoding]
     else
-      @encoding = 'utf8'
+      @encoding = "utf8"
     end
 
     if @baza.opts.key?(:port)
@@ -49,7 +53,7 @@ class Baza::Driver::MysqlJava < Baza::JdbcDriver
     reconnect
   end
 
-  #Respawns the connection to the MySQL-database.
+  # Respawns the connection to the MySQL-database.
   def reconnect
     @mutex.synchronize do
       if @baza.opts[:conn]
@@ -61,23 +65,23 @@ class Baza::Driver::MysqlJava < Baza::JdbcDriver
       end
 
       query_no_result_set("SET SQL_MODE = ''")
-      query_no_result_set("SET NAMES '#{self.esc(@encoding)}'") if @encoding
+      query_no_result_set("SET NAMES '#{esc(@encoding)}'") if @encoding
     end
   end
 
-  #Returns the last inserted ID for the connection.
+  # Returns the last inserted ID for the connection.
   def last_id
     data = query("SELECT LAST_INSERT_ID() AS id").fetch
     return data[:id].to_i if data[:id]
     raise "Could not figure out last inserted ID."
   end
 
-  #Closes the connection threadsafe.
+  # Closes the connection threadsafe.
   def close
     @mutex.synchronize { @conn.close }
   end
 
-  #Destroyes the connection.
+  # Destroyes the connection.
   def destroy
     @conn = nil
     @baza = nil
@@ -87,7 +91,7 @@ class Baza::Driver::MysqlJava < Baza::JdbcDriver
     @port = nil
   end
 
-  #Inserts multiple rows in a table. Can return the inserted IDs if asked to in arguments.
+  # Inserts multiple rows in a table. Can return the inserted IDs if asked to in arguments.
   def insert_multi(tablename, arr_hashes, args = nil)
     sql = "INSERT INTO `#{tablename}` ("
 
@@ -103,7 +107,7 @@ class Baza::Driver::MysqlJava < Baza::JdbcDriver
     keys.each do |col_name|
       sql << "," unless first
       first = false if first
-      sql << "`#{self.esc_col(col_name)}`"
+      sql << "`#{escape_column(col_name)}`"
     end
 
     sql << ") VALUES ("
@@ -128,7 +132,7 @@ class Baza::Driver::MysqlJava < Baza::JdbcDriver
           sql << @baza.sqlval(val)
         end
       else
-        hash.each do |key, val|
+        hash.each do |_key, val|
           if first_key
             first_key = false
           else
@@ -147,7 +151,7 @@ class Baza::Driver::MysqlJava < Baza::JdbcDriver
     query_no_result_set(sql)
 
     if args && args[:return_id]
-      first_id = self.last_id
+      first_id = last_id
       raise "Invalid ID: #{first_id}" if first_id.to_i <= 0
       ids = [first_id]
       1.upto(arr_hashes.length - 1) do |count|

@@ -2,40 +2,43 @@ class Baza::Driver::Sqlite3::Table < Baza::Table
   attr_reader :name, :type
 
   def initialize(args)
-    @db = args[:db]
-    @data = args[:data]
-    @name = @data[:name].to_sym
-    @type = @data[:type].to_sym
-    @tables = args[:tables]
+    @db = args.fetch(:db)
+    @data = args.fetch(:data)
+    @name = @data.fetch(:name)
+    @type = @data.fetch(:type).to_sym
+    @tables = args.fetch(:tables)
 
     @list = Wref::Map.new
     @indexes_list = Wref::Map.new
   end
 
   def maxlength
-    return @data[:maxlength]
+    @data.fetch(:maxlength)
   end
 
   def reload
-    @data = @db.select("sqlite_master", {type: "table", name: name}, {orderby: "name"}).fetch
+    data = @db.select("sqlite_master", {type: "table", name: name}, orderby: "name").fetch
+    raise Baza::Errors::TableNotFound unless data
+    @data = data
+    self
   end
 
   def rows_count
-    data = @db.q("SELECT COUNT(*) AS count FROM `#{name}`").fetch
-    return data[:count].to_i
+    data = @db.query("SELECT COUNT(*) AS count FROM `#{name}`").fetch
+    data.fetch(:count).to_i
   end
 
-  #Drops the table from the database.
+  # Drops the table from the database.
   def drop
     raise "Cant drop native table: '#{name}'." if native?
     @db.query("DROP TABLE `#{name}`")
     @tables.remove_from_list(self) if @tables.exists_in_list?(self)
   end
 
-  #Returns true if the table is safe to drop.
+  # Returns true if the table is safe to drop.
   def native?
     return true if name.to_s == "sqlite_sequence"
-    return false
+    false
   end
 
   def optimize
@@ -43,7 +46,7 @@ class Baza::Driver::Sqlite3::Table < Baza::Table
   end
 
   def rename(newname)
-    newname = newname.to_sym
+    newname = newname.to_s
 
     @tables.remove_from_list(self)
     newtable = clone(newname)
@@ -53,37 +56,42 @@ class Baza::Driver::Sqlite3::Table < Baza::Table
     @name = newname
     @tables.add_to_list(self)
 
-    #Rename table on all columns and indexes.
-    @list.each do |name, column|
+    # Rename table on all columns and indexes.
+    @list.each do |_name, column|
       column.args[:table_name] = newname
     end
 
-    @indexes_list.each do |name, index|
+    @indexes_list.each do |_name, index|
       index.args[:table_name] = newname
     end
   end
 
+  # Drops the table and creates it again
   def truncate
-    @db.query("DELETE FROM `#{name}` WHERE 1=1")
-    return nil
+    table_data = data
+    drop
+    @db.tables.create(table_data.delete(:name), table_data)
+    self
   end
 
   def table
-    return @db.tables[@table_name]
+    @db.tables[@table_name]
   end
 
   def column(name)
-    list = self.columns
-    return list[name] if list[name]
-    raise Errno::ENOENT, "Column not found: #{name}."
+    columns do |column|
+      return column if column.name == name.to_s
+    end
+
+    raise Baza::Errors::ColumnNotFound, "Column not found: #{name}"
   end
 
   def columns
     @db.cols
-    ret = {}
+    ret = []
 
-    @db.q("PRAGMA table_info(`#{@db.esc_table(name)}`)") do |d_cols|
-      column_name = d_cols.fetch(:name).to_sym
+    @db.query("PRAGMA table_info(`#{@db.escape_table(name)}`)") do |d_cols|
+      column_name = d_cols.fetch(:name)
       obj = @list.get(column_name)
 
       unless obj
@@ -98,7 +106,7 @@ class Baza::Driver::Sqlite3::Table < Baza::Table
       if block_given?
         yield obj
       else
-        ret[column_name] = obj
+        ret << obj
       end
     end
 
@@ -111,28 +119,28 @@ class Baza::Driver::Sqlite3::Table < Baza::Table
 
   def create_columns(col_arr)
     col_arr.each do |col_data|
-      #if col_data.key?("after")
+      # if col_data.key?("after")
       #  self.create_column_programmatic(col_data)
-      #else
-        @db.query("ALTER TABLE `#{self.name}` ADD COLUMN #{@db.cols.data_sql(col_data)};")
-      #end
+      # else
+      @db.query("ALTER TABLE `#{name}` ADD COLUMN #{@db.cols.data_sql(col_data)};")
+      # end
     end
   end
 
   def create_column_programmatic(col_data)
     temp_name = "temptable_#{Time.now.to_f.to_s.hash}"
-    cloned_tabled = self.clone(temp_name)
-    cols_cur = self.columns
-    @db.query("DROP TABLE `#{self.name}`")
+    cloned_tabled = clone(temp_name)
+    cols_cur = columns
+    @db.query("DROP TABLE `#{name}`")
 
-    sql = "CREATE TABLE `#{self.name}` ("
+    sql = "CREATE TABLE `#{name}` ("
     first = true
     cols_cur.each do |name, col|
-      sql << ", " if !first
+      sql << ", " unless first
       first = false if first
       sql << @db.cols.data_sql(col.data)
 
-      if col_data[:after] and col_data[:after] == name
+      if col_data[:after] && col_data[:after] == name
         sql << ", #{@db.cols.data_sql(col_data)}"
       end
     end
@@ -141,15 +149,13 @@ class Baza::Driver::Sqlite3::Table < Baza::Table
 
     sql = "INSERT INTO `#{self.name}` SELECT "
     first = true
-    cols_cur.each do |name, col|
-      sql << ", " if !first
+    cols_cur.each do |name, _col|
+      sql << ", " unless first
       first = false if first
 
       sql << "`#{name}`"
 
-      if col_data[:after] and col_data[:after] == name
-        sql << ", ''"
-      end
+      sql << ", ''" if col_data[:after] && col_data[:after] == name
     end
     sql << " FROM `#{temp_name}`"
     @db.query(sql)
@@ -161,23 +167,26 @@ class Baza::Driver::Sqlite3::Table < Baza::Table
 
     sql = "CREATE TABLE `#{newname}` ("
     first = true
-    columns.each do |name, col|
+    columns.each do |col|
       sql << ", " unless first
       first = false if first
       sql << @db.cols.data_sql(col.data)
     end
-
     sql << ");"
+
     @db.query(sql)
     @db.query("INSERT INTO `#{newname}` SELECT * FROM `#{name}`")
 
     indexes_to_create = []
     new_table = @db.tables[newname.to_sym]
-    indexes.each do |name, index|
-      index_name = name.to_s
+    indexes.each do |index|
+      index_name = index.name.gsub(/\A#{Regexp.escape(name)}_/, "")
 
       if @db.opts[:index_append_table_name] && match = index_name.match(/\A(.+?)__(.+)\Z/)
         index_name = match[2]
+      else
+        # Two indexes with the same name can't exist, and we are cloning, so we need to change the name
+        index_name = "#{newname}_#{index_name}"
       end
 
       create_data = index.data
@@ -197,29 +206,28 @@ class Baza::Driver::Sqlite3::Table < Baza::Table
 
   def copy(args = {})
     temp_name = "temptable_#{Time.now.to_f.to_s.hash}"
-    cloned_tabled = self.clone(temp_name)
-    cols_cur = self.columns
-    @db.query("DROP TABLE `#{self.name}`")
+    cloned_tabled = clone(temp_name)
+    cols_cur = columns
+    @db.query("DROP TABLE `#{name}`")
 
-    sql = "CREATE TABLE `#{self.name}` ("
+    sql = "CREATE TABLE `#{name}` ("
     first = true
-    cols_cur.each do |name, col|
-      next if args[:drops] && args[:drops].to_s.include?(name.to_s)
+    cols_cur.each do |col|
+      next if args[:drops] && args[:drops].to_s.include?(col.name)
 
-      sql << ", " if !first
+      sql << ", " unless first
       first = false if first
 
-      if args.key?(:alter_columns) && args[:alter_columns][name.to_sym]
-        sql << @db.cols.data_sql(args[:alter_columns][name.to_sym])
+      if args.key?(:alter_columns) && args[:alter_columns][col.name]
+        sql << @db.cols.data_sql(args[:alter_columns][col.name])
       else
         sql << @db.cols.data_sql(col.data)
       end
 
-      if args[:new]
-        args[:new].each do |col_data|
-          if col_data[:after] && col_data[:after] == name
-            sql << ", #{@db.cols.data_sql(col_data)}"
-          end
+      next unless args[:new]
+      args[:new].each do |col_data|
+        if col_data[:after] && col_data[:after] == col.name
+          sql << ", #{@db.cols.data_sql(col_data)}"
         end
       end
     end
@@ -227,22 +235,19 @@ class Baza::Driver::Sqlite3::Table < Baza::Table
     sql << ");"
     @db.query(sql)
 
-    sql = "INSERT INTO `#{self.name}` SELECT "
+    sql = "INSERT INTO `#{name}` SELECT "
     first = true
-    cols_cur.each do |name, col|
-      next if args[:drops] && args[:drops].to_s.include?(name.to_s)
+    cols_cur.each do |col|
+      next if args[:drops] && args[:drops].to_s.include?(col.name)
 
-      sql << ", " if !first
+      sql << ", " unless first
       first = false if first
 
-      sql << "`#{name}`"
+      sql << "`#{col.name}`"
 
-      if args[:news]
-        args[:news].each do |col_data|
-          if col_data[:after] && col_data[:after] == name.to_s
-            sql << ", ''"
-          end
-        end
+      next unless args[:news]
+      args[:news].each do |col_data|
+        sql << ", ''" if col_data[:after] && col_data[:after] == col.name
       end
     end
 
@@ -252,36 +257,33 @@ class Baza::Driver::Sqlite3::Table < Baza::Table
   end
 
   def index(index_name)
-    index_name = index_name.to_sym
+    index_name = index_name.to_s
 
-    if index = @indexes_list[index_name]
+    if (index = @indexes_list[index_name])
       return index
     end
 
     if @db.opts[:index_append_table_name]
       tryname = "#{name}__#{index_name}"
 
-      if index = @indexes_list[tryname]
+      if (index = @indexes_list[tryname])
         return index
       end
     end
 
-    indexes do |index|
-      if index.name.to_s == "#{name}__#{index_name}"
-        return index
-      end
-
-      return index if index.name.to_s == index_name.to_s
+    indexes do |index_i|
+      return index_i if index_i.name == "#{name}__#{index_name}"
+      return index_i if index_i.name == index_name
     end
 
-    raise Errno::ENOENT, "Index not found: #{index_name}."
+    raise Baza::Errors::IndexNotFound, "Index not found: #{index_name}."
   end
 
   def indexes
     @db.indexes
-    ret = {} unless block_given?
+    ret = [] unless block_given?
 
-    @db.q("PRAGMA index_list(`#{@db.esc_table(name)}`)") do |d_indexes|
+    @db.query("PRAGMA index_list(`#{@db.escape_table(name)}`)") do |d_indexes|
       next if d_indexes[:Key_name] == "PRIMARY"
       obj = @indexes_list.get(d_indexes[:name])
 
@@ -304,7 +306,7 @@ class Baza::Driver::Sqlite3::Table < Baza::Table
       if block_given?
         yield(obj)
       else
-        ret[d_indexes[:name].to_sym] = obj
+        ret << obj
       end
     end
 
@@ -316,31 +318,28 @@ class Baza::Driver::Sqlite3::Table < Baza::Table
   end
 
   def create_indexes(index_arr, args = nil)
-    if args && args[:return_sql]
-      ret = []
-    end
+    ret = [] if args && args[:return_sql]
 
     index_arr.each do |index_data|
-      if index_data.is_a?(String) or index_data.is_a?(Symbol)
+      if index_data.is_a?(String) || index_data.is_a?(Symbol)
         index_data = {name: index_data, columns: [index_data]}
       end
 
       raise "No name was given in data: '#{index_data}'." if !index_data.key?(:name) || index_data[:name].to_s.strip.empty?
       raise "No columns was given on index #{index_data[:name]}." if !index_data[:columns] || index_data[:columns].empty?
 
-      name = index_data[:name]
-      name = "#{self.name}__#{name}" if @db.opts[:index_append_table_name]
+      index_name = index_data.fetch(:name).to_s
+      index_name = "#{name}__#{index_name}" if @db.opts[:index_append_table_name] && !index_name.start_with?("#{name}__")
 
       sql = "CREATE"
       sql << " UNIQUE" if index_data[:unique]
-      sql << " INDEX '#{@db.esc_col(name)}' ON `#{@db.esc_table(self.name)}` ("
+      sql << " INDEX '#{@db.escape_column(index_name)}' ON `#{@db.escape_table(name)}` ("
 
       first = true
-      index_data[:columns].each do |col_name|
-        sql << ", " if !first
+      index_data.fetch(:columns).each do |col_name|
+        sql << ", " unless first
         first = false if first
-
-        sql << "`#{@db.esc_col(col_name)}`"
+        sql << "`#{@db.escape_column(col_name)}`"
       end
 
       sql << ")"
@@ -366,15 +365,15 @@ class Baza::Driver::Sqlite3::Table < Baza::Table
       indexes: []
     }
 
-    columns.each do |name, column|
+    columns do |column|
       ret[:columns] << column.data
     end
 
-    indexes.each do |name, index|
-      ret[:indexes] << index.data if name != "PRIMARY"
+    indexes do |index|
+      ret[:indexes] << index.data unless index.name == "PRIMARY"
     end
 
-    return ret
+    ret
   end
 
   def insert(data)
@@ -391,8 +390,8 @@ class Baza::Driver::Sqlite3::Table < Baza::Table
 
 private
 
-  def parse_columns_from_sql sql
+  def parse_columns_from_sql(sql)
     columns_sql = sql.match(/\((.+?)\)\Z/)[1]
-    return columns_sql.split(",").map{ |column| column[1, column.length - 2] }
+    columns_sql.split(",").map { |column| column.match(/`(.+)`/)[1] }
   end
 end

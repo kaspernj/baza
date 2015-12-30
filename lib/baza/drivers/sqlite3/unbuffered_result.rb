@@ -1,8 +1,8 @@
 class Baza::Driver::Sqlite3::UnbufferedResult
-  def initialize(driver, statement)
+  def initialize(_driver, statement)
     @statement = statement
     @statement.execute
-    @columns = statement.columns.map { |column| column.to_sym }
+    @columns = statement.columns.map(&:to_sym)
   end
 
   def fetch

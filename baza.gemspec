@@ -131,7 +131,7 @@ Gem::Specification.new do |s|
   s.rubygems_version = "2.4.0"
   s.summary = "A database abstraction layer, model framework and database framework."
 
-  if s.respond_to? :specification_version then
+  if s.respond_to? :specification_version
     s.specification_version = 4
 
     if Gem::Version.new(Gem::VERSION) >= Gem::Version.new('1.2.0') then
@@ -197,4 +197,3 @@ Gem::Specification.new do |s|
     s.add_dependency(%q<rubocop>, ["= 0.35.1"])
   end
 end
-

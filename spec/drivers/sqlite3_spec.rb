@@ -19,7 +19,8 @@ describe Baza::Driver::Sqlite3 do
     db = Baza::InfoSqlite3.new.db
     db2 = Baza::InfoSqlite3.new.db
 
-    db.tables.create(:test_table, {
+    db.tables.create(
+      :test_table,
       columns: [
         {name: "id", type: :int, autoincr: true, primarykey: true},
         {name: "testname", type: :varchar, null: true}
@@ -27,7 +28,7 @@ describe Baza::Driver::Sqlite3 do
       indexes: [
         "testname"
       ]
-    })
+    )
 
     table1 = db.tables["test_table"]
     cols1 = table1.columns
@@ -36,9 +37,7 @@ describe Baza::Driver::Sqlite3 do
       table1.insert(testname: "TestRow#{count}")
     end
 
-    expect {
-      table2 = db2.tables[:test_table]
-    }.to raise_error(Errno::ENOENT)
+    expect { table2 = db2.tables[:test_table] }.to raise_error(Baza::Errors::TableNotFound)
 
     db.copy_to(db2)
 

@@ -12,5 +12,6 @@ before_script:
   - mysql -e 'CREATE DATABASE baza;'
 script:
   - CODECLIMATE_REPO_TOKEN=98c06de7271764c9cd7bbde7cee4ddfa0d3e7db4bd9933f17779100276672e5f bundle exec rspec
+  - bundle exec rake best_practice_project:run
 notifications:
    email: false
