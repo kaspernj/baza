@@ -1,4 +1,4 @@
-class Baza::Driver::Mysql::Columns
+class Baza::Driver::Pg::Columns
   def initialize(args)
     @db = args.fetch(:db)
   end
@@ -11,18 +11,19 @@ class Baza::Driver::Mysql::Columns
 
     raise "No type given." unless data[:type]
     type = data[:type].to_sym
+    type = :serial if type == :int && data[:autoincr]
+    type = :timestamp if type == :datetime
 
     data[:maxlength] = 255 if type == :varchar && !data.key?(:maxlength)
 
     sql = "#{@db.sep_col}#{@db.escape_column(data.fetch(:name))}#{@db.sep_col} #{type}"
     sql << "(#{data[:maxlength]})" if data[:maxlength]
     sql << " PRIMARY KEY" if data[:primarykey]
-    sql << " AUTO_INCREMENT" if data[:autoincr]
     sql << " NOT NULL" unless data[:null]
 
     if data.key?(:default_func)
       sql << " DEFAULT #{data[:default_func]}"
-    elsif data.key?(:default) && data[:default] != false
+    elsif data.key?(:default) && data[:default]
       sql << " DEFAULT '#{@db.escape(data[:default])}'"
     end
 

@@ -1,5 +1,5 @@
 class Baza::BaseSqlDriver
-  attr_reader :baza, :conn, :sep_table, :sep_col, :sep_val
+  attr_reader :baza, :conn, :sep_database, :sep_table, :sep_col, :sep_val, :sep_index
   attr_accessor :tables, :cols, :indexes
 
   def self.from_object(_args)
@@ -8,9 +8,11 @@ class Baza::BaseSqlDriver
   def initialize(baza)
     @baza = baza
 
+    @sep_database = "`"
     @sep_table = "`"
     @sep_col = "`"
     @sep_val = "'"
+    @sep_index = "`"
   end
 
   def escape(string)
@@ -31,11 +33,27 @@ class Baza::BaseSqlDriver
   # Escapes a string to be used as a column.
   def escape_column(string)
     string = string.to_s
-    raise "Invalid column-string: #{string}" unless string.index(@sep_col).nil?
+    raise "Invalid column-string: #{string}" if string.include?(@sep_col)
     string
   end
-  alias escape_table escape_column
-  alias escape_database escape_column
+
+  def escape_table(string)
+    string = string.to_s
+    raise "Invalid table-string: #{string}" if string.include?(@sep_table)
+    string
+  end
+
+  def escape_database(string)
+    string = string.to_s
+    raise "Invalid database-string: #{string}" if string.include?(@sep_database)
+    string
+  end
+
+  def escape_index(string)
+    string = string.to_s
+    raise "Invalid index-string: #{string}" if string.include?(@sep_index)
+    string
+  end
 
   def transaction
     @baza.q("BEGIN TRANSACTION")

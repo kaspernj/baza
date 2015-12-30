@@ -199,10 +199,10 @@ shared_examples_for "a baza driver" do
 
   it "generates proper sql" do
     time = Time.new(1985, 6, 17, 10, 30)
-    db.insert(:test, {date: time}, return_sql: true).should eql("INSERT INTO `test` (`date`) VALUES ('1985-06-17 10:30:00')")
+    db.insert(:test, {date: time}, return_sql: true).should eql("INSERT INTO #{db.sep_table}test#{db.sep_table} (#{db.sep_col}date#{db.sep_col}) VALUES (#{db.sep_val}1985-06-17 10:30:00#{db.sep_val})")
 
     date = Date.new(1985, 6, 17)
-    db.insert(:test, {date: date}, return_sql: true).should eql("INSERT INTO `test` (`date`) VALUES ('1985-06-17')")
+    db.insert(:test, {date: date}, return_sql: true).should eql("INSERT INTO #{db.sep_table}test#{db.sep_table} (#{db.sep_col}date#{db.sep_col}) VALUES (#{db.sep_val}1985-06-17#{db.sep_val})")
   end
 
   it "is able to make new connections based on given objects" do

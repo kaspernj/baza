@@ -41,10 +41,6 @@ class Baza::Driver::Mysql::Table < Baza::Table
     self
   end
 
-  def rows_count
-    @db.query("SELECT COUNT(*) AS count FROM `#{@db.escape_table(name)}`").fetch.fetch(:count).to_i
-  end
-
   def column(name)
     name = name.to_s
 
@@ -142,15 +138,6 @@ class Baza::Driver::Mysql::Table < Baza::Table
     raise Baza::Errors::IndexNotFound, "Index not found: #{name}."
   end
 
-  def create_columns(col_arr)
-    @db.transaction do
-      col_arr.each do |col_data|
-        sql = "ALTER TABLE `#{name}` ADD COLUMN #{@db.cols.data_sql(col_data)};"
-        @db.query(sql)
-      end
-    end
-  end
-
   def create_indexes(index_arr, args = {})
     Baza::Driver::Mysql::Table.create_indexes(index_arr, args.merge(table_name: name, db: @db))
   end
@@ -184,10 +171,10 @@ class Baza::Driver::Mysql::Table < Baza::Table
       end
 
       sql << " UNIQUE" if index_data[:unique]
-      sql << " INDEX `#{db.escape_column(index_data.fetch(:name))}`"
+      sql << " INDEX #{db.sep_index}#{db.escape_index(index_data.fetch(:name))}#{db.sep_index}"
 
       if args[:on_table] || !args.key?(:on_table)
-        sql << " ON `#{db.escape_table(args.fetch(:table_name))}`"
+        sql << " ON #{db.sep_table}#{db.escape_table(args.fetch(:table_name))}#{db.sep_table}"
       end
 
       sql << " ("
@@ -197,7 +184,7 @@ class Baza::Driver::Mysql::Table < Baza::Table
         sql << ", " unless first
         first = false if first
 
-        sql << "`#{db.escape_column(col_name)}`"
+        sql << "#{db.sep_col}#{db.escape_column(col_name)}#{db.sep_col}"
       end
 
       sql << ")"
@@ -228,11 +215,6 @@ class Baza::Driver::Mysql::Table < Baza::Table
     end
   end
 
-  def truncate
-    @db.query("TRUNCATE `#{@db.escape_table(name)}`")
-    self
-  end
-
   def data
     ret = {
       name: name,
@@ -251,14 +233,10 @@ class Baza::Driver::Mysql::Table < Baza::Table
     ret
   end
 
-  def insert(data)
-    @db.insert(name, data)
-  end
-
   def clone(newname, args = {})
     raise "Invalid name." if newname.to_s.strip.empty?
 
-    sql = "CREATE TABLE `#{@db.escape_table(newname)}` ("
+    sql = "CREATE TABLE #{@db.sep_table}#{@db.escape_table(newname)}#{@db.sep_table} ("
     first = true
     pkey_found = false
     pkeys = []
@@ -291,7 +269,7 @@ class Baza::Driver::Mysql::Table < Baza::Table
       pkeys.each do |pkey|
         sql << ", " unless first
         first = false if first
-        sql << "`#{@db.escape_column(pkey)}`"
+        sql << "#{@db.sep_col}#{@db.escape_column(pkey)}#{@db.sep_col}"
       end
 
       sql << ")"
@@ -307,7 +285,7 @@ class Baza::Driver::Mysql::Table < Baza::Table
 
 
     # Insert data of previous data in a single query.
-    @db.query("INSERT INTO `#{@db.escape_table(newname)}` SELECT * FROM `#{@db.escape_table(name)}`")
+    @db.query("INSERT INTO #{@db.sep_table}#{@db.escape_table(newname)}#{@db.sep_table} SELECT * FROM #{@db.sep_table}#{@db.escape_table(name)}#{@db.sep_table}")
 
 
     # Create indexes.

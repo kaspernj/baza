@@ -7,7 +7,7 @@ class Baza::Driver::Mysql::Tables
   # Constructor. This should not be called manually.
   def initialize(args)
     @args = args
-    @db = @args[:db]
+    @db = @args.fetch(:db)
     @list_mutex = Monitor.new
     @list = Wref::Map.new
     @list_should_be_reloaded = true
@@ -82,7 +82,7 @@ class Baza::Driver::Mysql::Tables
 
     sql = "CREATE"
     sql << " TEMPORARY" if data[:temp]
-    sql << " TABLE `#{name}` ("
+    sql << " TABLE #{db.sep_table}#{@db.escape_table(name)}#{db.sep_table} ("
 
     first = true
     data[:columns].each do |col_data|
@@ -94,11 +94,14 @@ class Baza::Driver::Mysql::Tables
 
     if data[:indexes] && !data[:indexes].empty?
       sql << ", "
-      sql << Baza::Driver::Mysql::Table.create_indexes(data[:indexes],         db: @db,
-                                                                               return_sql: true,
-                                                                               create: false,
-                                                                               on_table: false,
-                                                                               table_name: name)
+      sql << Baza::Driver::Mysql::Table.create_indexes(
+        data[:indexes],
+        db: @db,
+        return_sql: true,
+        create: false,
+        on_table: false,
+        table_name: name
+      )
     end
 
     sql << ")"

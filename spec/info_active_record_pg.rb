@@ -1,4 +1,4 @@
-class Baza::InfoActiveRecordMysql
+class Baza::InfoActiveRecordPg
   attr_reader :db
 
   def self.connection
@@ -6,7 +6,7 @@ class Baza::InfoActiveRecordMysql
     require "pg"
 
     @conn_pool ||= ::ActiveRecord::Base.establish_connection(
-      adapter: "mysql",
+      adapter: "postgresql",
       host: "localhost",
       database: "baza-test",
       username: "baza-test",
@@ -18,8 +18,7 @@ class Baza::InfoActiveRecordMysql
   end
 
   def initialize(args = {})
-    @data = Baza::InfoActiveRecordMysql.connection
-    @data.fetch(:conn).reconnect!
+    @data = Baza::InfoActiveRecordPg.connection
 
     @db = Baza::Db.new({
       type: :active_record,

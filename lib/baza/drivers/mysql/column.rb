@@ -19,24 +19,6 @@ class Baza::Driver::Mysql::Column < Baza::Column
     @args.fetch(:table_name)
   end
 
-  # Returns the table-object that this column belongs to.
-  def table
-    @db.tables[table_name]
-  end
-
-  # Returns all data of the column in the knjdb-format.
-  def data
-    {
-      type: type,
-      name: name,
-      null: null?,
-      maxlength: maxlength,
-      default: default,
-      primarykey: primarykey?,
-      autoincr: autoincr?
-    }
-  end
-
   def reload
     data = @db.query("SHOW FULL COLUMNS FROM `#{@db.escape_table(table_name)}` WHERE `Field` = '#{@db.esc(name)}'").fetch
     raise Baza::Errors::ColumnNotFound unless data
@@ -114,8 +96,8 @@ class Baza::Driver::Mysql::Column < Baza::Column
 
   # Changes the column properties by the given hash.
   def change(data)
-    col_escaped = "`#{@db.escape_column(name)}`"
-    table_escape = "`#{@db.escape_table(table_name)}`"
+    col_escaped = "#{@db.sep_col}#{@db.escape_column(name)}#{@db.sep_col}"
+    table_escape = "#{@db.sep_table}#{@db.escape_table(table_name)}#{@db.sep_table}"
     newdata = data.clone
 
     newdata[:name] = name unless newdata.key?(:name)

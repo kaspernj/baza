@@ -6,7 +6,7 @@ class Baza::Driver::Mysql::Databases
   def create(args)
     sql = "CREATE DATABASE"
     sql << " IF NOT EXISTS" if args[:if_not_exists]
-    sql << " `#{@db.escape_table(args.fetch(:name))}`"
+    sql << " #{@db.sep_database}#{@db.escape_table(args.fetch(:name))}#{@db.sep_database}"
 
     @db.query(sql)
     true

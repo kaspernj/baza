@@ -1,12 +1,14 @@
-class Baza::InfoMysql2
+class Baza::InfoPg
   attr_reader :db
 
   def initialize(args = {})
     @db = Baza::Db.new({
-      type: :mysql2,
-      host: "localhost",
-      user: "shippa",
-      db: "baza"
+      type: :pg,
+      host: "127.0.0.1",
+      user: "baza-test",
+      pass: "BBH7djRUKzL5nmG3",
+      db: "baza-test",
+      debug: false
     }.merge(args))
   end
 

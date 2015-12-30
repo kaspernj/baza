@@ -52,6 +52,7 @@ shared_examples_for "a baza tables driver" do
   it "#clone" do
     test_table
     test_table.create_indexes([{name: "index_on_text", columns: ["text"]}])
+
     expect(test_table.indexes.length).to eq 1
 
     test_table.insert(text: "test1")

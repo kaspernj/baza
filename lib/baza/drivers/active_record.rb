@@ -41,31 +41,47 @@ class Baza::Driver::ActiveRecord < Baza::BaseSqlDriver
       require_relative "mysql2"
       require_relative "mysql2/result"
 
+      @sep_database = "`"
       @sep_table = "`"
       @sep_col = "`"
       @sep_val = "'"
+      @sep_index = "`"
       @driver_type = :mysql2
       @result_constant = Baza::Driver::Mysql2::Result
     elsif conn_name.include?("mysql")
       require_relative "mysql"
       require_relative "mysql/result"
 
+      @sep_database = "`"
       @sep_table = "`"
       @sep_col = "`"
       @sep_val = "'"
+      @sep_index = "`"
       @driver_type = :mysql
       @result_constant = Baza::Driver::Mysql::Result unless RUBY_PLATFORM == "java"
     elsif conn_name.include?("sqlite")
+      @sep_database = "`"
       @sep_table = "`"
       @sep_col = "`"
       @sep_val = "'"
+      @sep_index = "`"
       @driver_type = :sqlite3
+    elsif conn_name.include?("postgresqladapter")
+      @sep_database = '"'
+      @sep_table = '"'
+      @sep_col = '"'
+      @sep_index = '"'
+      @sep_val = "'"
+      @driver_type = :pg
+      @result_constant = Baza::Driver::Pg::Result
     else
       raise "Unknown type: '#{conn_name}'."
     end
 
     if conn_name.include?("mysql")
       @baza.opts[:db] ||= query("SELECT DATABASE()").fetch.fetch(:"DATABASE()")
+    elsif @driver_type == :pg
+      @baza.opts[:db] ||= query("SELECT current_database()").fetch.values.first
     end
 
     @result_constant ||= Baza::Driver::ActiveRecord::Result
@@ -98,7 +114,7 @@ class Baza::Driver::ActiveRecord < Baza::BaseSqlDriver
   end
 
   def transaction
-    if @driver_type == :mysql || @driver_type == :mysql2
+    if @driver_type == :mysql || @driver_type == :mysql2 || @driver_type == :pg
       query("START TRANSACTION")
     elsif @driver_type == :sqlite3
       query("BEGIN TRANSACTION")
@@ -116,6 +132,6 @@ class Baza::Driver::ActiveRecord < Baza::BaseSqlDriver
   end
 
   def supports_multiple_databases?
-    conn_name.include?("mysql")
+    conn_name.include?("mysql") || @driver_type == :pg
   end
 end
