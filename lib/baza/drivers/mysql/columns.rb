@@ -30,7 +30,7 @@ class Baza::Driver::Mysql::Columns
     end
 
     sql << " COMMENT '#{@args[:db].escape(data[:comment])}'" if data.key?(:comment)
-    sql << " AFTER `#{@args[:db].esc_col(data[:after])}`" if data[:after] && !data[:first]
+    sql << " AFTER `#{@args[:db].escape_column(data[:after])}`" if data[:after] && !data[:first]
     sql << " FIRST" if data[:first]
     sql << " STORAGE #{data[:storage].to_s.upcase}" if data[:storage]
 

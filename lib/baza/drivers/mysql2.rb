@@ -1,6 +1,10 @@
+Baza.load_driver("mysql")
+
 class Baza::Driver::Mysql2 < Baza::MysqlBaseDriver
   path = "#{File.dirname(__FILE__)}/mysql2"
 
+  autoload :Database, "#{path}/database"
+  autoload :Databases, "#{path}/databases"
   autoload :Table, "#{path}/table"
   autoload :Tables, "#{path}/tables"
   autoload :Column, "#{path}/column"

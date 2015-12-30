@@ -110,7 +110,7 @@ class Baza::Driver::Sqlite3::Column < Baza::Column
   end
 
   def reload
-    @db.q("PRAGMA table_info(`#{@db.esc_table(table_name)}`)") do |data|
+    @db.q("PRAGMA table_info(`#{@db.escape_table(table_name)}`)") do |data|
       next unless data.fetch(:name) == name
       @args[:data] = data
       @type = nil

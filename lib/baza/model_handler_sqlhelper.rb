@@ -12,7 +12,7 @@ class Baza::ModelHandler
     end
 
     if args[:table]
-      table_def = "`#{db.esc_table(args[:table])}`."
+      table_def = "`#{db.escape_table(args[:table])}`."
     else
       table_def = ""
     end
@@ -51,7 +51,7 @@ class Baza::ModelHandler
             list_args.delete("ordermode")
           end
 
-          sql_order << "#{table_def}`#{db.esc_col(list_args["orderby"])}`#{ordermode}"
+          sql_order << "#{table_def}`#{db.escape_column(list_args["orderby"])}`#{ordermode}"
           list_args.delete("orderby")
         end
       elsif list_args["orderby"].is_a?(Array)
@@ -74,7 +74,7 @@ class Baza::ModelHandler
                 args[:joined_tables].each do |table_name, _table_data|
                   next if table_name.to_s != val[0][0].to_s
                   do_joins[table_name] = true
-                  orders << "`#{db.esc_table(table_name)}`.`#{db.esc_col(val[0][1])}`#{ordermode}"
+                  orders << "`#{db.escape_table(table_name)}`.`#{db.escape_column(val[0][1])}`#{ordermode}"
                   found = true
                   break
                 end
@@ -105,7 +105,7 @@ class Baza::ModelHandler
                 args[:joined_tables].each do |table_name, _table_data|
                   next unless table_name == col.first
                   do_joins[table_name] = true
-                  col_str = "`#{db.esc_table(table_name)}`.`#{db.esc_col(col.last)}`"
+                  col_str = "`#{db.escape_table(table_name)}`.`#{db.escape_column(col.last)}`"
                   found = true
                   break
                 end
@@ -151,7 +151,7 @@ class Baza::ModelHandler
                 if val[:sql]
                   orders << val[:sql]
                 elsif val[:col]
-                  orders << "`#{db.esc_table(table_name_real)}`.`#{db.esc_col(val[:col])}`#{ordermode}"
+                  orders << "`#{db.escape_table(table_name_real)}`.`#{db.escape_column(val[:col])}`#{ordermode}"
                 else
                   raise "Couldnt figure out how to order based on keys: '#{val.keys.sort}'."
                 end
@@ -168,7 +168,7 @@ class Baza::ModelHandler
 
           raise "Column not found for ordering: #{orderstr}." unless found
 
-          orders << "#{table_def}`#{db.esc_col(orderstr)}`#{ordermode}" if orderstr
+          orders << "#{table_def}`#{db.escape_column(orderstr)}`#{ordermode}" if orderstr
         end
 
         sql_order << orders.join(", ")
@@ -194,7 +194,7 @@ class Baza::ModelHandler
         table_sym = realkey[0].to_sym
         do_joins[table_sym] = true
         list_table_name_real = table_sym
-        table = "`#{db.esc_table(list_table_name_real)}`."
+        table = "`#{db.escape_table(list_table_name_real)}`."
         key = realkey[1]
       else
         table = table_def
@@ -213,7 +213,7 @@ class Baza::ModelHandler
           raise "Could not make real value out of class: #{val.class.name} => #{val}."
         end
 
-        sql_where << " AND #{table}`#{db.esc_col(key)}` = '#{db.esc(realval)}'"
+        sql_where << " AND #{table}`#{db.escape_column(key)}` = '#{db.esc(realval)}'"
         found = true
       elsif args[:cols].key?(key.to_s)
         if val.is_a?(Array)
@@ -221,19 +221,19 @@ class Baza::ModelHandler
             sql_where << " AND false"
           else
             escape_sql = val.map { |v| "'#{db.escape(v)}'" }.join(",")
-            sql_where << " AND #{table}`#{db.esc_col(key)}` IN (#{escape_sql})"
+            sql_where << " AND #{table}`#{db.escape_column(key)}` IN (#{escape_sql})"
           end
         elsif val.is_a?(Hash) && val[:type].to_sym == :col
           raise "No table was given for join: '#{val}', key: '#{key}' on table #{table}." unless val.key?(:table)
           do_joins[val[:table].to_sym] = true
-          sql_where << " AND #{table}`#{db.esc_col(key)}` = `#{db.esc_table(val[:table])}`.`#{db.esc_col(val[:name])}`"
+          sql_where << " AND #{table}`#{db.escape_column(key)}` = `#{db.escape_table(val[:table])}`.`#{db.escape_column(val[:name])}`"
         elsif val.is_a?(Hash) && val[:type] == :sqlval && val[:val] == :null
-          sql_where << " AND #{table}`#{db.esc_col(key)}` IS NULL"
+          sql_where << " AND #{table}`#{db.escape_column(key)}` IS NULL"
         elsif val.is_a?(Proc)
           call_args = OpenStruct.new(ob: self, db: db)
-          sql_where << " AND #{table}`#{db.esc_col(key)}` = '#{db.esc(val.call(call_args))}'"
+          sql_where << " AND #{table}`#{db.escape_column(key)}` = '#{db.esc(val.call(call_args))}'"
         else
-          sql_where << " AND #{table}`#{db.esc_col(key)}` = '#{db.esc(val)}'"
+          sql_where << " AND #{table}`#{db.escape_column(key)}` = '#{db.esc(val)}'"
         end
 
         found = true
@@ -249,28 +249,28 @@ class Baza::ModelHandler
         found = true
       elsif args.key?(:cols_dbrows) && !args[:cols_dbrows].index("#{key}_id").nil?
         if val == false
-          sql_where << " AND #{table}`#{db.esc_col(key.to_s + "_id")}` = '0'"
+          sql_where << " AND #{table}`#{db.escape_column(key.to_s + "_id")}` = '0'"
         elsif val.is_a?(Array)
           if val.empty?
             sql_where << " AND false"
           else
-            sql_where << " AND #{table}`#{db.esc_col("#{key}_id")}` IN (#{Knj::ArrayExt.join(arr: val, sep: ",", surr: "'", callback: proc { |obj| obj.id.sql })})"
+            sql_where << " AND #{table}`#{db.escape_column("#{key}_id")}` IN (#{Knj::ArrayExt.join(arr: val, sep: ",", surr: "'", callback: proc { |obj| obj.id.sql })})"
           end
         else
-          sql_where << " AND #{table}`#{db.esc_col(key.to_s + "_id")}` = '#{db.esc(val.id)}'"
+          sql_where << " AND #{table}`#{db.escape_column(key.to_s + "_id")}` = '#{db.esc(val.id)}'"
         end
 
         found = true
       elsif match = key.match(/^([A-z_\d]+)_(search|has)$/) && !args[:cols].key?(match[1]).nil?
         if match[2] == "search"
           Knj::Strings.searchstring(val).each do |str|
-            sql_where << " AND #{table}`#{db.esc_col(match[1])}` LIKE '%#{db.esc(str)}%'"
+            sql_where << " AND #{table}`#{db.escape_column(match[1])}` LIKE '%#{db.esc(str)}%'"
           end
         elsif match[2] == "has"
           if val
-            sql_where << " AND #{table}`#{db.esc_col(match[1])}` != ''"
+            sql_where << " AND #{table}`#{db.escape_column(match[1])}` != ''"
           else
-            sql_where << " AND #{table}`#{db.esc_col(match[1])}` = ''"
+            sql_where << " AND #{table}`#{db.escape_column(match[1])}` = ''"
           end
         end
 
@@ -289,13 +289,13 @@ class Baza::ModelHandler
                 sep: ",",
                 surr: "'"
               )
-              sql_where << " AND #{table}`#{db.esc_col(match[1])}` NOT IN (#{escape_sql})"
+              sql_where << " AND #{table}`#{db.escape_column(match[1])}` NOT IN (#{escape_sql})"
             end
           else
-            sql_where << " AND #{table}`#{db.esc_col(match[1])}` != '#{db.esc(val)}'"
+            sql_where << " AND #{table}`#{db.escape_column(match[1])}` != '#{db.esc(val)}'"
           end
         elsif match[2] == "lower"
-          sql_where << " AND LOWER(#{table}`#{db.esc_col(match[1])}`) = LOWER('#{db.esc(val)}')"
+          sql_where << " AND LOWER(#{table}`#{db.escape_column(match[1])}`) = LOWER('#{db.esc(val)}')"
         else
           raise "Unknown mode: '#{match[2]}'."
         end
@@ -317,23 +317,23 @@ class Baza::ModelHandler
                 sql_where << " OR "
               end
 
-              sql_where << "#{db.sqlspecs.strftime("%d %m %Y", "#{table}`#{db.esc_col(match[1])}`")} #{self.not(not_v, "!")}= #{db.sqlspecs.strftime("%d %m %Y", "'#{db.esc(dayval.dbstr)}'")}"
+              sql_where << "#{db.sqlspecs.strftime("%d %m %Y", "#{table}`#{db.escape_column(match[1])}`")} #{self.not(not_v, "!")}= #{db.sqlspecs.strftime("%d %m %Y", "'#{db.esc(dayval.dbstr)}'")}"
             end
 
             sql_where << ")"
           else
-            sql_where << " AND #{db.sqlspecs.strftime("%d %m %Y", "#{table}`#{db.esc_col(match[1])}`")} #{self.not(not_v, "!")}= #{db.sqlspecs.strftime("%d %m %Y", "'#{db.esc(val.dbstr)}'")}"
+            sql_where << " AND #{db.sqlspecs.strftime("%d %m %Y", "#{table}`#{db.escape_column(match[1])}`")} #{self.not(not_v, "!")}= #{db.sqlspecs.strftime("%d %m %Y", "'#{db.esc(val.dbstr)}'")}"
           end
         elsif match[2] == "week"
-          sql_where << " AND #{db.sqlspecs.strftime("%W %Y", "#{table}`#{db.esc_col(match[1])}`")} #{self.not(not_v, "!")}= #{db.sqlspecs.strftime("%W %Y", "'#{db.esc(val.dbstr)}'")}"
+          sql_where << " AND #{db.sqlspecs.strftime("%W %Y", "#{table}`#{db.escape_column(match[1])}`")} #{self.not(not_v, "!")}= #{db.sqlspecs.strftime("%W %Y", "'#{db.esc(val.dbstr)}'")}"
         elsif match[2] == "month"
-          sql_where << " AND #{db.sqlspecs.strftime("%m %Y", "#{table}`#{db.esc_col(match[1])}`")} #{self.not(not_v, "!")}= #{db.sqlspecs.strftime("%m %Y", "'#{db.esc(val.dbstr)}'")}"
+          sql_where << " AND #{db.sqlspecs.strftime("%m %Y", "#{table}`#{db.escape_column(match[1])}`")} #{self.not(not_v, "!")}= #{db.sqlspecs.strftime("%m %Y", "'#{db.esc(val.dbstr)}'")}"
         elsif match[2] == "year"
-          sql_where << " AND #{db.sqlspecs.strftime("%Y", "#{table}`#{db.esc_col(match[1])}`")} #{self.not(not_v, "!")}= #{db.sqlspecs.strftime("%Y", "'#{db.esc(val.dbstr)}'")}"
+          sql_where << " AND #{db.sqlspecs.strftime("%Y", "#{table}`#{db.escape_column(match[1])}`")} #{self.not(not_v, "!")}= #{db.sqlspecs.strftime("%Y", "'#{db.esc(val.dbstr)}'")}"
         elsif match[2] == "from" || match[2] == "above"
-          sql_where << " AND #{table}`#{db.esc_col(match[1])}` >= '#{db.esc(val.dbstr)}'"
+          sql_where << " AND #{table}`#{db.escape_column(match[1])}` >= '#{db.esc(val.dbstr)}'"
         elsif match[2] == "to" || match[2] == "below"
-          sql_where << " AND #{table}`#{db.esc_col(match[1])}` <= '#{db.esc(val.dbstr)}'"
+          sql_where << " AND #{table}`#{db.escape_column(match[1])}` <= '#{db.esc(val.dbstr)}'"
         else
           raise "Unknown date-key: #{match[2]}."
         end
@@ -341,21 +341,21 @@ class Baza::ModelHandler
         found = true
       elsif args.key?(:cols_num) && match = key.match(/^(.+)_(from|to|above|below|numeric)$/) && !args[:cols_num].index(match[1]).nil?
         if match[2] == "from"
-          sql_where << " AND #{table}`#{db.esc_col(match[1])}` >= '#{db.esc(val)}'"
+          sql_where << " AND #{table}`#{db.escape_column(match[1])}` >= '#{db.esc(val)}'"
         elsif match[2] == "to"
-          sql_where << " AND #{table}`#{db.esc_col(match[1])}` <= '#{db.esc(val)}'"
+          sql_where << " AND #{table}`#{db.escape_column(match[1])}` <= '#{db.esc(val)}'"
         elsif match[2] == "above"
-          sql_where << " AND #{table}`#{db.esc_col(match[1])}` > '#{db.esc(val)}'"
+          sql_where << " AND #{table}`#{db.escape_column(match[1])}` > '#{db.esc(val)}'"
         elsif match[2] == "below"
-          sql_where << " AND #{table}`#{db.esc_col(match[1])}` < '#{db.esc(val)}'"
+          sql_where << " AND #{table}`#{db.escape_column(match[1])}` < '#{db.esc(val)}'"
         else
           raise "Unknown method of treating cols-num-argument: #{match[2]}."
         end
 
         found = true
       elsif match = key.match(/^(.+)_lookup$/) && args[:cols].key?("#{match[1]}_id") && args[:cols].key?("#{match[1]}_class")
-        sql_where << " AND #{table}`#{db.esc_col("#{match[1]}_class")}` = '#{db.esc(val.table)}'"
-        sql_where << " AND #{table}`#{db.esc_col("#{match[1]}_id")}` = '#{db.esc(val.id)}'"
+        sql_where << " AND #{table}`#{db.escape_column("#{match[1]}_class")}` = '#{db.esc(val.table)}'"
+        sql_where << " AND #{table}`#{db.escape_column("#{match[1]}_id")}` = '#{db.esc(val.id)}'"
         found = true
       elsif realkey == "groupby"
         found = true
@@ -364,11 +364,11 @@ class Baza::ModelHandler
           val.each do |col_name|
             raise "Column '#{val}' not found on table '#{table}'." unless args[:cols].key?(col_name)
             sql_groupby << ", " if sql_groupby.length > 0
-            sql_groupby << "#{table}`#{db.esc_col(col_name)}`"
+            sql_groupby << "#{table}`#{db.escape_column(col_name)}`"
           end
         elsif val.is_a?(String)
           sql_groupby << ", " if sql_groupby.length > 0
-          sql_groupby << "#{table}`#{db.esc_col(val)}`"
+          sql_groupby << "#{table}`#{db.escape_column(val)}`"
         else
           raise "Unknown class given for 'groupby': '#{val.class.name}'."
         end

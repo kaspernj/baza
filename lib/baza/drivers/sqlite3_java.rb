@@ -2,6 +2,8 @@
 class Baza::Driver::Sqlite3Java < Baza::JdbcDriver
   path = "#{File.dirname(__FILE__)}/sqlite3_java"
 
+  autoload :Database, "#{path}/database"
+  autoload :Databases, "#{path}/databases"
   autoload :Table, "#{path}/table"
   autoload :Tables, "#{path}/tables"
   autoload :Column, "#{path}/column"

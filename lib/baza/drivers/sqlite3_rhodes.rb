@@ -2,6 +2,8 @@
 class Baza::Driver::Sqlite3Rhodes < Baza::BaseSqlDriver
   path = "#{File.dirname(__FILE__)}/sqlite3_rhodes"
 
+  autoload :Database, "#{path}/database"
+  autoload :Databases, "#{path}/databases"
   autoload :Table, "#{path}/table"
   autoload :Tables, "#{path}/tables"
   autoload :Column, "#{path}/column"

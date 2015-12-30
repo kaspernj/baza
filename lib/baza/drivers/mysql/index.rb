@@ -1,43 +1,50 @@
 class Baza::Driver::Mysql::Index < Baza::Index
   attr_reader :args, :columns
+  attr_accessor :table_name
 
   def initialize(args)
-    @args = args
+    @db = args.fetch(:db)
+    @data = args.fetch(:data)
+    @table_name = args.fetch(:table_name)
     @columns = []
   end
 
   # Used to validate in Wref::Map.
   def __object_unique_id__
-    @args.fetch(:data).fetch(:Key_name)
+    name
   end
 
   def name
-    @args.fetch(:data).fetch(:Key_name)
+    @data.fetch(:Key_name)
   end
 
   def table
-    @args.fetch(:db).tables[@args.fetch(:table_name)]
+    @db.tables[@table_name]
   end
 
   def drop
-    sql = "DROP INDEX `#{name}` ON `#{table.name}`"
+    sql = "DROP INDEX `#{name}` ON `#{@table_name}`"
 
     begin
-      @args.fetch(:db).query(sql)
+      @db.query(sql)
     rescue => e
       # The index has already been dropped - ignore.
       raise e if e.message.index("check that column/key exists") == nil
     end
+
+    self
   end
 
   def rename(newname)
-    newname = newname.to_sym
+    newname = newname.to_s
     create_args = data
     create_args[:name] = newname
 
     drop
     table.create_indexes([create_args])
-    @args[:data][:Key_name] = newname
+    @data[:Key_name] = newname
+
+    self
   end
 
   def data
@@ -49,7 +56,7 @@ class Baza::Driver::Mysql::Index < Baza::Index
 
   # Returns true if the index is a unique-index.
   def unique?
-    if @args.fetch(:data).fetch(:Index_type) == "UNIQUE" || @args.fetch(:data).fetch(:Non_unique).to_i == 0
+    if @data.fetch(:Index_type) == "UNIQUE" || @data.fetch(:Non_unique).to_i == 0
       return true
     else
       return false
@@ -58,14 +65,14 @@ class Baza::Driver::Mysql::Index < Baza::Index
 
   # Returns true if the index is a primary-index.
   def primary?
-    return true if @args.fetch(:data).fetch(:Key_name) == "PRIMARY"
+    return true if @data.fetch(:Key_name) == "PRIMARY"
     false
   end
 
   def reload
-    data = @db.query("SHOW INDEX FROM `#{@db.esc_table(name)}` WHERE `Key_name` = '#{@db.esc(args[:name])}'").fetch
+    data = @db.query("SHOW INDEX FROM `#{@db.escape_table(@table_name)}` WHERE `Key_name` = '#{@db.esc(name)}'").fetch
     raise Baza::Errors::IndexNotFound unless data
-    @args[:data] = data
+    @data = data
     self
   end
 end

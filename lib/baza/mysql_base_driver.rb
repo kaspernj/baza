@@ -37,7 +37,7 @@ class Baza::MysqlBaseDriver < Baza::BaseSqlDriver
     keys.each do |col_name|
       sql << "," unless first
       first = false if first
-      sql << "`#{esc_col(col_name)}`"
+      sql << "`#{escape_column(col_name)}`"
     end
 
     sql << ") VALUES ("
@@ -107,20 +107,6 @@ class Baza::MysqlBaseDriver < Baza::BaseSqlDriver
     rescue
       @baza.q("ROLLBACK")
       raise
-    end
-  end
-
-  def databases
-    Enumerator.new do |yielder|
-      @baza.q("SHOW DATABASES") do |data|
-        puts "Data: #{data}"
-
-        yielder << Baza::Database.new(
-          name: data.fetch(:Database),
-          driver: self,
-          baza: @baza
-        )
-      end
     end
   end
 end

@@ -1,4 +1,6 @@
 class Baza::Row
+  include Baza::DatabaseModelFunctionality
+
   attr_reader :args, :data
 
   def knj?
@@ -12,7 +14,7 @@ class Baza::Row
     end
 
     @args[:objects] = $objects if !@args[:objects] && $objects && $objects.is_a?(Baza::ModelHandler)
-    @args[:col_id] = :id unless @args[:col_id]
+    @args[:col_id] ||= :id
     raise "No table given." unless @args[:table]
 
     if @args[:data] && (@args[:data].is_a?(Integer) || @args[:data].is_a?(Fixnum) || @args[:data].is_a?(String))
@@ -33,14 +35,7 @@ class Baza::Row
   end
 
   def db
-    unless @args[:force_selfdb]
-      curthread = Thread.current
-      if curthread.is_a?(Knj::Thread) && curthread[:knjappserver] && curthread[:knjappserver][:db]
-        return curthread[:knjappserver][:db]
-      end
-    end
-
-    @args[:db]
+    @args.fetch(:db)
   end
 
   def ob
@@ -108,6 +103,10 @@ class Baza::Row
     @data[@args[:col_id]]
   end
 
+  def to_param
+    id
+  end
+
   def title
     return @data[@args[:col_title].to_sym] if @args[:col_title]
 
@@ -122,8 +121,12 @@ class Baza::Row
 
   alias_method :name, :title
 
-  def each(&args)
-    @data.each(&args)
+  def each(*args, &blk)
+    @data.each(*args, &blk)
+  end
+
+  def each_value(*args, &blk)
+    @data.each_value(*args, &blk)
   end
 
   def to_hash
@@ -134,9 +137,8 @@ class Baza::Row
     db.escape(str)
   end
 
-  def method_missing(*args)
-    func_name = args[0].to_s
-    if match = func_name.match(/^(\S+)\?$/) && @data.key?(match[1].to_sym)
+  def method_missing(func_name, *args)
+    if match = func_name.to_s.match(/^(\S+)\?$/) && @data.key?(match[1].to_sym)
       if @data[match[1].to_sym] == "1" || @data[match[1].to_sym] == "yes"
         return true
       elsif @data[match[1].to_sym] == "0" || @data[match[1].to_sym] == "no"
@@ -144,6 +146,6 @@ class Baza::Row
       end
     end
 
-    format("No such method: %s", func_name)
+    super
   end
 end

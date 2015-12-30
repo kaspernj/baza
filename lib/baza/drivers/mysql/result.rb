@@ -25,14 +25,14 @@ class Baza::Driver::Mysql::Result < Baza::ResultBase
     @mutex = Mutex.new
     @type_translation = driver.baza.opts[:type_translation]
 
-    if @result
-      @keys = []
-      @types = [] if @type_translation
+    return unless @result
 
-      @result.fetch_fields.each do |key|
-        @keys << key.name.to_sym
-        @types << key.type if @type_translation
-      end
+    @keys = []
+    @types = [] if @type_translation
+
+    @result.fetch_fields.each do |key|
+      @keys << key.name.to_sym
+      @types << key.type if @type_translation
     end
   end
 
@@ -64,18 +64,18 @@ class Baza::Driver::Mysql::Result < Baza::ResultBase
 private
 
   def translate_value_to_type(value, type_no)
-    unless value === nil
-      if INT_TYPES[type_no]
-        return value.to_i
-      elsif FLOAT_TYPES[type_no]
-        return value.to_f
-      elsif TIME_TYPES[type_no]
-        return Time.parse(value)
-      elsif DATE_TYPES[type_no]
-        return Date.parse(value)
-      else
-        return value.to_s
-      end
+    return if value == nil
+
+    if INT_TYPES[type_no]
+      return value.to_i
+    elsif FLOAT_TYPES[type_no]
+      return value.to_f
+    elsif TIME_TYPES[type_no]
+      return Time.parse(value)
+    elsif DATE_TYPES[type_no]
+      return Date.parse(value)
+    else
+      return value.to_s
     end
   end
 end

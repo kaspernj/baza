@@ -2,6 +2,8 @@
 class Baza::Driver::Sqlite3 < Baza::BaseSqlDriver
   path = "#{File.dirname(__FILE__)}/sqlite3"
 
+  autoload :Database, "#{path}/database"
+  autoload :Databases, "#{path}/databases"
   autoload :Table, "#{path}/table"
   autoload :Tables, "#{path}/tables"
   autoload :Column, "#{path}/column"
@@ -86,13 +88,7 @@ class Baza::Driver::Sqlite3 < Baza::BaseSqlDriver
     @conn.transaction { yield @baza }
   end
 
-  def databases
-    ArrayEnumerator.new do |yielder|
-      yielder << Baza::Database.new(
-        driver: self,
-        baza: @baza,
-        name: "Main"
-      )
-    end
+  def supports_multiple_databases?
+    false
   end
 end

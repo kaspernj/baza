@@ -78,8 +78,8 @@ private
 
   # Spawns a new database-result to read from.
   def new_res
-    table_esc = "`#{@args[:db].esc_table(@args[:table])}`"
-    col_esc = "`#{@args[:db].esc_col(@args[:col])}`"
+    table_esc = "`#{@args[:db].escape_table(@args[:table])}`"
+    col_esc = "`#{@args[:db].escape_column(@args[:col])}`"
     ids = @ids.shift(@args[:size])
 
     if ids.empty?

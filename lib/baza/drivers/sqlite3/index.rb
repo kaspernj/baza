@@ -3,12 +3,13 @@ class Baza::Driver::Sqlite3::Index < Baza::Index
 
   def initialize(args)
     @args = args
+    @data = args.delete(:data)
     @columns = []
     @db = args[:db]
   end
 
   def name
-    @args.fetch(:data).fetch(:name)
+    @data.fetch(:name)
   end
 
   def table_name
@@ -31,7 +32,7 @@ class Baza::Driver::Sqlite3::Index < Baza::Index
 
     drop
     table.create_indexes([create_args])
-    @args[:data][:name] = newname
+    @data[:name] = newname
   end
 
   def data
@@ -47,19 +48,19 @@ class Baza::Driver::Sqlite3::Index < Baza::Index
   end
 
   def unique?
-    @args.fetch(:data).fetch(:unique).to_i == 1
+    @data.fetch(:unique).to_i == 1
   end
 
   def reload
     data = nil
-    @db.query("PRAGMA index_list(`#{@db.esc_table(name)}`)") do |d_indexes|
+    @db.query("PRAGMA index_list(`#{@db.escape_table(name)}`)") do |d_indexes|
       next unless d_indexes.fetch(:name) == name
       data = d_indexes
       break
     end
 
     raise Baza::Errors::IndexNotFound unless data
-    @args[:data] = data
+    @data = data
     self
   end
 end

@@ -4,31 +4,30 @@ class Baza::InfoActiveRecordMysql
   def self.connection
     require "active_record"
 
-    conn_pool = ::ActiveRecord::Base.establish_connection(
+    @conn_pool ||= ::ActiveRecord::Base.establish_connection(
       adapter: "mysql",
       host: "localhost",
       database: "baza-test",
       username: "baza-test",
       password: "BBH7djRUKzL5nmG3"
     )
-    conn = conn_pool.connection
+    @conn ||= @conn_pool.connection
 
-    {pool: conn_pool, conn: conn}
+    {pool: @conn_pool, conn: @conn}
   end
 
   def initialize(args = {})
     @data = Baza::InfoActiveRecordMysql.connection
+    @data.fetch(:conn).reconnect!
 
     @db = Baza::Db.new({
       type: :active_record,
-      conn: @data[:conn]
+      conn: @data.fetch(:conn)
     }.merge(args))
   end
 
   def before
-    @db.tables.list do |table|
-      table.drop
-    end
+    @db.tables.list(&:drop)
   end
 
   def after

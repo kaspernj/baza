@@ -12,7 +12,8 @@ class Baza::InfoSqlite3
       type: :sqlite3,
       path: @path,
       index_append_table_name: true,
-      sql_to_error: true
+      sql_to_error: true,
+      debug: false
     }.merge(args))
   end
 

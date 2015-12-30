@@ -38,12 +38,18 @@ class Baza::Driver::ActiveRecord < Baza::BaseSqlDriver
     conn_name = @conn.class.name.to_s.downcase
 
     if conn_name.include?("mysql2")
+      require_relative "mysql2"
+      require_relative "mysql2/result"
+
       @sep_table = "`"
       @sep_col = "`"
       @sep_val = "'"
       @driver_type = :mysql2
       @result_constant = Baza::Driver::Mysql2::Result
     elsif conn_name.include?("mysql")
+      require_relative "mysql"
+      require_relative "mysql/result"
+
       @sep_table = "`"
       @sep_col = "`"
       @sep_val = "'"
@@ -56,6 +62,10 @@ class Baza::Driver::ActiveRecord < Baza::BaseSqlDriver
       @driver_type = :sqlite3
     else
       raise "Unknown type: '#{conn_name}'."
+    end
+
+    if conn_name.include?("mysql")
+      @baza.opts[:db] ||= query("SELECT DATABASE()").fetch.fetch(:"DATABASE()")
     end
 
     @result_constant ||= Baza::Driver::ActiveRecord::Result
@@ -71,13 +81,13 @@ class Baza::Driver::ActiveRecord < Baza::BaseSqlDriver
     @conn.quote_string(str.to_s)
   end
 
-  def esc_col(string)
+  def escape_column(string)
     string = string.to_s
     raise "Invalid column-string: #{string}" if string.include?(@sep_col)
     string
   end
 
-  def esc_table(string)
+  def escape_table(string)
     string = string.to_s
     raise "Invalid column-string: #{string}" if string.include?(@sep_col)
     string
@@ -103,5 +113,9 @@ class Baza::Driver::ActiveRecord < Baza::BaseSqlDriver
       query("ROLLBACK")
       raise
     end
+  end
+
+  def supports_multiple_databases?
+    conn_name.include?("mysql")
   end
 end

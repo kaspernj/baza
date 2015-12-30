@@ -29,13 +29,13 @@ class Baza::BaseSqlDriver
   alias_method :escape_alternative, :escape
 
   # Escapes a string to be used as a column.
-  def esc_col(string)
+  def escape_column(string)
     string = string.to_s
     raise "Invalid column-string: #{string}" unless string.index(@sep_col).nil?
     string
   end
-
-  alias_method :esc_table, :esc_col
+  alias escape_table escape_column
+  alias escape_database escape_column
 
   def transaction
     @baza.q("BEGIN TRANSACTION")
@@ -55,7 +55,7 @@ class Baza::BaseSqlDriver
   # id = db.insert(:users, {name: "John", lastname: "Doe"}, return_id: true)
   # sql = db.insert(:users, {name: "John", lastname: "Doe"}, return_sql: true) #=> "INSERT INTO `users` (`name`, `lastname`) VALUES ('John', 'Doe')"
   def insert(tablename, arr_insert, args = nil)
-    sql = "INSERT INTO #{@sep_table}#{esc_table(tablename)}#{@sep_table}"
+    sql = "INSERT INTO #{@sep_table}#{escape_table(tablename)}#{@sep_table}"
 
     if !arr_insert || arr_insert.empty?
       # This is the correct syntax for inserting a blank row in MySQL.
@@ -77,7 +77,7 @@ class Baza::BaseSqlDriver
           sql << ", "
         end
 
-        sql << "#{@baza.sep_col}#{@baza.esc_col(key)}#{@baza.sep_col}"
+        sql << "#{@baza.sep_col}#{@baza.escape_column(key)}#{@baza.sep_col}"
       end
 
       sql << ") VALUES ("
@@ -115,5 +115,9 @@ class Baza::BaseSqlDriver
 
     return sql if args && args[:return_sql]
     nil
+  end
+
+  def supports_multiple_databases?
+    false
   end
 end

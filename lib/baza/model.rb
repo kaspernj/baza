@@ -315,7 +315,7 @@ class Baza::Model
     # Cache these to avoid method-lookups.
     @sep_col = @db.sep_col
     @sep_table = @db.sep_table
-    @table_str = "#{@sep_table}#{@db.esc_table(@table)}#{@sep_table}"
+    @table_str = "#{@sep_table}#{@db.escape_table(@table)}#{@sep_table}"
 
     @mutex.synchronize do
       inst_methods = instance_methods(false)

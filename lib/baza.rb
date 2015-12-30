@@ -1,3 +1,4 @@
+require "array_enumerator"
 require "wref"
 require "datet"
 require "string-cases"
@@ -52,6 +53,12 @@ class Baza
   end
 
   def self.load_driver(name)
-    require_relative "baza/drivers/#{name}.rb"
+    require_relative "baza/drivers/#{name}"
+
+    loads = %w(databases database tables table columns column indexes index result)
+    loads.each do |load|
+      file_path = "#{File.dirname(__FILE__)}/baza/drivers/#{name}/#{load}"
+      require_relative file_path if File.exist?(file_path)
+    end
   end
 end

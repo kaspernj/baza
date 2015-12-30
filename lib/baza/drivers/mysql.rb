@@ -1,6 +1,8 @@
 class Baza::Driver::Mysql < Baza::MysqlBaseDriver
   path = "#{File.dirname(__FILE__)}/mysql"
 
+  autoload :Database, "#{path}/database"
+  autoload :Databases, "#{path}/databases"
   autoload :Table, "#{path}/table"
   autoload :Tables, "#{path}/tables"
   autoload :Column, "#{path}/column"
@@ -117,5 +119,9 @@ class Baza::Driver::Mysql < Baza::MysqlBaseDriver
     @encoding = nil
     @query_args = nil
     @port = nil
+  end
+
+  def supports_multiple_databases?
+    true
   end
 end

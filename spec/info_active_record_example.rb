@@ -19,16 +19,14 @@ class Baza::InfoActiveRecord
   def initialize
     data = Baza::InfoActiveRecord.connection
 
-    @db = Baza::Db.new(
+    @db = Baza::Db.new({
       type: :active_record,
       conn: data[:conn]
-    )
+    }.merge(args))
   end
 
   def before
-    @db.tables.list do |table|
-      table.drop
-    end
+    @db.tables.list(&:drop)
   end
 
   def after

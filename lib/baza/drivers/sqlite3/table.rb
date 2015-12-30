@@ -24,7 +24,7 @@ class Baza::Driver::Sqlite3::Table < Baza::Table
   end
 
   def rows_count
-    data = @db.q("SELECT COUNT(*) AS count FROM `#{name}`").fetch
+    data = @db.query("SELECT COUNT(*) AS count FROM `#{name}`").fetch
     data.fetch(:count).to_i
   end
 
@@ -66,9 +66,12 @@ class Baza::Driver::Sqlite3::Table < Baza::Table
     end
   end
 
+  # Drops the table and creates it again
   def truncate
-    @db.query("DELETE FROM `#{name}` WHERE 1=1")
-    nil
+    table_data = data
+    drop
+    @db.tables.create(table_data.delete(:name), table_data)
+    self
   end
 
   def table
@@ -87,7 +90,7 @@ class Baza::Driver::Sqlite3::Table < Baza::Table
     @db.cols
     ret = []
 
-    @db.q("PRAGMA table_info(`#{@db.esc_table(name)}`)") do |d_cols|
+    @db.query("PRAGMA table_info(`#{@db.escape_table(name)}`)") do |d_cols|
       column_name = d_cols.fetch(:name)
       obj = @list.get(column_name)
 
@@ -169,18 +172,21 @@ class Baza::Driver::Sqlite3::Table < Baza::Table
       first = false if first
       sql << @db.cols.data_sql(col.data)
     end
-
     sql << ");"
+
     @db.query(sql)
     @db.query("INSERT INTO `#{newname}` SELECT * FROM `#{name}`")
 
     indexes_to_create = []
     new_table = @db.tables[newname.to_sym]
     indexes.each do |index|
-      index_name = index.name
+      index_name = index.name.gsub(/\A#{Regexp.escape(name)}_/, "")
 
       if @db.opts[:index_append_table_name] && match = index_name.match(/\A(.+?)__(.+)\Z/)
         index_name = match[2]
+      else
+        # Two indexes with the same name can't exist, and we are cloning, so we need to change the name
+        index_name = "#{newname}_#{index_name}"
       end
 
       create_data = index.data
@@ -251,23 +257,22 @@ class Baza::Driver::Sqlite3::Table < Baza::Table
   end
 
   def index(index_name)
-    index_name = index_name
+    index_name = index_name.to_s
 
-    if index = @indexes_list[index_name]
+    if (index = @indexes_list[index_name])
       return index
     end
 
     if @db.opts[:index_append_table_name]
       tryname = "#{name}__#{index_name}"
 
-      if index = @indexes_list[tryname]
+      if (index = @indexes_list[tryname])
         return index
       end
     end
 
     indexes do |index_i|
       return index_i if index_i.name == "#{name}__#{index_name}"
-
       return index_i if index_i.name == index_name
     end
 
@@ -278,7 +283,7 @@ class Baza::Driver::Sqlite3::Table < Baza::Table
     @db.indexes
     ret = [] unless block_given?
 
-    @db.query("PRAGMA index_list(`#{@db.esc_table(name)}`)") do |d_indexes|
+    @db.query("PRAGMA index_list(`#{@db.escape_table(name)}`)") do |d_indexes|
       next if d_indexes[:Key_name] == "PRIMARY"
       obj = @indexes_list.get(d_indexes[:name])
 
@@ -323,19 +328,18 @@ class Baza::Driver::Sqlite3::Table < Baza::Table
       raise "No name was given in data: '#{index_data}'." if !index_data.key?(:name) || index_data[:name].to_s.strip.empty?
       raise "No columns was given on index #{index_data[:name]}." if !index_data[:columns] || index_data[:columns].empty?
 
-      name = index_data[:name]
-      name = "#{self.name}__#{name}" if @db.opts[:index_append_table_name]
+      index_name = index_data.fetch(:name).to_s
+      index_name = "#{name}__#{index_name}" if @db.opts[:index_append_table_name] && !index_name.start_with?("#{name}__")
 
       sql = "CREATE"
       sql << " UNIQUE" if index_data[:unique]
-      sql << " INDEX '#{@db.esc_col(name)}' ON `#{@db.esc_table(self.name)}` ("
+      sql << " INDEX '#{@db.escape_column(index_name)}' ON `#{@db.escape_table(name)}` ("
 
       first = true
-      index_data[:columns].each do |col_name|
+      index_data.fetch(:columns).each do |col_name|
         sql << ", " unless first
         first = false if first
-
-        sql << "`#{@db.esc_col(col_name)}`"
+        sql << "`#{@db.escape_column(col_name)}`"
       end
 
       sql << ")"
@@ -388,6 +392,6 @@ private
 
   def parse_columns_from_sql(sql)
     columns_sql = sql.match(/\((.+?)\)\Z/)[1]
-    columns_sql.split(",").map { |column| column[1, column.length - 2] }
+    columns_sql.split(",").map { |column| column.match(/`(.+)`/)[1] }
   end
 end

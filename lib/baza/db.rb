@@ -62,6 +62,7 @@ class Baza::Db
 
   def initialize(opts)
     @driver = opts.delete(:driver) if opts[:driver]
+    Baza.load_driver(opts.fetch(:type))
     self.opts = opts unless opts.nil?
     @int_types = [:int, :bigint, :tinyint, :smallint, :mediumint]
 
@@ -301,7 +302,7 @@ class Baza::Db
       # Convert dates to valid dbstr.
       value = date_out(value) if value.is_a?(Datet) || value.is_a?(Time)
 
-      sql << "#{@sep_col}#{esc_col(key)}#{@sep_col} = "
+      sql << "#{@sep_col}#{escape_column(key)}#{@sep_col} = "
       sql << sqlval(value)
     end
 
@@ -346,12 +347,18 @@ class Baza::Db
         select_sql = "`id`"
         col = :id
       else
-        select_sql = "`#{esc_col(args[:idquery])}`"
+        select_sql = "`#{escape_column(args[:idquery])}`"
         col = args[:idquery]
       end
     end
 
-    sql = "SELECT #{select_sql} FROM #{@sep_table}#{tablename}#{@sep_table}"
+    sql = "SELECT #{select_sql} FROM"
+
+    if tablename.is_a?(Array)
+      sql << " #{@sep_table}#{tablename.first}#{@sep_table}.#{@sep_table}#{tablename.last}#{@sep_table}"
+    else
+      sql << " #{@sep_table}#{tablename}#{@sep_table}"
+    end
 
     if !arr_terms.nil? && !arr_terms.empty?
       sql << " WHERE #{makeWhere(arr_terms)}"
@@ -359,20 +366,21 @@ class Baza::Db
 
     unless args.nil?
       sql << " ORDER BY #{args[:orderby]}" if args[:orderby]
-
       sql << " LIMIT #{args[:limit]}" if args[:limit]
 
       if args[:limit_from] && args[:limit_to]
-        raise "'limit_from' was not numeric: '#{args[:limit_from]}'." unless begin
-                                                                                Float(args[:limit_from])
-                                                                              rescue
-                                                                                false
-                                                                              end
-        raise "'limit_to' was not numeric: '#{args[:limit_to]}'." unless begin
-                                                                            Float(args[:limit_to])
-                                                                          rescue
-                                                                            false
-                                                                          end
+        begin
+          Float(args[:limit_from])
+        rescue
+          raise "'limit_from' was not numeric: '#{args[:limit_from]}'."
+        end
+
+        begin
+          Float(args[:limit_to])
+        rescue
+          raise "'limit_to' was not numeric: '#{args[:limit_to]}'."
+        end
+
         sql << " LIMIT #{args[:limit_from]}, #{args[:limit_to]}"
       end
     end
@@ -566,23 +574,24 @@ class Baza::Db
   alias_method :esc, :escape
 
   # Escapes the given string to be used as a column.
-  def esc_col(str)
-    @driver.esc_col(str)
+  def escape_column(str)
+    @driver.escape_column(str)
   end
 
   # Escapes the given string to be used as a table.
-  def esc_table(str)
-    @driver.esc_table(str)
+  def escape_table(str)
+    @driver.escape_table(str)
+  end
+
+  def escape_database(str)
+    @driver.escape_database(str)
   end
 
   # Returns a string which can be used in SQL with the current driver.
   #===Examples
   # str = db.date_out(Time.now) #=> "2012-05-20 22:06:09"
   def date_out(date_obj = Datet.new, args = {})
-    if @driver.respond_to?(:date_out)
-      return @driver.date_out(date_obj, args)
-    end
-
+    return @driver.date_out(date_obj, args) if @driver.respond_to?(:date_out)
     Datet.in(date_obj).dbstr(args)
   end
 
@@ -595,48 +604,45 @@ class Baza::Db
     Datet.in(date_obj)
   end
 
+  def databases
+    require_relative "drivers/#{@opts.fetch(:type)}/databases"
+    @databases ||= Baza::Driver.const_get(@type_cc).const_get(:Databases).new(db: self)
+  end
+
   # Returns the table-module and spawns it if it isnt already spawned.
   def tables
-    unless @tables
-      @tables = Baza::Driver.const_get(@type_cc).const_get(:Tables).new(
-        db: self
-      )
-    end
-
-    @tables
+    @tables ||= Baza::Driver.const_get(@type_cc).const_get(:Tables).new(db: self)
   end
 
   # Returns the columns-module and spawns it if it isnt already spawned.
   def cols
-    unless @cols
-      @cols = Baza::Driver.const_get(@type_cc).const_get(:Columns).new(
-        db: self
-      )
-    end
-
-    @cols
+    @cols || Baza::Driver.const_get(@type_cc).const_get(:Columns).new(db: self)
   end
 
   # Returns the index-module and spawns it if it isnt already spawned.
   def indexes
-    unless @indexes
-      @indexes = Baza::Driver.const_get(@type_cc).const_get(:Indexes).new(
-        db: self
-      )
-    end
-
-    @indexes
+    @indexes ||= Baza::Driver.const_get(@type_cc).const_get(:Indexes).new(db: self)
   end
 
   # Returns the SQLSpec-module and spawns it if it isnt already spawned.
   def sqlspecs
-    unless @sqlspecs
-      @sqlspecs = Baza::Driver.const_get(@type_cc).const_get(:Sqlspecs).new(
-        db: self
-      )
-    end
+    @sqlspecs ||= Baza::Driver.const_get(@type_cc).const_get(:Sqlspecs).new(db: self)
+  end
 
-    @sqlspecs
+  def supports_multiple_databases?
+    if @driver.respond_to?(:supports_multiple_databases?)
+      @driver.supports_multiple_databases?
+    else
+      false
+    end
+  end
+
+  def supports_type_translation?
+    if @driver.respond_to?(:supports_type_translation?)
+      @driver.supports_multiple_databases?
+    else
+      false
+    end
   end
 
   # Beings a transaction and commits when the block ends.
@@ -660,18 +666,6 @@ class Baza::Db
     end
 
     nil
-  end
-
-  def database(name)
-    databases.each do |database|
-      return database if database.name.to_s == name.to_s
-    end
-
-    raise "Database not found: #{name}"
-  end
-
-  def databases
-    @driver.databases
   end
 
   def to_s

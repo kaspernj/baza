@@ -1,6 +1,10 @@
+Baza.load_driver("mysql")
+
 class Baza::Driver::MysqlJava < Baza::JdbcDriver
   path = "#{File.dirname(__FILE__)}/mysql_java"
 
+  autoload :Database, "#{path}/database"
+  autoload :Databases, "#{path}/databases"
   autoload :Table, "#{path}/table"
   autoload :Tables, "#{path}/tables"
   autoload :Column, "#{path}/column"
@@ -103,7 +107,7 @@ class Baza::Driver::MysqlJava < Baza::JdbcDriver
     keys.each do |col_name|
       sql << "," unless first
       first = false if first
-      sql << "`#{esc_col(col_name)}`"
+      sql << "`#{escape_column(col_name)}`"
     end
 
     sql << ") VALUES ("

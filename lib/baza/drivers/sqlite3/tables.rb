@@ -1,3 +1,5 @@
+require "monitor"
+
 class Baza::Driver::Sqlite3::Tables
   attr_reader :db, :driver
 
@@ -5,7 +7,7 @@ class Baza::Driver::Sqlite3::Tables
     @args = args
     @db = @args[:db]
 
-    @list_mutex = Mutex.new
+    @list_mutex = Monitor.new
     @list = Wref::Map.new
   end
 
@@ -54,9 +56,9 @@ class Baza::Driver::Sqlite3::Tables
     end
 
     if block_given?
-      return nil
+      nil
     else
-      return ret
+      ret
     end
   end
 

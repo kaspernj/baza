@@ -5,7 +5,8 @@ class Baza::Driver::Mysql::Column < Baza::Column
   # Constructor. Should not be called manually.
   def initialize(args)
     @args = args
-    @name = @args.fetch(:data).fetch(:Field)
+    @data = @args.delete(:data)
+    @name = @data.fetch(:Field)
     @db = @args.fetch(:db)
   end
 
@@ -37,30 +38,30 @@ class Baza::Driver::Mysql::Column < Baza::Column
   end
 
   def reload
-    data = @db.query("SHOW FULL COLUMNS FROM `#{@db.esc_table(table_name)}` WHERE `Field` = '#{@db.esc(name)}'").fetch
+    data = @db.query("SHOW FULL COLUMNS FROM `#{@db.escape_table(table_name)}` WHERE `Field` = '#{@db.esc(name)}'").fetch
     raise Baza::Errors::ColumnNotFound unless data
-    @args[:data] = data
+    @data = data
     @type = nil
   end
 
   # Returns the type of the column (integer, varchar etc.).
   def type
     unless @type
-      if match = @args[:data][:Type].match(/^([A-z]+)$/)
+      if match = @data[:Type].match(/^([A-z]+)$/)
         @maxlength = false
         @type = match[0].to_sym
-      elsif match = @args[:data][:Type].match(/^decimal\((\d+),(\d+)\)$/)
+      elsif match = @data[:Type].match(/^decimal\((\d+),(\d+)\)$/)
         @maxlength = "#{match[1]},#{match[2]}"
         @type = :decimal
-      elsif match = @args[:data][:Type].match(/^enum\((.+)\)$/)
+      elsif match = @data[:Type].match(/^enum\((.+)\)$/)
         @maxlength = match[1]
         @type = :enum
-      elsif match = @args[:data][:Type].match(/^(.+)\((\d+)\)/)
+      elsif match = @data[:Type].match(/^(.+)\((\d+)\)/)
         @maxlength = match[2].to_i
         @type = match[1].to_sym
       end
 
-      raise "Still not type from: '#{@args[:data][:Type]}'." if @type.to_s.strip.empty?
+      raise "Still not type from: '#{@data[:Type]}'." if @type.to_s.strip.empty?
     end
 
     @type
@@ -68,7 +69,7 @@ class Baza::Driver::Mysql::Column < Baza::Column
 
   # Return true if the columns allows null. Otherwise false.
   def null?
-    return false if @args[:data][:Null] == "NO"
+    return false if @data[:Null] == "NO"
     true
   end
 
@@ -81,40 +82,40 @@ class Baza::Driver::Mysql::Column < Baza::Column
 
   # Returns the default value for the column.
   def default
-    return false if (type == :datetime || type == :date) && @args[:data][:Default].to_s.strip.empty?
-    return false if (type == :int || type == :bigint) && @args[:data][:Default].to_s.strip.empty?
-    return false unless @args[:data][:Default]
-    @args[:data][:Default]
+    return false if (type == :datetime || type == :date) && @data[:Default].to_s.strip.empty?
+    return false if (type == :int || type == :bigint) && @data[:Default].to_s.strip.empty?
+    return false unless @data[:Default]
+    @data.fetch(:Default)
   end
 
   # Returns true if the column is the primary key. Otherwise false.
   def primarykey?
-    return true if @args[:data][:Key] == "PRI"
+    return true if @data.fetch(:Key) == "PRI"
     false
   end
 
   # Returns true if the column is auto-increasing. Otherwise false.
   def autoincr?
-    return true if @args[:data][:Extra].include?("auto_increment")
+    return true if @data.fetch(:Extra).include?("auto_increment")
     false
   end
 
   # Returns the comment for the column.
   def comment
-    @args[:data][:Comment]
+    @data.fetch(:Comment)
   end
 
   # Drops the column from the table.
   def drop
-    @args.fetch(:db).query("ALTER TABLE `#{@db.esc_table(table_name)}` DROP COLUMN `#{@db.esc_col(name)}`")
+    @db.query("ALTER TABLE `#{@db.escape_table(table_name)}` DROP COLUMN `#{@db.escape_column(name)}`")
     table.__send__(:remove_column_from_list, self)
     nil
   end
 
   # Changes the column properties by the given hash.
   def change(data)
-    col_escaped = "`#{@db.esc_col(name)}`"
-    table_escape = "`#{@db.esc_table(table_name)}`"
+    col_escaped = "`#{@db.escape_column(name)}`"
+    table_escape = "`#{@db.escape_table(table_name)}`"
     newdata = data.clone
 
     newdata[:name] = name unless newdata.key?(:name)
@@ -127,7 +128,7 @@ class Baza::Driver::Mysql::Column < Baza::Column
     drop_add = true if name.to_s != newdata[:name].to_s
 
     table.__send__(:remove_column_from_list, self) if drop_add
-    @db.query("ALTER TABLE #{table_escape} CHANGE #{col_escaped} #{@args[:db].cols.data_sql(newdata)}")
+    @db.query("ALTER TABLE #{table_escape} CHANGE #{col_escaped} #{@db.cols.data_sql(newdata)}")
     @name = newdata[:name].to_s
     reload
     table.__send__(:add_column_to_list, self) if drop_add

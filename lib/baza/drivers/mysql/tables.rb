@@ -26,8 +26,8 @@ class Baza::Driver::Mysql::Tables
       return table
     end
 
-    list(name: table_name) do |table|
-      return table if table.name == table_name
+    list(name: table_name) do |table_i|
+      return table_i if table_i.name == table_name
     end
 
     raise Baza::Errors::TableNotFound, "Table was not found: '#{table_name}'"
@@ -37,19 +37,24 @@ class Baza::Driver::Mysql::Tables
   def list(args = {})
     ret = [] unless block_given?
 
-    sql = "SHOW TABLE STATUS"
-    sql << " WHERE `Name` = '#{@db.esc(args[:name])}'" if args[:name]
+    where_args = {}
+    where_args["TABLE_NAME"] = args.fetch(:name) if args[:name]
+
+    if args[:database]
+      where_args["TABLE_SCHEMA"] = args.fetch(:database)
+    else
+      where_args["TABLE_SCHEMA"] = @db.opts.fetch(:db)
+    end
 
     @list_mutex.synchronize do
-      @db.q(sql) do |d_tables|
-        raise "No name was given from: #{d_tables}" unless d_tables.is_a?(Hash) && d_tables[:Name]
-        name = d_tables[:Name]
+      @db.select([:information_schema, :tables], where_args) do |d_tables|
+        name = d_tables.fetch(:TABLE_NAME)
         obj = @list.get(name)
 
         unless obj
           obj = Baza::Driver::Mysql::Table.new(
             db: @db,
-            data: d_tables,
+            data: {name: name, engine: d_tables.fetch(:ENGINE)},
             tables: self
           )
           @list[name] = obj

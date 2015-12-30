@@ -39,7 +39,7 @@ shared_examples_for "a baza indexes driver" do
     expect(index.table.name).to eq "test2"
   end
 
-  it "should raise an error when index is not found" do
+  it "raises an error when an index isn't found" do
     expect do
       test_table.index("index_that_doesnt_exist")
     end.to raise_error(Baza::Errors::IndexNotFound)

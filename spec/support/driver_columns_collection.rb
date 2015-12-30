@@ -28,7 +28,7 @@ shared_examples_for "a baza columns driver" do
     column.table.name.should eq "test2"
   end
 
-  it "should create columns right" do
+  it "creates columns right" do
     col_id = test_table.column(:id)
     col_id.type.should eq :int
 
@@ -36,7 +36,7 @@ shared_examples_for "a baza columns driver" do
     col_text.type.should eq :varchar
   end
 
-  it "should be able to change columns" do
+  it "is able to change columns" do
     col_text = test_table.column(:text)
     col_text.change(name: "text2", type: :int, default: 5)
 
@@ -45,7 +45,7 @@ shared_examples_for "a baza columns driver" do
     col_text.name.should eq "text2"
   end
 
-  it "should be able to drop a column" do
+  it "is able to drop a column" do
     test_table.column(:text).drop
 
     expect do

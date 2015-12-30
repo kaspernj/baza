@@ -61,7 +61,7 @@ shared_examples_for "a baza driver" do
     expect(test_table.columns.map(&:name)).to include "nickname"
   end
 
-  it "should do id-queries" do
+  it "does id-queries" do
     test_table
 
     rows_count = 1250
@@ -102,7 +102,7 @@ shared_examples_for "a baza driver" do
     expect(count_results).to eq 10
   end
 
-  it "should do upserting" do
+  it "does upserting" do
     test_table.create_columns([{name: "nickname", type: :varchar}])
 
     # Test upserting.
@@ -129,7 +129,7 @@ shared_examples_for "a baza driver" do
     table.rows_count.should eq rows_count + 1
   end
 
-  it "should dump as SQL" do
+  it "dumps as SQL" do
     dump = Baza::Dump.new(db: db, debug: false)
     str_io = StringIO.new
     dump.dump(str_io)
@@ -154,7 +154,7 @@ shared_examples_for "a baza driver" do
     raise "Not same amount of tables: #{tables_count}, #{db.tables.list.length}" if tables_count != db.tables.list.length
   end
 
-  it "should rename tables in revisions" do
+  it "renames tables in revisions" do
     test_table
 
     Baza::Revision.new.init_db(
@@ -175,7 +175,7 @@ shared_examples_for "a baza driver" do
     expect(tables).to include "new_test_table"
   end
 
-  it "should rename columns in revisions" do
+  it "renames columns in revisions" do
     test_table
 
     Baza::Revision.new.init_db(
@@ -197,7 +197,7 @@ shared_examples_for "a baza driver" do
     expect(columns).to include "new_name"
   end
 
-  it "should generate proper sql" do
+  it "generates proper sql" do
     time = Time.new(1985, 6, 17, 10, 30)
     db.insert(:test, {date: time}, return_sql: true).should eql("INSERT INTO `test` (`date`) VALUES ('1985-06-17 10:30:00')")
 
@@ -205,14 +205,14 @@ shared_examples_for "a baza driver" do
     db.insert(:test, {date: date}, return_sql: true).should eql("INSERT INTO `test` (`date`) VALUES ('1985-06-17')")
   end
 
-  it "should be able to make new connections based on given objects" do
+  it "is able to make new connections based on given objects" do
     # Mysql doesn't support it...
     unless db.opts.fetch(:type) == :mysql
       new_db = Baza::Db.from_object(object: db.driver.conn)
     end
   end
 
-  it "should be able to do ID-queries through the select-method" do
+  it "is able to do ID-queries through the select-method" do
     db.tables.create(:test_table, columns: [
       {name: :idrow, type: :int, autoincr: true, primarykey: true},
       {name: :name, type: :varchar}
@@ -372,7 +372,10 @@ shared_examples_for "a baza driver" do
     expect(row.fetch(:text).class).to eq String
     expect(row.fetch(:number).class).to eq Fixnum
     expect(row.fetch(:float).class).to eq Float
-    expect(row.fetch(:created_at).class).to eq Time
-    expect(row.fetch(:date).class).to eq Date
+
+    unless db.driver.conn.class.name == "ActiveRecord::ConnectionAdapters::SQLite3Adapter"
+      expect(row.fetch(:created_at).class).to eq Time
+      expect(row.fetch(:date).class).to eq Date
+    end
   end
 end

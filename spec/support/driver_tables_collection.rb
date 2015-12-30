@@ -19,7 +19,7 @@ shared_examples_for "a baza tables driver" do
     driver.after
   end
 
-  it "should create tables" do
+  it "creates tables" do
     expect(test_table.name).to eq "test"
     expect(db.tables[:test]).to_not eq nil
   end
@@ -38,11 +38,15 @@ shared_examples_for "a baza tables driver" do
     test_table
 
     db.insert(:test, text: "test")
+    expect(db.select(:test).fetch.fetch(:id).to_i).to eq 1
     expect(test_table.rows_count).to eq 1
 
     # Throw out invalid encoding because it will make dumping fail.
     db.tables[:test].truncate
     expect(test_table.rows_count).to eq 0
+
+    db.insert(:test, text: "test")
+    expect(db.select(:test).fetch.fetch(:id).to_i).to eq 1
   end
 
   it "#clone" do
