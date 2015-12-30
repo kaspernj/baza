@@ -49,8 +49,11 @@ class Baza::Driver::ActiveRecord < Baza::BaseSqlDriver
       @driver_type = :mysql2
       @result_constant = Baza::Driver::Mysql2::Result
     elsif conn_name.include?("mysql")
-      require_relative "mysql"
-      require_relative "mysql/result"
+      unless RUBY_PLATFORM == "java"
+        require_relative "mysql"
+        require_relative "mysql/result"
+        @result_constant = Baza::Driver::Mysql::Result
+      end
 
       @sep_database = "`"
       @sep_table = "`"
@@ -58,7 +61,6 @@ class Baza::Driver::ActiveRecord < Baza::BaseSqlDriver
       @sep_val = "'"
       @sep_index = "`"
       @driver_type = :mysql
-      @result_constant = Baza::Driver::Mysql::Result unless RUBY_PLATFORM == "java"
     elsif conn_name.include?("sqlite")
       @sep_database = "`"
       @sep_table = "`"
@@ -78,13 +80,13 @@ class Baza::Driver::ActiveRecord < Baza::BaseSqlDriver
       raise "Unknown type: '#{conn_name}'."
     end
 
+    @result_constant ||= Baza::Driver::ActiveRecord::Result
+
     if conn_name.include?("mysql")
       @baza.opts[:db] ||= query("SELECT DATABASE()").fetch.fetch(:"DATABASE()")
     elsif @driver_type == :pg
       @baza.opts[:db] ||= query("SELECT current_database()").fetch.values.first
     end
-
-    @result_constant ||= Baza::Driver::ActiveRecord::Result
   end
 
   def query(sql)
