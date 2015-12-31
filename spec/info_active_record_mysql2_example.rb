@@ -3,6 +3,7 @@ class Baza::InfoActiveRecordMysql2
 
   def self.connection
     require "active_record"
+    require "activerecord-jdbc-adapter" if RUBY_PLATFORM == "java"
 
     @conn_pool ||= ::ActiveRecord::Base.establish_connection(
       adapter: "mysql2",

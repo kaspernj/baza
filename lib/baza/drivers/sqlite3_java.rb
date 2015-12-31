@@ -29,6 +29,13 @@ class Baza::Driver::Sqlite3Java < Baza::JdbcDriver
     end
   end
 
+  def self.args
+    [{
+      label: "Path",
+      name: "path"
+    }]
+  end
+
   # Constructor. This should not be called manually.
   def initialize(db)
     super

@@ -32,6 +32,28 @@ class Baza::Driver::MysqlJava < Baza::JdbcDriver
     nil
   end
 
+  def self.args
+    [{
+      label: "Host",
+      name: "host"
+    }, {
+      label: "Port",
+      name: "port"
+    }, {
+      label: "Username",
+      name: "user"
+    }, {
+      label: "Password",
+      name: "pass"
+    }, {
+      label: "Database",
+      name: "db"
+    }, {
+      label: "Encoding",
+      name: "encoding"
+    }]
+  end
+
   def initialize(db)
     super
 
@@ -58,10 +80,10 @@ class Baza::Driver::MysqlJava < Baza::JdbcDriver
     @mutex.synchronize do
       if @db.opts[:conn]
         @jdbc_loaded = true
-        @conn = @db.opts[:conn]
+        @conn = @db.opts.fetch(:conn)
       else
         com.mysql.jdbc.Driver
-        @conn = java.sql::DriverManager.getConnection("jdbc:mysql://#{@db.opts[:host]}:#{@port}/#{@db.opts[:db]}?user=#{@db.opts[:user]}&password=#{@db.opts[:pass]}&populateInsertRowWithDefaultValues=true&zeroDateTimeBehavior=round&characterEncoding=#{@encoding}&holdResultsOpenOverStatementClose=true")
+        @conn = java.sql::DriverManager.getConnection("jdbc:mysql://#{@db.opts.fetch(:host)}:#{@port}/#{@db.opts.fetch(:db)}?user=#{@db.opts.fetch(:user)}&password=#{@db.opts.fetch(:pass)}&populateInsertRowWithDefaultValues=true&zeroDateTimeBehavior=round&characterEncoding=#{@encoding}&holdResultsOpenOverStatementClose=true")
       end
 
       query_no_result_set("SET SQL_MODE = ''")
