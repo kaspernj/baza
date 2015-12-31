@@ -22,7 +22,7 @@ class Baza::Driver::Mysql::Columns
 
     if data.key?(:default_func)
       sql << " DEFAULT #{data[:default_func]}"
-    elsif data.key?(:default) && data[:default] != false
+    elsif data.key?(:default) && !data[:default].nil?
       sql << " DEFAULT '#{@db.escape(data[:default])}'"
     end
 

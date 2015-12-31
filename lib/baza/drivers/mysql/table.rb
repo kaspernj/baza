@@ -6,15 +6,19 @@ class Baza::Driver::Mysql::Table < Baza::Table
     @data = args.fetch(:data)
     @list = Wref::Map.new
     @indexes_list = Wref::Map.new
-    @name = @data.fetch(:name)
+    @name = @data.fetch(:TABLE_NAME)
     @tables = args.fetch(:tables)
   end
 
   def reload
-    data = @db.q("SHOW TABLE STATUS WHERE `Name` = '#{@db.esc(name)}'").fetch
+    data = @db.single([:information_schema, :tables], "TABLE_SCHEMA" => database_name, "TABLE_NAME" => name)
     raise Baza::Errors::TableNotFound unless data
     @data = data
     self
+  end
+
+  def database_name
+    @data.fetch(:TABLE_SCHEMA)
   end
 
   # Used to validate in Wref::Map.
@@ -23,8 +27,12 @@ class Baza::Driver::Mysql::Table < Baza::Table
   end
 
   def drop
-    raise "Cant drop native table: '#{name}'." if self.native?
-    @db.query("DROP TABLE `#{@db.escape_table(name)}`")
+    raise "Cant drop native table: '#{name}'" if self.native?
+
+    @db.with_database(database_name) do
+      @db.query("DROP TABLE `#{@db.escape_table(name)}`")
+    end
+
     @tables.__send__(:remove_from_list, self)
     nil
   end
@@ -304,14 +312,14 @@ class Baza::Driver::Mysql::Table < Baza::Table
 
   # Returns the current engine of the table.
   def engine
-    @data[:engine]
+    @data.fetch(:ENGINE)
   end
 
   # Changes the engine for a table.
   def engine=(newengine)
     raise "Invalid engine: '#{newengine}'." unless newengine.to_s.match(/^[A-z]+$/)
     @db.query("ALTER TABLE `#{@db.escape_table(name)}` ENGINE = #{newengine}") if engine.to_s != newengine.to_s
-    @data[:engine] = newengine
+    @data[:ENGINE] = newengine
   end
 
 private

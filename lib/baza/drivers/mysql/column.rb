@@ -29,21 +29,21 @@ class Baza::Driver::Mysql::Column < Baza::Column
   # Returns the type of the column (integer, varchar etc.).
   def type
     unless @type
-      if match = @data[:Type].match(/^([A-z]+)$/)
+      if (match = @data.fetch(:Type).match(/^([A-z]+)$/))
         @maxlength = false
         @type = match[0].to_sym
-      elsif match = @data[:Type].match(/^decimal\((\d+),(\d+)\)$/)
+      elsif (match = @data.fetch(:Type).match(/^decimal\((\d+),(\d+)\)$/))
         @maxlength = "#{match[1]},#{match[2]}"
         @type = :decimal
-      elsif match = @data[:Type].match(/^enum\((.+)\)$/)
+      elsif (match = @data.fetch(:Type).match(/^enum\((.+)\)$/))
         @maxlength = match[1]
         @type = :enum
-      elsif match = @data[:Type].match(/^(.+)\((\d+)\)/)
+      elsif (match = @data.fetch(:Type).match(/^(.+)\((\d+)\)/))
         @maxlength = match[2].to_i
         @type = match[1].to_sym
       end
 
-      raise "Still not type from: '#{@data[:Type]}'." if @type.to_s.strip.empty?
+      raise "Still no type from: '#{@data.fetch(:Type)}'" if @type.to_s.strip.empty?
     end
 
     @type
@@ -51,8 +51,7 @@ class Baza::Driver::Mysql::Column < Baza::Column
 
   # Return true if the columns allows null. Otherwise false.
   def null?
-    return false if @data[:Null] == "NO"
-    true
+    @data[:Null] != "NO"
   end
 
   # Returns the maxlength.
@@ -64,22 +63,20 @@ class Baza::Driver::Mysql::Column < Baza::Column
 
   # Returns the default value for the column.
   def default
-    return false if (type == :datetime || type == :date) && @data[:Default].to_s.strip.empty?
-    return false if (type == :int || type == :bigint) && @data[:Default].to_s.strip.empty?
-    return false unless @data[:Default]
+    return nil if (type == :datetime || type == :date) && @data[:Default].to_s.strip.empty?
+    return nil if (type == :int || type == :bigint) && @data[:Default].to_s.strip.empty?
+    return nil unless @data[:Default]
     @data.fetch(:Default)
   end
 
   # Returns true if the column is the primary key. Otherwise false.
   def primarykey?
-    return true if @data.fetch(:Key) == "PRI"
-    false
+    @data.fetch(:Key) == "PRI"
   end
 
   # Returns true if the column is auto-increasing. Otherwise false.
   def autoincr?
-    return true if @data.fetch(:Extra).include?("auto_increment")
-    false
+    @data.fetch(:Extra).include?("auto_increment")
   end
 
   # Returns the comment for the column.

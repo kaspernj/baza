@@ -6,7 +6,7 @@ class Baza::Driver::Sqlite3::Result < Baza::ResultBase
 
     begin
       @statement.execute
-      @type_translation = driver.baza.opts[:type_translation]
+      @type_translation = driver.db.opts[:type_translation]
       @types = statement.types if @type_translation == true
       @columns = statement.columns.map(&:to_sym)
       read_results
@@ -50,7 +50,7 @@ private
   end
 
   def translate_type(value, type)
-    return unless value
+    return if value.to_s.length == 0
 
     if type == "datetime"
       Time.parse(value)

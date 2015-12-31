@@ -8,10 +8,17 @@ class Baza::Driver::Pg::Table < Baza::Table
   end
 
   def drop
-    @db.query("DROP TABLE \"#{@db.escape_table(name)}\"")
+    @db.with_database(database_name) do
+      @db.query("DROP TABLE \"#{@db.escape_table(name)}\"")
+    end
+  end
+
+  def database_name
+    @data.fetch(:table_catalog)
   end
 
   def native?
+    false
   end
 
   def columns(args = {})

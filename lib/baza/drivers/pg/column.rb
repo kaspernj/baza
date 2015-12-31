@@ -38,7 +38,7 @@ class Baza::Driver::Pg::Column < Baza::Column
   end
 
   def autoincr?
-    @data.fetch(:column_default).to_s.match(/\Anextval\('#{Regexp.escape(table_name)}_#{Regexp.escape(name)}_seq'::regclass\)\Z/)
+    !@data.fetch(:column_default).to_s.match(/\Anextval\('#{Regexp.escape(table_name)}_#{Regexp.escape(name)}_seq'::regclass\)\Z/).nil?
   end
 
   def default

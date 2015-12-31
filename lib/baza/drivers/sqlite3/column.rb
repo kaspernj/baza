@@ -5,16 +5,17 @@ class Baza::Driver::Sqlite3::Column < Baza::Column
   # Constructor. This should not be called manually.
   def initialize(args)
     @args = args
-    @db = @args[:db]
+    @data = args.fetch(:data)
+    @db = @args.fetch(:db)
   end
 
   # Returns the name of the column.
   def name
-    @args[:data][:name]
+    @data.fetch(:name)
   end
 
   def table_name
-    @args[:table_name]
+    @args.fetch(:table_name)
   end
 
   # Returns the columns table-object.
@@ -38,21 +39,20 @@ class Baza::Driver::Sqlite3::Column < Baza::Column
   # Returns the type of the column.
   def type
     unless @type
-      if match = @args[:data][:type].match(/^([A-z]+)$/)
+      if match = @data.fetch(:type).match(/^([A-z]+)$/)
         @maxlength = false
-        type = match[0].to_sym
-      elsif match = @args[:data][:type].match(/^decimal\((\d+),(\d+)\)$/)
+        type = match[0].downcase.to_sym
+      elsif match = @data.fetch(:type).match(/^decimal\((\d+),(\d+)\)$/)
         @maxlength = "#{match[1]},#{match[2]}"
         type = :decimal
-      elsif match = @args[:data][:type].match(/^enum\((.+)\)$/)
+      elsif match = @data.fetch(:type).match(/^enum\((.+)\)$/)
         @maxlength = match[1]
         type = :enum
-      elsif match = @args[:data][:type].match(/^(.+)\((\d+)\)$/)
+      elsif match = @data.fetch(:type).match(/^(.+)\((\d+)\)$/)
         @maxlength = match[2]
         type = match[1].to_sym
-      elsif @args[:data].key?(:type) && @args[:data][:type].to_s == ""
-        # A type can actually be empty in SQLite... Wtf?
-        return @args[:data][:type]
+      elsif @data.key?(:type) && @data.fetch(:type).to_s == ""
+        return @data[:type] # A type can actually be empty in SQLite... Wtf?
       end
 
       if type == :integer
@@ -61,7 +61,7 @@ class Baza::Driver::Sqlite3::Column < Baza::Column
         @type = type
       end
 
-      raise "Still not type? (#{@args[:data]})" if @type.to_s.strip.empty?
+      raise "Still not type? (#{@data})" if @type.to_s.strip.empty?
     end
 
     @type
@@ -69,39 +69,37 @@ class Baza::Driver::Sqlite3::Column < Baza::Column
 
   # Returns true if the column allows null. Otherwise false.
   def null?
-    return false if @args[:data][:notnull].to_i == 1
+    return false if @data.fetch(:notnull).to_i == 1
     true
   end
 
   # Returns the maxlength of the column.
   def maxlength
-    type unless @maxlength
+    type unless @maxlength.nil?
     return @maxlength if @maxlength
     false
   end
 
   # Returns the default value of the column.
   def default
-    def_val = @args[:data][:dflt_value]
+    def_val = @data.fetch(:dflt_value)
 
-    if def_val && match = def_val.match(/\A'(.*)'\Z/)
+    if def_val && (match = def_val.match(/\A'(.*)'\Z/))
       return match[1]
     end
 
-    return false if @args[:data][:dflt_value].to_s.empty?
+    return nil if @data.fetch(:dflt_value).to_s.empty?
     def_val
   end
 
   # Returns true if the column is the primary key.
   def primarykey?
-    return false if @args[:data][:pk].to_i == 0
-    true
+    @data.fetch(:pk).to_i == 1
   end
 
   # Returns true if the column is auto-increasing.
   def autoincr?
-    return true if @args[:data][:pk].to_i == 1 && @args[:data][:type].to_s == "integer"
-    false
+    primarykey? && @data.fetch(:type).downcase == "integer"
   end
 
   # Drops the column from the table.
@@ -112,7 +110,7 @@ class Baza::Driver::Sqlite3::Column < Baza::Column
   def reload
     @db.q("PRAGMA table_info(`#{@db.escape_table(table_name)}`)") do |data|
       next unless data.fetch(:name) == name
-      @args[:data] = data
+      @data = data
       @type = nil
       return nil
     end
@@ -140,7 +138,7 @@ class Baza::Driver::Sqlite3::Column < Baza::Column
       }
     )
 
-    @args[:data][:name] = newdata.fetch(:name).to_s
+    @data[:name] = newdata.fetch(:name).to_s
     reload
   end
 end

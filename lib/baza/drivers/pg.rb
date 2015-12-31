@@ -29,7 +29,26 @@ class Baza::Driver::Pg < Baza::BaseSqlDriver
     nil
   end
 
-  def initialize(baza)
+  def self.args
+    [{
+      label: "Host",
+      name: "host"
+    }, {
+      label: "Port",
+      name: "port"
+    }, {
+      label: "Username",
+      name: "user"
+    }, {
+      label: "Password",
+      name: "pass"
+    }, {
+      label: "Database",
+      name: "db"
+    }]
+  end
+
+  def initialize(db)
     super
 
     @sep_database = '"'
@@ -37,8 +56,8 @@ class Baza::Driver::Pg < Baza::BaseSqlDriver
     @sep_col = '"'
     @sep_index = '"'
 
-    if baza.opts[:conn]
-      @conn = baza.opts.fetch(:conn)
+    if db.opts[:conn]
+      @conn = db.opts.fetch(:conn)
     else
       reconnect
     end
@@ -47,11 +66,11 @@ class Baza::Driver::Pg < Baza::BaseSqlDriver
   def reconnect
     require "pg" unless ::Object.const_defined?(:PG)
 
-    args = {dbname: baza.opts.fetch(:db)}
-    args[:port] = baza.opts.fetch(:port) if baza.opts[:port]
-    args[:hostaddr] = baza.opts.fetch(:host) if baza.opts[:host]
-    args[:user] = baza.opts.fetch(:user) if baza.opts[:user]
-    args[:password] = baza.opts.fetch(:pass) if baza.opts[:pass]
+    args = {dbname: db.opts.fetch(:db)}
+    args[:port] = db.opts.fetch(:port) if db.opts[:port]
+    args[:hostaddr] = db.opts.fetch(:host) if db.opts[:host]
+    args[:user] = db.opts.fetch(:user) if db.opts[:user]
+    args[:password] = db.opts.fetch(:pass) if db.opts[:pass]
 
     @conn = PG::Connection.new(args)
   end

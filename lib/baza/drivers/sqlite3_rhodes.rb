@@ -30,14 +30,14 @@ class Baza::Driver::Sqlite3Rhodes < Baza::BaseSqlDriver
   end
 
   # Constructor. This should not be called manually.
-  def initialize(baza_db)
+  def initialize(db)
     super
 
-    @path = @baza.opts[:path] if @baza.opts[:path]
+    @path = @db.opts[:path] if @db.opts[:path]
     @mutex_statement_reader = Mutex.new
 
-    if @baza.opts[:conn]
-      @conn = @baza.opts[:conn]
+    if @db.opts[:conn]
+      @conn = @db.opts[:conn]
     else
       raise "No path was given." unless @path
       @conn = ::SQLite3::Database.new(@path, @path)
@@ -75,6 +75,6 @@ class Baza::Driver::Sqlite3Rhodes < Baza::BaseSqlDriver
 
   # Starts a transaction, yields the database and commits.
   def transaction
-    @conn.transaction { yield @baza }
+    @conn.transaction { yield @db }
   end
 end

@@ -28,7 +28,7 @@ shared_examples_for "a baza driver" do
     driver2.after
   end
 
-  it "should do revisions" do
+  it "does revisions" do
     test_table
 
     schema = {
@@ -66,24 +66,24 @@ shared_examples_for "a baza driver" do
 
     rows_count = 1250
     db.transaction do
-      0.upto(rows_count) do |count|
+      rows_count.times do |count|
         db.insert(:test, text: "User #{count}")
       end
     end
 
     block_ran = 0
-    idq = Baza::Idquery.new(db: db, debug: false, table: :test, query: "SELECT id FROM test") do |_data|
+    idq = Baza::Idquery.new(db: db, debug: false, table: :test, query: "SELECT id FROM test") do
       block_ran += 1
     end
 
-    raise "Block with should have ran too little: #{block_ran}." if block_ran < rows_count
+    expect(block_ran).to eq rows_count
 
     block_ran = 0
-    db.select(:test, {}, idquery: true) do |_data|
+    db.select(:test, {}, idquery: true) do
       block_ran += 1
     end
 
-    raise "Block with should have ran too little: #{block_ran}." if block_ran < rows_count
+    expect(block_ran).to eq rows_count
   end
 
   it "does unbuffered queries" do
@@ -94,7 +94,7 @@ shared_examples_for "a baza driver" do
     end
 
     count_results = 0
-    db.q("SELECT * FROM test", type: :unbuffered) do |row|
+    db.query_ubuf("SELECT * FROM test") do |row|
       expect(row[:text]).to eq "Test #{count_results}"
       count_results += 1
     end
@@ -116,17 +116,17 @@ shared_examples_for "a baza driver" do
 
     db.upsert(:test, data, sel)
     row = db.select(:test, sel).fetch
-    row[:text].should eq "upsert - Kasper Johansen"
+    expect(row[:text]).to eq "upsert - Kasper Johansen"
 
     table.reload
-    table.rows_count.should eql(rows_count + 1)
+    expect(table.rows_count).to eq rows_count + 1
 
     db.upsert(:test, data2, sel)
     row = db.select(:test, sel).fetch
-    row[:text].should eq "upsert - Kasper Nielsen Johansen"
+    expect(row[:text]).to eq "upsert - Kasper Nielsen Johansen"
 
     table.reload
-    table.rows_count.should eq rows_count + 1
+    expect(table.rows_count).to eq rows_count + 1
   end
 
   it "dumps as SQL" do
@@ -139,9 +139,7 @@ shared_examples_for "a baza driver" do
     tables_count = db.tables.list.length
 
     # Remove everything in the db.
-    db.tables.list do |table|
-      table.drop unless table.native?
-    end
+    db.tables.list.select(&:native?).each(&:drop)
 
     # Run the exported SQL.
     db.transaction do
@@ -199,10 +197,10 @@ shared_examples_for "a baza driver" do
 
   it "generates proper sql" do
     time = Time.new(1985, 6, 17, 10, 30)
-    db.insert(:test, {date: time}, return_sql: true).should eql("INSERT INTO #{db.sep_table}test#{db.sep_table} (#{db.sep_col}date#{db.sep_col}) VALUES (#{db.sep_val}1985-06-17 10:30:00#{db.sep_val})")
+    expect(db.insert(:test, {date: time}, return_sql: true)).to eq "INSERT INTO #{db.sep_table}test#{db.sep_table} (#{db.sep_col}date#{db.sep_col}) VALUES (#{db.sep_val}1985-06-17 10:30:00#{db.sep_val})"
 
     date = Date.new(1985, 6, 17)
-    db.insert(:test, {date: date}, return_sql: true).should eql("INSERT INTO #{db.sep_table}test#{db.sep_table} (#{db.sep_col}date#{db.sep_col}) VALUES (#{db.sep_val}1985-06-17#{db.sep_val})")
+    expect(db.insert(:test, {date: date}, return_sql: true)).to eq "INSERT INTO #{db.sep_table}test#{db.sep_table} (#{db.sep_col}date#{db.sep_col}) VALUES (#{db.sep_val}1985-06-17#{db.sep_val})"
   end
 
   it "is able to make new connections based on given objects" do
@@ -233,7 +231,7 @@ shared_examples_for "a baza driver" do
     db.select(:test_table, nil, idquery: :idrow) do |row|
       count_found += 1
 
-      row[:name].should eq "Kasper #{count_found}"
+      expect(row[:name]).to eq "Kasper #{count_found}"
     end
 
     expect(count_found).to eq 10_000
@@ -376,6 +374,13 @@ shared_examples_for "a baza driver" do
     unless db.driver.conn.class.name == "ActiveRecord::ConnectionAdapters::SQLite3Adapter"
       expect(row.fetch(:created_at).class).to eq Time
       expect(row.fetch(:date).class).to eq Date
+    end
+  end
+
+  it "returns arguments used to connect" do
+    unless db.driver.is_a?(Baza::Driver::ActiveRecord)
+      args = db.driver.class.args
+      expect(args).to be_a Array
     end
   end
 end

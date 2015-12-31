@@ -2,8 +2,7 @@ class Baza::Driver::Pg::Result
   def initialize(driver, result, args = nil)
     @result = result
     @unbuffered = true if args && args[:unbuffered]
-    @type_translation = driver.baza.opts[:type_translation]
-    @debug = driver.baza.opts[:debug]
+    @type_translation = driver.db.opts[:type_translation]
 
     types
   end

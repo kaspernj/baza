@@ -6,7 +6,7 @@ class Baza::Driver::ActiveRecord < Baza::BaseSqlDriver
   autoload :Indexes, "#{path}/indexes"
   autoload :Result, "#{path}/result"
 
-  attr_reader :baza, :conn, :sep_table, :sep_col, :sep_val, :symbolize, :driver_type
+  attr_reader :db, :conn, :sep_table, :sep_col, :sep_val, :symbolize, :driver_type
   attr_accessor :tables, :cols, :indexes
 
   def self.from_object(args)
@@ -29,9 +29,9 @@ class Baza::Driver::ActiveRecord < Baza::BaseSqlDriver
     nil
   end
 
-  def initialize(baza)
-    @baza = baza
-    @conn = @baza.opts.fetch(:conn)
+  def initialize(db)
+    @db = db
+    @conn = @db.opts.fetch(:conn)
 
     raise "No conn given" unless @conn
 
@@ -77,15 +77,15 @@ class Baza::Driver::ActiveRecord < Baza::BaseSqlDriver
       @driver_type = :pg
       @result_constant = Baza::Driver::Pg::Result
     else
-      raise "Unknown type: '#{conn_name}'."
+      raise "Unknown type: '#{conn_name}'"
     end
 
     @result_constant ||= Baza::Driver::ActiveRecord::Result
 
     if conn_name.include?("mysql")
-      @baza.opts[:db] ||= query("SELECT DATABASE()").fetch.fetch(:"DATABASE()")
+      @db.opts[:db] ||= query("SELECT DATABASE()").fetch.fetch(:"DATABASE()")
     elsif @driver_type == :pg
-      @baza.opts[:db] ||= query("SELECT current_database()").fetch.values.first
+      @db.opts[:db] ||= query("SELECT current_database()").fetch.values.first
     end
   end
 
@@ -125,7 +125,7 @@ class Baza::Driver::ActiveRecord < Baza::BaseSqlDriver
     end
 
     begin
-      yield @baza
+      yield @db
       query("COMMIT")
     rescue
       query("ROLLBACK")

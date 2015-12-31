@@ -44,9 +44,9 @@ describe Baza::Driver::Sqlite3 do
     table2 = db2.tables[:test_table]
 
     cols2 = table2.columns
-    cols2.length.should eql(cols1.length)
+    expect(cols2.length).to eql(cols1.length)
 
-    table2.rows_count.should eql(table1.rows_count)
+    expect(table2.rows_count).to eq table1.rows_count
 
     db.select(:test_table) do |row1|
       found = 0
@@ -54,14 +54,14 @@ describe Baza::Driver::Sqlite3 do
         found += 1
 
         row1.each do |key, val|
-          row2[key].should eql(val)
+          expect(row2[key]).to eql(val)
         end
       end
 
-      found.should eq 1
+      expect(found).to eq 1
     end
 
-    table1.indexes.length.should eq 1
-    table2.indexes.length.should eq table1.indexes.length
+    expect(table1.indexes.length).to eq 1
+    expect(table2.indexes.length).to eq table1.indexes.length
   end
 end

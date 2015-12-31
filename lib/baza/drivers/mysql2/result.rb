@@ -3,7 +3,7 @@ class Baza::Driver::Mysql2::Result < Baza::ResultBase
   # Constructor. This should not be called manually.
   def initialize(driver, result)
     @result = result
-    @type_translation = driver.baza.opts[:type_translation]
+    @type_translation = driver.db.opts[:type_translation]
   end
 
   # Returns a single result.

@@ -19,16 +19,16 @@ class Baza::Driver::Mysql < Baza::MysqlBaseDriver
     raise "Mysql does not support auth extraction" if args[:object].class.name == "Mysql"
   end
 
-  def initialize(baza)
+  def initialize(db)
     super
 
-    @opts = @baza.opts
+    @opts = @db.opts
 
     require "monitor"
     @mutex = Monitor.new
 
-    if baza.opts[:conn]
-      @conn = baza.opts[:conn]
+    if db.opts[:conn]
+      @conn = db.opts[:conn]
     else
       if @opts[:encoding]
         @encoding = @opts[:encoding]
@@ -36,8 +36,8 @@ class Baza::Driver::Mysql < Baza::MysqlBaseDriver
         @encoding = "utf8"
       end
 
-      if @baza.opts.key?(:port)
-        @port = @baza.opts[:port].to_i
+      if @db.opts.key?(:port)
+        @port = @db.opts[:port].to_i
       else
         @port = 3306
       end
@@ -55,7 +55,7 @@ class Baza::Driver::Mysql < Baza::MysqlBaseDriver
   def reconnect
     @mutex.synchronize do
       require "mysql" unless ::Object.const_defined?(:Mysql)
-      @conn = ::Mysql.real_connect(@baza.opts[:host], @baza.opts[:user], @baza.opts[:pass], @baza.opts[:db], @port)
+      @conn = ::Mysql.real_connect(@db.opts[:host], @db.opts[:user], @db.opts[:pass], @db.opts[:db], @port)
       query("SET NAMES '#{esc(@encoding)}'") if @encoding
     end
   end
@@ -113,7 +113,7 @@ class Baza::Driver::Mysql < Baza::MysqlBaseDriver
   # Destroyes the connection.
   def destroy
     @conn = nil
-    @baza = nil
+    @db = nil
     @mutex = nil
     @subtype = nil
     @encoding = nil

@@ -367,14 +367,28 @@ class Baza::Db
     end
 
     unless args.nil?
-      sql << " ORDER BY #{args[:orderby]}" if args[:orderby]
+      if args[:orderby]
+        sql << " ORDER BY"
+
+        if args.fetch(:orderby).is_a?(Array)
+          first = true
+          args.fetch(:orderby).each do |order_by|
+            sql << "," unless first
+            first = false if first
+            sql << " #{sep_col}#{escape_column(order_by)}#{sep_col}"
+          end
+        else
+          sql << " #{sep_col}#{escape_column(args.fetch(:orderby))}#{sep_col}"
+        end
+      end
+
       sql << " LIMIT #{args[:limit]}" if args[:limit]
 
       if args[:limit_from] && args[:limit_to]
         begin
           Float(args[:limit_from])
         rescue
-          raise "'limit_from' was not numeric: '#{args[:limit_from]}'."
+          raise "'limit_from' was not numeric: '#{args.fetch(:limit_from)}'."
         end
 
         begin
@@ -383,7 +397,7 @@ class Baza::Db
           raise "'limit_to' was not numeric: '#{args[:limit_to]}'."
         end
 
-        sql << " LIMIT #{args[:limit_from]}, #{args[:limit_to]}"
+        sql << " LIMIT #{args.fetch(:limit_from)}, #{args.fetch(:limit_to)}"
       end
     end
 
@@ -563,6 +577,18 @@ class Baza::Db
   # id = db.last_id
   def last_id
     @driver.last_id
+  end
+
+  def current_database_name
+    databases.current_database_name
+  end
+
+  def current_database
+    databases.current_database
+  end
+
+  def with_database(name, &blk)
+    databases.with_database(name, &blk)
   end
 
   # Escapes a string to be safe-to-use in a query-string.

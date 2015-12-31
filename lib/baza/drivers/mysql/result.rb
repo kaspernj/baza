@@ -23,7 +23,7 @@ class Baza::Driver::Mysql::Result < Baza::ResultBase
     @driver = driver
     @result = result
     @mutex = Mutex.new
-    @type_translation = driver.baza.opts[:type_translation]
+    @type_translation = driver.db.opts[:type_translation]
 
     return unless @result
 

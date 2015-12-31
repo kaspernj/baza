@@ -35,10 +35,10 @@ class Baza::Driver::Mysql2 < Baza::MysqlBaseDriver
     nil
   end
 
-  def initialize(baza)
+  def initialize(db)
     super
 
-    @opts = @baza.opts
+    @opts = @db.opts
 
     require "monitor"
     @mutex = Monitor.new
@@ -49,8 +49,8 @@ class Baza::Driver::Mysql2 < Baza::MysqlBaseDriver
       @encoding = "utf8"
     end
 
-    if @baza.opts.key?(:port)
-      @port = @baza.opts[:port].to_i
+    if @db.opts.key?(:port)
+      @port = @db.opts[:port].to_i
     else
       @port = 3306
     end
@@ -67,10 +67,10 @@ class Baza::Driver::Mysql2 < Baza::MysqlBaseDriver
   def reconnect
     @mutex.synchronize do
       args = {
-        host: @baza.opts[:host],
-        username: @baza.opts[:user],
-        password: @baza.opts[:pass],
-        database: @baza.opts[:db],
+        host: @db.opts[:host],
+        username: @db.opts[:user],
+        password: @db.opts[:pass],
+        database: @db.opts[:db],
         port: @port,
         symbolize_keys: true,
         cache_rows: false
@@ -78,12 +78,12 @@ class Baza::Driver::Mysql2 < Baza::MysqlBaseDriver
 
       # Symbolize keys should also be given here, else table-data wont be symbolized for some reason - knj.
       @query_args = {symbolize_keys: true}
-      @query_args[:cast] = false unless @baza.opts[:type_translation]
-      @query_args.merge!(@baza.opts[:query_args]) if @baza.opts[:query_args]
+      @query_args[:cast] = false unless @db.opts[:type_translation]
+      @query_args.merge!(@db.opts[:query_args]) if @db.opts[:query_args]
 
       pos_args = [:as, :async, :cast_booleans, :database_timezone, :application_timezone, :cache_rows, :connect_flags, :cast]
       pos_args.each do |key|
-        args[key] = @baza.opts[key] if @baza.opts.key?(key)
+        args[key] = @db.opts[key] if @db.opts.key?(key)
       end
 
       args[:as] = :array
@@ -91,8 +91,8 @@ class Baza::Driver::Mysql2 < Baza::MysqlBaseDriver
       tries = 0
       begin
         tries += 1
-        if @baza.opts[:conn]
-          @conn = @baza.opts[:conn]
+        if @db.opts[:conn]
+          @conn = @db.opts[:conn]
         else
           require "mysql2"
           @conn = Mysql2::Client.new(args)
@@ -165,7 +165,7 @@ class Baza::Driver::Mysql2 < Baza::MysqlBaseDriver
   # Destroyes the connection.
   def destroy
     @conn = nil
-    @baza = nil
+    @db = nil
     @mutex = nil
     @encoding = nil
     @query_args = nil

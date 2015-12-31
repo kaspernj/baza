@@ -348,8 +348,8 @@ describe "Objects" do
   it "should be able to generate lists for inputs" do
     task
     list = ob.list_optshash(:Task)
-    list.length.should eq 1
-    list[1].should eq "Test task"
+    expect(list.length).to eq 1
+    expect(list[1]).to eq "Test task"
   end
 
   it "should be able to connect to objects 'no-html' callback and test it." do
@@ -414,13 +414,13 @@ describe "Objects" do
     person1 = ob.add(:Person, name: "get_or_add")
     person2 = ob.get_or_add(:Person, name: "get_or_add")
 
-    person2.id.should eql(person1.id)
-    person2[:name].should eql("get_or_add")
+    expect(person2.id).to eq person1.id
+    expect(person2[:name]).to eq "get_or_add"
 
     person3 = ob.get_or_add(:Person, name: "get_or_add3")
 
     raise "Failure ID was the same" if person3.id == person2.id
-    person3[:name].should eql("get_or_add3")
+    expect(person3[:name]).to eq "get_or_add3"
   end
 
   it "should delete the temp database again." do

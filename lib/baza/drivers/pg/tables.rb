@@ -23,7 +23,7 @@ class Baza::Driver::Pg::Tables
 
     @db.select([:information_schema, :tables], where_args, orderby: :table_name) do |table_data|
       table = Baza::Driver::Pg::Table.new(
-        driver: self,
+        driver: @db.driver,
         data: table_data
       )
 
@@ -39,32 +39,7 @@ class Baza::Driver::Pg::Tables
     tables_list
   end
 
-  CREATE_ALLOWED_KEYS = [:columns, :indexes, :temp, :return_sql]
-  # Creates a new table by the given name and data.
   def create(name, data, args = nil)
-    raise "No columns was given for '#{name}'." if !data[:columns] || data[:columns].empty?
-
-    sql = "CREATE"
-    sql << " TEMPORARY" if data[:temp]
-    sql << " TABLE #{db.sep_table}#{@db.escape_table(name)}#{db.sep_table} ("
-
-    first = true
-    data.fetch(:columns).each do |col_data|
-      sql << ", " unless first
-      first = false if first
-      col_data.delete(:after) if col_data[:after]
-      sql << @db.cols.data_sql(col_data)
-    end
-
-    sql << ")"
-
-    @db.query(sql) unless args && args[:return_sql]
-
-    if data[:indexes] && !data[:indexes].empty?
-      table = @db.tables[name]
-      table.create_indexes(data.fetch(:indexes))
-    end
-
-    return [sql] if args && args[:return_sql]
+    @db.current_database.create_table(name, data, args)
   end
 end

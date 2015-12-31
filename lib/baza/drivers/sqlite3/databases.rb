@@ -1,7 +1,6 @@
 class Baza::Driver::Sqlite3::Databases
   def initialize(args)
     @db = args.fetch(:db)
-    raise "Db wasn't a baza object" unless @db.class.name.include?("Baza")
   end
 
   def [](name)

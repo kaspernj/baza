@@ -1,12 +1,12 @@
 class Baza::BaseSqlDriver
-  attr_reader :baza, :conn, :sep_database, :sep_table, :sep_col, :sep_val, :sep_index
+  attr_reader :db, :conn, :sep_database, :sep_table, :sep_col, :sep_val, :sep_index
   attr_accessor :tables, :cols, :indexes
 
   def self.from_object(_args)
   end
 
-  def initialize(baza)
-    @baza = baza
+  def initialize(db)
+    @db = db
 
     @sep_database = "`"
     @sep_table = "`"
@@ -56,13 +56,13 @@ class Baza::BaseSqlDriver
   end
 
   def transaction
-    @baza.q("BEGIN TRANSACTION")
+    @db.q("BEGIN TRANSACTION")
 
     begin
-      yield @baza
-      @baza.q("COMMIT")
+      yield @db
+      @db.q("COMMIT")
     rescue => e
-      @baza.q("ROLLBACK")
+      @db.q("ROLLBACK")
     end
   end
 
@@ -77,12 +77,12 @@ class Baza::BaseSqlDriver
 
     if !arr_insert || arr_insert.empty?
       # This is the correct syntax for inserting a blank row in MySQL.
-      if @baza.opts.fetch(:type).to_s.include?("mysql")
+      if @db.opts.fetch(:type).to_s.include?("mysql")
         sql << " VALUES ()"
-      elsif @baza.opts.fetch(:type).to_s.include?("sqlite3")
+      elsif @db.opts.fetch(:type).to_s.include?("sqlite3")
         sql << " DEFAULT VALUES"
       else
-        raise "Unknown database-type: '#{@baza.opts.fetch(:type)}'."
+        raise "Unknown database-type: '#{@db.opts.fetch(:type)}'."
       end
     else
       sql << " ("
@@ -95,7 +95,7 @@ class Baza::BaseSqlDriver
           sql << ", "
         end
 
-        sql << "#{@baza.sep_col}#{@baza.escape_column(key)}#{@baza.sep_col}"
+        sql << "#{@db.sep_col}#{@db.escape_column(key)}#{@db.sep_col}"
       end
 
       sql << ") VALUES ("
@@ -108,7 +108,7 @@ class Baza::BaseSqlDriver
           sql << ", "
         end
 
-        sql << @baza.sqlval(value)
+        sql << @db.sqlval(value)
       end
 
       sql << ")"
@@ -116,17 +116,17 @@ class Baza::BaseSqlDriver
 
     return sql if args && args[:return_sql]
 
-    @baza.query(sql)
-    return @baza.last_id if args && args[:return_id]
+    @db.query(sql)
+    return @db.last_id if args && args[:return_id]
     nil
   end
 
   def insert_multi(tablename, arr_hashes, args = nil)
     sql = [] if args && args[:return_sql]
 
-    @baza.transaction do
+    @db.transaction do
       arr_hashes.each do |hash|
-        res = @baza.insert(tablename, hash, args)
+        res = @db.insert(tablename, hash, args)
         sql << res if args && args[:return_sql]
       end
     end

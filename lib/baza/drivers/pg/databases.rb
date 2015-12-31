@@ -3,6 +3,14 @@ class Baza::Driver::Pg::Databases
     @db = args.fetch(:db)
   end
 
+  def current_database
+    @db.databases[current_database_name]
+  end
+
+  def current_database_name
+    @db.query("SELECT current_database()").fetch.values.first
+  end
+
   def create(args)
     if args[:if_not_exists]
       begin
@@ -32,7 +40,7 @@ class Baza::Driver::Pg::Databases
     @db.select(:pg_database, where_args) do |database_data|
       database = Baza::Driver::Pg::Database.new(
         db: @db,
-        driver: self,
+        driver: @db.driver,
         name: database_data.fetch(:datname)
       )
 
@@ -44,5 +52,28 @@ class Baza::Driver::Pg::Databases
     end
 
     database_list
+  end
+
+  def with_database(name)
+    if @db.opts[:db].to_s == name
+      yield if block_given?
+      return self
+    end
+
+    previous_db_name = @db.current_database_name
+
+    @db.opts[:db] = name
+    @db.driver.reconnect
+
+    if block_given?
+      begin
+        yield
+      ensure
+        @db.opts[:db] = previous_db_name
+        @db.driver.reconnect
+      end
+    end
+
+    self
   end
 end

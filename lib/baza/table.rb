@@ -25,14 +25,9 @@ class Baza::Table
   end
 
   def row(id)
-    data = rows({id: id}, limit: 1).fetch
-    raise Baza::Errors::RowNotFound unless data
-
-    Baza::Row.new(
-      db: db,
-      table: name,
-      data: data
-    )
+    row = rows({id: id}, limit: 1).first
+    raise Baza::Errors::RowNotFound unless row
+    row
   end
 
   def to_param
