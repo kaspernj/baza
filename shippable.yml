@@ -4,7 +4,7 @@ archive: true
 rvm:
   - ruby-1.9.3
   - ruby-2.1.2
-  - jruby-head
+  - jruby-1.7.13
 before_script:
   - sudo apt-get -f install libmysql-java
   - cp spec/info_mysql_shippable.rb spec/info_mysql.rb
