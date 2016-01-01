@@ -8,7 +8,7 @@ rvm:
 before_install:
   - apt-get update
   - apt-get install -y libpq-dev libmysqlclient-dev
-  - gem uninstall pg mysql mysql2 -a
+  - gem uninstall pg mysql mysql2 --all --ignore-dependencies
 before_script:
   - sudo apt-get -f install libmysql-java
   - cp spec/info_mysql_shippable.rb spec/info_mysql.rb
