@@ -1,4 +1,5 @@
 language: ruby
+reset_minion: true
 rvm:
   - ruby-1.9.3
   - ruby-2.1.7
