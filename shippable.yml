@@ -6,7 +6,6 @@ rvm:
   - jruby-1.7.13
 before_install:
   - sudo apt-get -y install libmysqlclient-dev
-  - /bin/bash config/shippable_prepare.sh
   - source ~/.rvm/scripts/rvm
   - rvm install $SHIPPABLE_RUBY --verify-downloads 1
   - source ~/.bashrc && ~/.rvm/scripts/rvm && rvm use $SHIPPABLE_RUBY
