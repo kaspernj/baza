@@ -6,8 +6,8 @@ rvm:
   - ruby-2.1.2
   - jruby-1.7.13
 before_install:
-  - apt-get update
-  - apt-get install -y libpq-dev libmysqlclient-dev
+  - sudo apt-get update
+  - sudo apt-get install -y libpq-dev libmysqlclient-dev
   - gem uninstall pg mysql mysql2 --all --ignore-dependencies
 before_script:
   - sudo apt-get -f install libmysql-java
