@@ -1,8 +1,8 @@
 language: ruby
 reset_minion: true
 rvm:
-  - ruby-1.9.3
-  - ruby-2.1.7
+  - ruby-1.9.3-p551
+  - ruby-2.2-head
   - jruby-1.7.13
 before_install:
   - sudo apt-get -y install libmysqlclient-dev
