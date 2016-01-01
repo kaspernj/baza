@@ -4,10 +4,6 @@ rvm:
   - ruby-1.9.3
   - ruby-2.1.7
   - jruby-1.7.13
-before_install:
-  - sudo apt-get update
-  - sudo apt-get install -y libpq-dev libmysqlclient-dev libmysql-java
-  - gem uninstall pg mysql mysql2 --all --ignore-dependencies
 before_script:
   - cp spec/info_mysql_shippable.rb spec/info_mysql.rb
   - cp spec/info_mysql2_shippable.rb spec/info_mysql2.rb
