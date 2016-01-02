@@ -28,39 +28,6 @@ shared_examples_for "a baza driver" do
     driver2.after
   end
 
-  it "does revisions" do
-    test_table
-
-    schema = {
-      tables: {
-        test_table: {
-          columns: [
-            {name: "id", type: :int, autoincr: true, primarykey: true},
-            {name: "name", type: :varchar},
-            {name: "age", type: :int, default: 0},
-            {name: "nickname", type: :varchar, default: ""}
-          ],
-          indexes: [
-            "name"
-          ],
-          rows: [
-            {
-              find_by: {"id" => 1},
-              data: {"id" => 1, "name" => "trala"}
-            }
-          ]
-        }
-      }
-    }
-
-    rev = Baza::Revision.new
-    rev.init_db(schema: schema, debug: false, db: db)
-
-    test_table = db.tables[:test_table]
-    expect(test_table.columns.map(&:name)).to include "age"
-    expect(test_table.columns.map(&:name)).to include "nickname"
-  end
-
   it "does id-queries" do
     test_table
 
@@ -150,49 +117,6 @@ shared_examples_for "a baza driver" do
 
     # Vaildate import.
     raise "Not same amount of tables: #{tables_count}, #{db.tables.list.length}" if tables_count != db.tables.list.length
-  end
-
-  it "renames tables in revisions" do
-    test_table
-
-    Baza::Revision.new.init_db(
-      db: db,
-      debug: false,
-      schema: {
-        tables: {
-          new_test_table: {
-            renames: [:test]
-          }
-        }
-      }
-    )
-
-    tables = db.tables.list.map(&:name)
-
-    expect(tables).to_not include "test"
-    expect(tables).to include "new_test_table"
-  end
-
-  it "renames columns in revisions" do
-    test_table
-
-    Baza::Revision.new.init_db(
-      db: db,
-      debug: false,
-      schema: {
-        tables: {
-          new_test_table: {
-            columns: [
-              {name: :new_name, type: :varchar, renames: [:text]}
-            ]
-          }
-        }
-      }
-    )
-
-    columns = db.tables[:new_test_table].columns.map(&:name)
-    expect(columns).to_not include "text"
-    expect(columns).to include "new_name"
   end
 
   it "generates proper sql" do
