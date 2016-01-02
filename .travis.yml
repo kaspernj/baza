@@ -1,8 +1,9 @@
 language: ruby
+rvm_old:
+  #1.9.3-p551
+  #jruby-1.7.13
 rvm:
-  - #ruby-1.9.3-p551
-  - ruby-2.1-2
-  - #jruby-1.7.13
+  - 2.1.2
 before_script:
   - cp spec/info_mysql_shippable.rb spec/info_mysql.rb
   - cp spec/info_mysql2_shippable.rb spec/info_mysql2.rb
