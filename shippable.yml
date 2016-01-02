@@ -16,6 +16,7 @@ before_script:
   - mysql -e 'CREATE DATABASE baza;'
   - psql -c 'DROP DATABASE IF EXISTS "baza";' -U postgres
   - psql -c 'CREATE DATABASE "baza";' -U postgres
+  - ruby -v
   - source ~/.rvm/scripts/rvm
   - rvm install $SHIPPABLE_RUBY --verify-downloads 1
   - source ~/.bashrc && ~/.rvm/scripts/rvm && rvm use $SHIPPABLE_RUBY
