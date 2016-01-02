@@ -52,7 +52,7 @@ private
         if sql.match(/^\s*(delete|update|create|drop|insert\s+into|alter|truncate)\s+/i)
           return query_no_result_set(sql)
         else
-          stmt = yield stmt
+          stmt = yield
 
           result_set = stmt.execute_query(sql)
           result = Baza::JdbcResult.new(self, stmt, result_set, preload_results)
