@@ -22,7 +22,12 @@ gem 'baza'
 
 ### MySQL
 ```ruby
-db = Baza::Db.new(type: :mysql, subtype: :mysql2, host: "localhost", user: "my_user", pass: "my_password", port: 3306, db: "my_database")
+db = Baza::Db.new(type: :mysql2, host: "localhost", user: "my_user", pass: "my_password", port: 3306, db: "my_database")
+```
+
+### PostgreSQL
+```ruby
+db = Baza::Db.new(type: :pg, host: "localhost", user: "my_user", pass: "my_password", db: "my_database")
 ```
 
 ### SQLite3
