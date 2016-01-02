@@ -12,6 +12,7 @@ class Baza::Driver::Pg < Baza::BaseSqlDriver
   autoload :Result, "#{path}/result"
   autoload :UnbufferedResult, "#{path}/unbuffered_result"
   autoload :Sqlspecs, "#{path}/sqlspecs"
+  autoload :CreateIndexSqlCreator, "#{path}/create_index_sql_creator"
 
   attr_reader :conn
 
