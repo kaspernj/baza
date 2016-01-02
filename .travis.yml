@@ -4,6 +4,7 @@ rvm_old:
   #jruby-1.7.13
 rvm:
   - 2.1.2
+bundler_args: --verbose
 before_script:
   - cp spec/info_mysql_shippable.rb spec/info_mysql.rb
   - cp spec/info_mysql2_shippable.rb spec/info_mysql2.rb
