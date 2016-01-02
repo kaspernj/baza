@@ -21,7 +21,7 @@ class Baza::InfoActiveRecordSqlite3
 
     @db = Baza::Db.new({
       type: :active_record,
-      conn: data[:conn],
+      conn: data.fetch(:conn),
       index_append_table_name: true
     }.merge(args))
   end

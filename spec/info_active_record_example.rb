@@ -21,7 +21,7 @@ class Baza::InfoActiveRecord
 
     @db = Baza::Db.new({
       type: :active_record,
-      conn: data[:conn]
+      conn: data.fetch(:conn)
     }.merge(args))
   end
 
