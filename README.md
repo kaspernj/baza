@@ -1,6 +1,6 @@
 [![Code Climate](https://codeclimate.com/github/kaspernj/baza/badges/gpa.svg)](https://codeclimate.com/github/kaspernj/baza)
 [![Test Coverage](https://codeclimate.com/github/kaspernj/baza/badges/coverage.svg)](https://codeclimate.com/github/kaspernj/baza)
-[![Build Status](https://img.shields.io/shippable/540e7b993479c5ea8f9ec1fe.svg)](https://app.shippable.com/projects/540e7b993479c5ea8f9ec1fe/builds/latest)
+[![Build Status](https://travis-ci.org/kaspernj/baza.svg)](https://travis-ci.org/kaspernj/baza)
 
 # baza
 
