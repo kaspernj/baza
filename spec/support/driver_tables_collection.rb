@@ -77,24 +77,6 @@ shared_examples_for "a baza tables driver" do
     test_table.clone("test2")
     test_table2 = db.tables[:test2]
 
-    puts "TestTable"
-
-    test_table.columns.each do |column|
-      puts "Name: #{column.name}"
-      puts "Type: #{column.type}"
-      puts "Data: #{column.instance_variable_get(:@data)}"
-      puts
-    end
-
-    puts "TestTable2"
-
-    test_table2.columns.each do |column|
-      puts "Name: #{column.name}"
-      puts "Type: #{column.type}"
-      puts "Data: #{column.instance_variable_get(:@data)}"
-      puts
-    end
-
     expect(test_table2.columns.length).to eq test_table.columns.length
     expect(test_table2.indexes.length).to eq test_table.indexes.length
     expect(test_table2.rows_count).to eq test_table.rows_count
