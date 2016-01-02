@@ -164,7 +164,7 @@ table.rows_count
 
 ### Column listing
 ```ruby
-table = db.tables[:users]
+table = db.tables["users"]
 cols = table.columns
 ```
 
