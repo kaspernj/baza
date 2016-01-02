@@ -1,11 +1,8 @@
 language: ruby
-reset_minion: true
 rvm:
   - #ruby-1.9.3-p551
-  - ruby-2.2-head
+  - ruby-2.1-2
   - #jruby-1.7.13
-before_install:
-  - sudo apt-get -y install libmysqlclient-dev
 before_script:
   - cp spec/info_mysql_shippable.rb spec/info_mysql.rb
   - cp spec/info_mysql2_shippable.rb spec/info_mysql2.rb
@@ -16,16 +13,6 @@ before_script:
   - mysql -e 'CREATE DATABASE baza;'
   - psql -c 'DROP DATABASE IF EXISTS "baza";' -U postgres
   - psql -c 'CREATE DATABASE "baza";' -U postgres
-  - ruby -v
-  - source ~/.rvm/scripts/rvm
-  - rvm install $SHIPPABLE_RUBY --verify-downloads 1
-  - source ~/.bashrc && ~/.rvm/scripts/rvm && rvm use $SHIPPABLE_RUBY
-  - ruby -v
-  - gem uninstall --all --ignore-dependencies mysql2
-  - gem install mysql2
-  - bundle
-install:
-  - ruby -v
 script:
   - CODECLIMATE_REPO_TOKEN=98c06de7271764c9cd7bbde7cee4ddfa0d3e7db4bd9933f17779100276672e5f bundle exec rspec
   - bundle exec rake best_practice_project:run
