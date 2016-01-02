@@ -94,6 +94,13 @@ database.name = "new-name"
 database.save!
 ```
 
+### Listing databases
+```ruby
+db.databases.list.each do |database|
+  puts "Database: #{database.name}"
+end
+```
+
 ### Listing tables on non-used-database
 ```ruby
 database = db.database["test-db"]
