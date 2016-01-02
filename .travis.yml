@@ -2,7 +2,7 @@ language: ruby
 cache: bundler
 rvm:
   - 1.9.3
-  - 2.1.2
+  - 2.1.7
   - jruby-1.7.13
 before_script:
   - cp spec/info_mysql_travis.rb spec/info_mysql.rb
