@@ -204,6 +204,7 @@ index.drop
 ```ruby
 puts "Unique: #{index.unique?}"
 puts "Primary: #{index.primary?}"
+puts "Autoincr: #{index.autoincr?}"
 puts "Table: #{index.table}"
 ```
 
