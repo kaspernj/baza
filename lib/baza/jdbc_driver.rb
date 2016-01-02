@@ -1,16 +1,4 @@
 class Baza::JdbcDriver < Baza::BaseSqlDriver
-  path = "#{File.dirname(__FILE__)}/mysql_java"
-
-  autoload :Table, "#{path}/table"
-  autoload :Tables, "#{path}/tables"
-  autoload :Column, "#{path}/column"
-  autoload :Columns, "#{path}/columns"
-  autoload :Index, "#{path}/index"
-  autoload :Indexes, "#{path}/indexes"
-  autoload :Result, "#{path}/result"
-  autoload :UnbufferedResult, "#{path}/unbuffered_result"
-  autoload :Sqlspecs, "#{path}/sqlspecs"
-
   attr_reader :conn, :conns
 
   def initialize(db)

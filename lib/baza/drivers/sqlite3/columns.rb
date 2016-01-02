@@ -4,7 +4,7 @@ class Baza::Driver::Sqlite3::Columns
 
   # Constructor. This should not be called manually.
   def initialize(args)
-    @args = args
+    @db = args.fetch(:db)
   end
 
   DATA_SQL_ALLOWED_KEYS = [:name, :type, :maxlength, :autoincr, :primarykey, :null, :default, :default_func, :renames, :after, :renames]
@@ -24,10 +24,10 @@ class Baza::Driver::Sqlite3::Columns
 
     data[:maxlength] = 255 if type == :varchar && !data.key?(:maxlength)
     data[:maxlength] = 11 if type == :int && !data.key?(:maxlength) && !data[:autoincr] && !data[:primarykey]
-    type = :integer if @args[:db].int_types.index(type) && (data[:autoincr] || data[:primarykey])
+    type = :integer if @db.int_types.index(type) && (data[:autoincr] || data[:primarykey])
 
-    sql = "`#{data[:name]}` #{type}"
-    sql << "(#{data[:maxlength]})" if data[:maxlength] && !data[:autoincr]
+    sql = "`#{data.fetch(:name)}` #{type}"
+    sql << "(#{data.fetch(:maxlength)})" if data[:maxlength] && !data[:autoincr]
     sql << " PRIMARY KEY" if data[:primarykey]
     sql << " AUTOINCREMENT" if data[:autoincr]
 
@@ -39,7 +39,7 @@ class Baza::Driver::Sqlite3::Columns
     if data.key?(:default_func)
       sql << " DEFAULT #{data[:default_func]}"
     elsif data.key?(:default) && data[:default] != false
-      sql << " DEFAULT '#{@args[:db].escape(data[:default])}'"
+      sql << " DEFAULT #{@db.sqlval(data.fetch(:default))}"
     end
 
     sql

@@ -83,7 +83,7 @@ class Baza::Driver::MysqlJava < Baza::JdbcDriver
         @conn = @db.opts.fetch(:conn)
       else
         com.mysql.jdbc.Driver
-        @conn = java.sql::DriverManager.getConnection("jdbc:mysql://#{@db.opts.fetch(:host)}:#{@port}/#{@db.opts.fetch(:db)}?user=#{@db.opts.fetch(:user)}&password=#{@db.opts.fetch(:pass)}&populateInsertRowWithDefaultValues=true&zeroDateTimeBehavior=round&characterEncoding=#{@encoding}&holdResultsOpenOverStatementClose=true")
+        @conn = java.sql::DriverManager.getConnection(jdbc_connect_command)
       end
 
       query_no_result_set("SET SQL_MODE = ''")
@@ -200,5 +200,28 @@ class Baza::Driver::MysqlJava < Baza::JdbcDriver
       query_no_result_set("ROLLBACK")
       raise
     end
+  end
+
+private
+
+  def jdbc_connect_command
+    conn_options = {
+      "user" => @db.opts.fetch(:user),
+      "password" => @db.opts.fetch(:pass),
+      "populateInsertRowWithDefaultValues" => true,
+      "zeroDateTimeBehavior" => "round",
+      "characterEncoding" => @encoding,
+      "holdResultsOpenOverStatementClose" => true
+    }
+
+    conn_command = "jdbc:mysql://#{@db.opts.fetch(:host)}:#{@port}/#{@db.opts.fetch(:db)}?"
+    first = true
+    conn_options.each do |key, value|
+      conn_command << "&" unless first
+      first = false if first
+      conn_command << "#{key}=#{value}"
+    end
+
+    conn_command
   end
 end
