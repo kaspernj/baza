@@ -602,7 +602,7 @@ class Baza::Model
   # print "That user is deleted." if user.deleted_from_db?
   def deleted_from_db?
     # Try to avoid db-query if object is already deleted.
-    return true if self.deleted?
+    return true if deleted?
 
     # Try to reload data. Destroy object and return true if the row is gone from the database.
     begin
@@ -637,7 +637,6 @@ class Baza::Model
 
   # Returns the objects ID.
   def id
-    raise Errno::ENOENT, "This object has been deleted." if deleted?
     raise "No ID on object." unless @id
     @id
   end
