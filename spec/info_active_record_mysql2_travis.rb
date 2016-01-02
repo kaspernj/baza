@@ -5,15 +5,15 @@ class Baza::InfoActiveRecordMysql2
     require "active_record"
     require "activerecord-jdbc-adapter" if RUBY_PLATFORM == "java"
 
-    conn_pool ||= ::ActiveRecord::Base.establish_connection(
+    @conn_pool ||= ::ActiveRecord::Base.establish_connection(
       adapter: "mysql2",
       host: "localhost",
       database: "baza",
       username: "travis"
     )
-    conn = conn_pool.connection
+    @conn = @conn_pool.connection
 
-    {pool: conn_pool, conn: conn}
+    {pool: @conn_pool, conn: @conn}
   end
 
   def initialize(args = {})
