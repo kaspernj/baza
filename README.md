@@ -82,6 +82,27 @@ db.upsert(:users, {name: "Kasper"}, {age: 27})
 
 ## Structure
 
+### Database creation
+```ruby
+db.databases.create(name: "test-db")
+```
+
+### Database renaming
+```ruby
+database = db.databases["test-db"]
+database.name = "new-name"
+database.save!
+```
+
+### Listing tables on non-used-database
+```ruby
+database = db.database["test-db"]
+database.tables.each do |table|
+  puts "TableName: #{table.name}"
+  puts "Columns: #{table.columns.map(&:name)}"
+end
+```
+
 ### Table creation
 ```ruby
 db.tables.create(:users, {
