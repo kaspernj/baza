@@ -90,64 +90,23 @@ class Baza::Driver::Pg::Table < Baza::Table
     index
   end
 
-  def create_indexes(index_arr, args = {})
-    Baza::Driver::Pg::Table.create_indexes(index_arr, args.merge(table_name: name, db: @db))
+  def create_indexes(index_list, args = {})
+    Baza::Driver::Pg::Table.create_indexes(index_list, args.merge(table_name: name, db: @db))
   end
 
-  def self.create_indexes(index_arr, args = {})
-    db = args[:db]
+  def self.create_indexes(index_list, args = {})
+    db = args.fetch(:db)
+    sqls = Baza::Driver::Pg::CreateIndexSqlCreator.new(db: db, indexes: index_list, create_args: args).sqls
 
-    if args[:return_sql]
-      sql = ""
-      first = true
-    end
-
-    index_arr.each do |index_data|
-      sql = "" unless args[:return_sql]
-
-      sql << "CREATE" if args[:create] || !args.key?(:create)
-
-      if index_data.is_a?(String) || index_data.is_a?(Symbol)
-        index_data = {name: index_data, columns: [index_data]}
-      end
-
-      if !index_data.key?(:name) || index_data[:name].to_s.strip.empty?
-        index_data[:name] = "index_on_#{args[:table_name] || name}_#{index_data.fetch(:columns).join("_")}"
-      end
-
-      raise "No columns was given on index: '#{index_data.fetch(:name)}'." if !index_data[:columns] || index_data[:columns].empty?
-
-      if args[:return_sql]
-        if first
-          first = false
-        else
-          sql << ", "
+    unless args[:return_sql]
+      db.transaction do
+        sqls.each do |sql|
+          db.query(sql)
         end
       end
-
-      sql << " UNIQUE" if index_data[:unique]
-      sql << " INDEX #{db.sep_index}#{db.escape_index(index_data.fetch(:name))}#{db.sep_index}"
-
-      if args[:on_table] || !args.key?(:on_table)
-        sql << " ON #{db.sep_table}#{db.escape_table(args.fetch(:table_name))}#{db.sep_table}"
-      end
-
-      sql << " ("
-
-      first = true
-      index_data[:columns].each do |col_name|
-        sql << ", " unless first
-        first = false if first
-
-        sql << "#{db.sep_col}#{db.escape_column(col_name)}#{db.sep_col}"
-      end
-
-      sql << ")"
-
-      db.query(sql) unless args[:return_sql]
     end
 
-    sql if args[:return_sql]
+    sqls if args[:return_sql]
   end
 
   def rename(new_name)
