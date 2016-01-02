@@ -1,2 +1,2 @@
-class Baza::Driver::Mysqljava::Database < Baza::Database
+class Baza::Driver::MysqlJava::Database < Baza::Driver::Mysql::Database
 end

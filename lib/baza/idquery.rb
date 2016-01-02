@@ -12,11 +12,12 @@ class Baza::Idquery
   # end
   def initialize(args, &block)
     @args = args
+    @db = args.fetch(:db)
     @ids = []
     @debug = @args[:debug]
 
     if @args[:query]
-      @args[:db].q(@args[:query]) do |data|
+      @db.q(@args.fetch(:query)) do |data|
         @args[:col] = data.keys.first unless @args[:col]
 
         if data.is_a?(Array)
@@ -78,8 +79,8 @@ private
 
   # Spawns a new database-result to read from.
   def new_res
-    table_esc = "`#{@args[:db].escape_table(@args[:table])}`"
-    col_esc = "`#{@args[:db].escape_column(@args[:col])}`"
+    table_esc = "#{@db.sep_table}#{@db.escape_table(@args[:table])}#{@db.sep_table}"
+    col_esc = "#{@db.sep_col}#{@db.escape_column(@args[:col])}#{@db.sep_col}"
     ids = @ids.shift(@args[:size])
 
     if ids.empty?
@@ -87,11 +88,11 @@ private
       return nil
     end
 
-    ids_sql = ids.map { |id| "'#{@args[:db].esc(id)}'" }.join(",")
+    ids_sql = ids.map { |id| "#{@db.sep_val}#{@db.esc(id)}#{@db.sep_val}" }.join(",")
     query_str = "SELECT * FROM #{table_esc} WHERE #{table_esc}.#{col_esc} IN (#{ids_sql})"
-    print "Query: #{query_str}\n" if @debug
+    puts "Query: #{query_str}" if @debug
 
-    @args[:db].q(query_str)
+    @db.q(query_str)
   end
 
   # Removes all variables on the object. This is done when no more results are available.

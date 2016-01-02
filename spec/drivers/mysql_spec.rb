@@ -38,16 +38,16 @@ describe Baza.const_get(:Driver).const_get(:Mysql) do
       db1.copy_to(db2)
 
       table_sqlite = db2.tables[:test_table]
-      table_sqlite.columns.length.should eq test_table.columns.length
+      expect(table_sqlite.columns.length).to eq test_table.columns.length
 
       col_id_sqlite = table_sqlite.column(:id)
-      col_id_sqlite.type.should eq :int
-      col_id_sqlite.autoincr?.should eq true
-      col_id_sqlite.primarykey?.should eq true
+      expect(col_id_sqlite.type).to eq :int
+      expect(col_id_sqlite.autoincr?).to eq true
+      expect(col_id_sqlite.primarykey?).to eq true
 
       col_name_sqlite = table_sqlite.column(:name)
-      col_name_sqlite.type.should eq :varchar
-      col_name_sqlite.maxlength.to_i.should eq 100
+      expect(col_name_sqlite.type).to eq :varchar
+      expect(col_name_sqlite.maxlength.to_i).to eq 100
     ensure
       driver1.after
       driver2.after

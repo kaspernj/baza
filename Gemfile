@@ -21,8 +21,9 @@ group :development, :test do
   gem "jdbc-mysql", platform: :jruby
   gem "activerecord-jdbc-adapter", platform: :jruby
   gem "sqlite3", platform: :ruby
-  gem "mysql", platform: :ruby
-  gem "mysql2", platform: :ruby
+  gem "mysql", "2.9.1", platform: :ruby
+  gem "mysql2", "0.4.2", platform: :ruby
+  gem "pg", "0.18.4", platform: :ruby
   gem "activerecord", "4.2.5"
   gem "best_practice_project", github: "kaspernj/best_practice_project", require: false
   gem "rubocop", "0.35.1", require: false

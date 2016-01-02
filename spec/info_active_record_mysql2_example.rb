@@ -1,15 +1,16 @@
-class Baza::InfoActiveRecordMysql
+class Baza::InfoActiveRecordMysql2
   attr_reader :db
 
   def self.connection
     require "active_record"
+    require "activerecord-jdbc-adapter" if RUBY_PLATFORM == "java"
 
     @conn_pool ||= ::ActiveRecord::Base.establish_connection(
-      adapter: "mysql",
+      adapter: "mysql2",
       host: "localhost",
       database: "baza-test",
       username: "baza-test",
-      password: "BBH7djRUKzL5nmG3"
+      password: "password"
     )
     @conn ||= @conn_pool.connection
 
@@ -17,12 +18,11 @@ class Baza::InfoActiveRecordMysql
   end
 
   def initialize(args = {})
-    @data = Baza::InfoActiveRecordMysql.connection
-    @data.fetch(:conn).reconnect!
+    data = Baza::InfoActiveRecordMysql2.connection
 
     @db = Baza::Db.new({
       type: :active_record,
-      conn: @data.fetch(:conn)
+      conn: data[:conn]
     }.merge(args))
   end
 

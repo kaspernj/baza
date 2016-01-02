@@ -392,6 +392,15 @@ private
 
   def parse_columns_from_sql(sql)
     columns_sql = sql.match(/\((.+?)\)\Z/)[1]
-    columns_sql.split(",").map { |column| column.match(/`(.+)`/)[1] }
+
+    columns_sql.split(",").map do |column|
+      if (match = column.match(/`(.+)`/))
+        match[1]
+      elsif (match = column.match(/"(.+)"/))
+        match[1]
+      else
+        raise "Couldn't parse column part: #{column}"
+      end
+    end
   end
 end

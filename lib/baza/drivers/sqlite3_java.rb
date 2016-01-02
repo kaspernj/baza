@@ -29,15 +29,22 @@ class Baza::Driver::Sqlite3Java < Baza::JdbcDriver
     end
   end
 
+  def self.args
+    [{
+      label: "Path",
+      name: "path"
+    }]
+  end
+
   # Constructor. This should not be called manually.
-  def initialize(baza_db)
+  def initialize(db)
     super
 
-    @path = @baza.opts[:path] if @baza.opts[:path]
+    @path = @db.opts[:path] if @db.opts[:path]
     @preload_results = true
 
-    if @baza.opts[:conn]
-      @conn = @baza.opts[:conn]
+    if @db.opts[:conn]
+      @conn = @db.opts[:conn]
     else
       org.sqlite.JDBC
       reconnect
@@ -67,7 +74,7 @@ class Baza::Driver::Sqlite3Java < Baza::JdbcDriver
     query_no_result_set("BEGIN TRANSACTION")
 
     begin
-      yield @baza
+      yield @db
       query_no_result_set("COMMIT")
     rescue
       query_no_result_set("ROLLBACK")

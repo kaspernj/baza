@@ -1,7 +1,7 @@
 class Baza::Driver::ActiveRecord::Result < Baza::ResultBase
   def initialize(driver, result)
     @result = result
-    @type_translation = driver.baza.opts[:type_translation]
+    @type_translation = driver.db.opts[:type_translation]
   end
 
   def fetch

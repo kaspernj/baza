@@ -13,7 +13,7 @@ class Baza::JdbcDriver < Baza::BaseSqlDriver
 
   attr_reader :conn, :conns
 
-  def initialize(baza)
+  def initialize(db)
     @java_rs_data = {}
     @mutex = ::Mutex.new
     super
@@ -41,7 +41,7 @@ class Baza::JdbcDriver < Baza::BaseSqlDriver
     query_with_statement(str, false) do
       stmt = @conn.create_statement(java.sql.ResultSet.TYPE_FORWARD_ONLY, java.sql.ResultSet.CONCUR_READ_ONLY)
 
-      if @baza.opts[:type] == :sqlite3_java
+      if @db.opts[:type] == :sqlite3_java
         stmt.fetch_size = 1
       else
         stmt.fetch_size = java.lang.Integer::MIN_VALUE

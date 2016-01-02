@@ -12,4 +12,20 @@ class Baza::Column
   def to_param
     name
   end
+
+  def table
+    @db.tables[table_name]
+  end
+
+  def data
+    {
+      type: type,
+      name: name,
+      null: null?,
+      maxlength: maxlength,
+      default: default,
+      primarykey: primarykey?,
+      autoincr: autoincr?
+    }
+  end
 end

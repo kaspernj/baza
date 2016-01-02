@@ -59,7 +59,7 @@ class Baza::MysqlBaseDriver < Baza::BaseSqlDriver
             sql << ","
           end
 
-          sql << @baza.sqlval(val)
+          sql << @db.sqlval(val)
         end
       else
         hash.each do |_key, val|
@@ -69,7 +69,7 @@ class Baza::MysqlBaseDriver < Baza::BaseSqlDriver
             sql << ","
           end
 
-          sql << @baza.sqlval(val)
+          sql << @db.sqlval(val)
         end
       end
     end
@@ -99,13 +99,13 @@ class Baza::MysqlBaseDriver < Baza::BaseSqlDriver
   end
 
   def transaction
-    @baza.q("START TRANSACTION")
+    @db.q("START TRANSACTION")
 
     begin
-      yield @baza
-      @baza.q("COMMIT")
+      yield @db
+      @db.q("COMMIT")
     rescue
-      @baza.q("ROLLBACK")
+      @db.q("ROLLBACK")
       raise
     end
   end

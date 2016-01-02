@@ -12,7 +12,7 @@
 #   print data[:name]
 # end
 class Baza::Db
-  attr_reader :sep_col, :sep_table, :sep_val, :opts, :driver, :int_types
+  attr_reader :sep_database, :sep_col, :sep_table, :sep_val, :sep_index, :opts, :driver, :int_types
 
   # Returns an array containing hashes of information about each registered driver.
   def self.drivers
@@ -68,8 +68,10 @@ class Baza::Db
 
     @debug = @opts[:debug]
     @driver = spawn
+    @sep_database = @driver.sep_database
     @sep_table = @driver.sep_table
     @sep_col = @driver.sep_col
+    @sep_index = @driver.sep_index
     @sep_val = @driver.sep_val
 
     return unless block_given?
@@ -344,10 +346,10 @@ class Baza::Db
     # Set up IDQuery-stuff if that is given in arguments.
     if args && args[:idquery]
       if args[:idquery] == true
-        select_sql = "`id`"
+        select_sql = "#{sep_col}id#{sep_col}"
         col = :id
       else
-        select_sql = "`#{escape_column(args[:idquery])}`"
+        select_sql = "#{sep_col}#{escape_column(args.fetch(:idquery))}#{sep_col}"
         col = args[:idquery]
       end
     end
@@ -365,14 +367,28 @@ class Baza::Db
     end
 
     unless args.nil?
-      sql << " ORDER BY #{args[:orderby]}" if args[:orderby]
+      if args[:orderby]
+        sql << " ORDER BY"
+
+        if args.fetch(:orderby).is_a?(Array)
+          first = true
+          args.fetch(:orderby).each do |order_by|
+            sql << "," unless first
+            first = false if first
+            sql << " #{sep_col}#{escape_column(order_by)}#{sep_col}"
+          end
+        else
+          sql << " #{sep_col}#{escape_column(args.fetch(:orderby))}#{sep_col}"
+        end
+      end
+
       sql << " LIMIT #{args[:limit]}" if args[:limit]
 
       if args[:limit_from] && args[:limit_to]
         begin
           Float(args[:limit_from])
         rescue
-          raise "'limit_from' was not numeric: '#{args[:limit_from]}'."
+          raise "'limit_from' was not numeric: '#{args.fetch(:limit_from)}'."
         end
 
         begin
@@ -381,7 +397,7 @@ class Baza::Db
           raise "'limit_to' was not numeric: '#{args[:limit_to]}'."
         end
 
-        sql << " LIMIT #{args[:limit_from]}, #{args[:limit_to]}"
+        sql << " LIMIT #{args.fetch(:limit_from)}, #{args.fetch(:limit_to)}"
       end
     end
 
@@ -511,7 +527,7 @@ class Baza::Db
     ret
   end
 
-  alias q query
+  alias_method :q, :query
 
   # Execute an ubuffered query and returns the result.
   #
@@ -519,7 +535,7 @@ class Baza::Db
   # db.query_ubuf('SELECT * FROM users') do |data|
   #   print data[:name]
   # end
-  def query_ubuf(string, args = nil, &block)
+  def query_ubuf(string, _args = nil, &block)
     ret = @driver.query_ubuf(string)
 
     if block
@@ -563,6 +579,18 @@ class Baza::Db
     @driver.last_id
   end
 
+  def current_database_name
+    databases.current_database_name
+  end
+
+  def current_database
+    databases.current_database
+  end
+
+  def with_database(name, &blk)
+    databases.with_database(name, &blk)
+  end
+
   # Escapes a string to be safe-to-use in a query-string.
   #
   #===Examples
@@ -585,6 +613,10 @@ class Baza::Db
 
   def escape_database(str)
     @driver.escape_database(str)
+  end
+
+  def escape_index(str)
+    @driver.escape_index(str)
   end
 
   # Returns a string which can be used in SQL with the current driver.

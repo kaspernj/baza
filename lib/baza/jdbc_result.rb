@@ -11,7 +11,7 @@ class Baza::JdbcResult < Baza::ResultBase
   def initialize(driver, stmt, result_set, preload_results)
     @result_set = result_set
     @stmt = stmt
-    @type_translation = driver.baza.opts[:type_translation]
+    @type_translation = driver.db.opts[:type_translation]
     @rows = []
     @index = -1
     read_results if preload_results

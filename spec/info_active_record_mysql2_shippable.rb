@@ -3,6 +3,7 @@ class Baza::InfoActiveRecordMysql2
 
   def self.connection
     require "active_record"
+    require "activerecord-jdbc-adapter" if RUBY_PLATFORM == "java"
 
     conn_pool ||= ::ActiveRecord::Base.establish_connection(
       adapter: "mysql2",
@@ -15,13 +16,13 @@ class Baza::InfoActiveRecordMysql2
     {pool: conn_pool, conn: conn}
   end
 
-  def initialize
-    data = Baza::InfoActiveRecord.connection
+  def initialize(args = {})
+    data = Baza::InfoActiveRecordMysql2.connection
 
-    @db = Baza::Db.new(
+    @db = Baza::Db.new({
       type: :active_record,
       conn: data[:conn]
-    )
+    }.merge(args))
   end
 
   def before

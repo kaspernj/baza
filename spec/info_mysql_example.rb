@@ -12,9 +12,7 @@ class Baza::InfoMysql
   end
 
   def before
-    @db.tables.list do |table|
-      table.drop
-    end
+    @db.tables.list(&:drop)
   end
 
   def after

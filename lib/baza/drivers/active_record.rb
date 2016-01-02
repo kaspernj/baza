@@ -6,7 +6,7 @@ class Baza::Driver::ActiveRecord < Baza::BaseSqlDriver
   autoload :Indexes, "#{path}/indexes"
   autoload :Result, "#{path}/result"
 
-  attr_reader :baza, :conn, :sep_table, :sep_col, :sep_val, :symbolize, :driver_type
+  attr_reader :db, :conn, :sep_table, :sep_col, :sep_val, :symbolize, :driver_type
   attr_accessor :tables, :cols, :indexes
 
   def self.from_object(args)
@@ -29,9 +29,9 @@ class Baza::Driver::ActiveRecord < Baza::BaseSqlDriver
     nil
   end
 
-  def initialize(baza)
-    @baza = baza
-    @conn = @baza.opts.fetch(:conn)
+  def initialize(db)
+    @db = db
+    @conn = @db.opts.fetch(:conn)
 
     raise "No conn given" unless @conn
 
@@ -41,34 +41,52 @@ class Baza::Driver::ActiveRecord < Baza::BaseSqlDriver
       require_relative "mysql2"
       require_relative "mysql2/result"
 
+      @sep_database = "`"
       @sep_table = "`"
       @sep_col = "`"
       @sep_val = "'"
+      @sep_index = "`"
       @driver_type = :mysql2
       @result_constant = Baza::Driver::Mysql2::Result
     elsif conn_name.include?("mysql")
-      require_relative "mysql"
-      require_relative "mysql/result"
+      unless RUBY_PLATFORM == "java"
+        require_relative "mysql"
+        require_relative "mysql/result"
+        @result_constant = Baza::Driver::Mysql::Result
+      end
 
+      @sep_database = "`"
       @sep_table = "`"
       @sep_col = "`"
       @sep_val = "'"
+      @sep_index = "`"
       @driver_type = :mysql
-      @result_constant = Baza::Driver::Mysql::Result unless RUBY_PLATFORM == "java"
     elsif conn_name.include?("sqlite")
+      @sep_database = "`"
       @sep_table = "`"
       @sep_col = "`"
       @sep_val = "'"
+      @sep_index = "`"
       @driver_type = :sqlite3
+    elsif conn_name.include?("postgresqladapter")
+      @sep_database = '"'
+      @sep_table = '"'
+      @sep_col = '"'
+      @sep_index = '"'
+      @sep_val = "'"
+      @driver_type = :pg
+      @result_constant = Baza::Driver::Pg::Result
     else
-      raise "Unknown type: '#{conn_name}'."
-    end
-
-    if conn_name.include?("mysql")
-      @baza.opts[:db] ||= query("SELECT DATABASE()").fetch.fetch(:"DATABASE()")
+      raise "Unknown type: '#{conn_name}'"
     end
 
     @result_constant ||= Baza::Driver::ActiveRecord::Result
+
+    if conn_name.include?("mysql")
+      @db.opts[:db] ||= query("SELECT DATABASE()").fetch.fetch(:"DATABASE()")
+    elsif @driver_type == :pg
+      @db.opts[:db] ||= query("SELECT current_database()").fetch.values.first
+    end
   end
 
   def query(sql)
@@ -98,7 +116,7 @@ class Baza::Driver::ActiveRecord < Baza::BaseSqlDriver
   end
 
   def transaction
-    if @driver_type == :mysql || @driver_type == :mysql2
+    if @driver_type == :mysql || @driver_type == :mysql2 || @driver_type == :pg
       query("START TRANSACTION")
     elsif @driver_type == :sqlite3
       query("BEGIN TRANSACTION")
@@ -107,7 +125,7 @@ class Baza::Driver::ActiveRecord < Baza::BaseSqlDriver
     end
 
     begin
-      yield @baza
+      yield @db
       query("COMMIT")
     rescue
       query("ROLLBACK")
@@ -116,6 +134,6 @@ class Baza::Driver::ActiveRecord < Baza::BaseSqlDriver
   end
 
   def supports_multiple_databases?
-    conn_name.include?("mysql")
+    conn_name.include?("mysql") || @driver_type == :pg
   end
 end

@@ -32,10 +32,32 @@ class Baza::Driver::MysqlJava < Baza::JdbcDriver
     nil
   end
 
-  def initialize(baza)
+  def self.args
+    [{
+      label: "Host",
+      name: "host"
+    }, {
+      label: "Port",
+      name: "port"
+    }, {
+      label: "Username",
+      name: "user"
+    }, {
+      label: "Password",
+      name: "pass"
+    }, {
+      label: "Database",
+      name: "db"
+    }, {
+      label: "Encoding",
+      name: "encoding"
+    }]
+  end
+
+  def initialize(db)
     super
 
-    @opts = @baza.opts
+    @opts = @db.opts
 
     if @opts[:encoding]
       @encoding = @opts[:encoding]
@@ -43,8 +65,8 @@ class Baza::Driver::MysqlJava < Baza::JdbcDriver
       @encoding = "utf8"
     end
 
-    if @baza.opts.key?(:port)
-      @port = @baza.opts[:port].to_i
+    if @db.opts.key?(:port)
+      @port = @db.opts[:port].to_i
     else
       @port = 3306
     end
@@ -56,12 +78,12 @@ class Baza::Driver::MysqlJava < Baza::JdbcDriver
   # Respawns the connection to the MySQL-database.
   def reconnect
     @mutex.synchronize do
-      if @baza.opts[:conn]
+      if @db.opts[:conn]
         @jdbc_loaded = true
-        @conn = @baza.opts[:conn]
+        @conn = @db.opts.fetch(:conn)
       else
         com.mysql.jdbc.Driver
-        @conn = java.sql::DriverManager.getConnection("jdbc:mysql://#{@baza.opts[:host]}:#{@port}/#{@baza.opts[:db]}?user=#{@baza.opts[:user]}&password=#{@baza.opts[:pass]}&populateInsertRowWithDefaultValues=true&zeroDateTimeBehavior=round&characterEncoding=#{@encoding}&holdResultsOpenOverStatementClose=true")
+        @conn = java.sql::DriverManager.getConnection("jdbc:mysql://#{@db.opts.fetch(:host)}:#{@port}/#{@db.opts.fetch(:db)}?user=#{@db.opts.fetch(:user)}&password=#{@db.opts.fetch(:pass)}&populateInsertRowWithDefaultValues=true&zeroDateTimeBehavior=round&characterEncoding=#{@encoding}&holdResultsOpenOverStatementClose=true")
       end
 
       query_no_result_set("SET SQL_MODE = ''")
@@ -84,7 +106,7 @@ class Baza::Driver::MysqlJava < Baza::JdbcDriver
   # Destroyes the connection.
   def destroy
     @conn = nil
-    @baza = nil
+    @db = nil
     @mutex = nil
     @encoding = nil
     @query_args = nil
@@ -129,7 +151,7 @@ class Baza::Driver::MysqlJava < Baza::JdbcDriver
             sql << ","
           end
 
-          sql << @baza.sqlval(val)
+          sql << @db.sqlval(val)
         end
       else
         hash.each do |_key, val|
@@ -139,7 +161,7 @@ class Baza::Driver::MysqlJava < Baza::JdbcDriver
             sql << ","
           end
 
-          sql << @baza.sqlval(val)
+          sql << @db.sqlval(val)
         end
       end
     end
@@ -172,7 +194,7 @@ class Baza::Driver::MysqlJava < Baza::JdbcDriver
     query_no_result_set("START TRANSACTION")
 
     begin
-      yield @baza
+      yield @db
       query_no_result_set("COMMIT")
     rescue
       query_no_result_set("ROLLBACK")

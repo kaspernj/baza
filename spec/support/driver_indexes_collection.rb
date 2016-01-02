@@ -47,11 +47,11 @@ shared_examples_for "a baza indexes driver" do
 
   describe "#unique?" do
     it "returns true when it is unique" do
-      test_table.index("email").unique?.should eq true
+      expect(test_table.index("email").unique?).to eq true
     end
 
     it "returns false when it isn't unique" do
-      test_table.index("text").unique?.should eq false
+      expect(test_table.index("text").unique?).to eq false
     end
   end
 end

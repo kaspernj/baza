@@ -34,6 +34,22 @@ shared_examples_for "a baza tables driver" do
     # FIXME: How to validate?
   end
 
+  it "#rows_count" do
+    expect(test_table.rows_count).to eq 0
+    test_table.insert(text: "Test")
+    expect(test_table.rows_count).to eq 1
+  end
+
+  it "#native?" do
+    expect(test_table.native?).to eq false
+  end
+
+  it "#row" do
+    expect { test_table.row(500) }.to raise_error(Baza::Errors::RowNotFound)
+    test_table.insert(id: 1, text: "Test")
+    expect(test_table.row(1)[:text]).to eq "Test"
+  end
+
   it "#truncate" do
     test_table
 
@@ -52,6 +68,7 @@ shared_examples_for "a baza tables driver" do
   it "#clone" do
     test_table
     test_table.create_indexes([{name: "index_on_text", columns: ["text"]}])
+
     expect(test_table.indexes.length).to eq 1
 
     test_table.insert(text: "test1")

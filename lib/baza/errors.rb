@@ -5,4 +5,5 @@ class Baza::Errors
   class NotImplemented < RuntimeError; end
   class Retry < RuntimeError; end
   class TableNotFound < RuntimeError; end
+  class RowNotFound < RuntimeError; end
 end

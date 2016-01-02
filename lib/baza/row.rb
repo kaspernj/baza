@@ -20,17 +20,18 @@ class Baza::Row
     if @args[:data] && (@args[:data].is_a?(Integer) || @args[:data].is_a?(Fixnum) || @args[:data].is_a?(String))
       @data = {@args[:col_id].to_sym => @args[:data].to_s}
       reload
-    elsif @args[:data] && @args[:data].is_a?(Hash)
+    elsif @args[:data] && @args.fetch(:data).is_a?(Hash)
       @data = {}
-      @args[:data].each do |key, value|
-        @data[key.to_sym] = value
+      @args.fetch(:data).each do |key, value|
+        key = key.to_sym unless key.is_a?(Fixnum)
+        @data[key] = value
       end
     elsif @args[:id]
       @data = {}
       @data[@args[:col_id].to_sym] = @args[:id]
       reload
     else
-      raise ArgumentError.new("Invalid data: #{@args[:data]} (#{@args[:data].class})")
+      raise ArgumentError, "Invalid data: #{@args[:data]} (#{@args[:data].class})"
     end
   end
 

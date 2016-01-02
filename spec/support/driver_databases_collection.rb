@@ -11,7 +11,9 @@ shared_examples_for "a baza databases driver" do
   it "renames database" do
     begin
       db.databases["renamed-db"].drop
+    # rubocop:disable Lint/HandleExceptions
     rescue Baza::Errors::DatabaseNotFound
+      # rubocop:enable Lint/HandleExceptions
       # Ignore - it shouldn't exist
     end
 
@@ -23,7 +25,27 @@ shared_examples_for "a baza databases driver" do
 
   it "drops databases" do
     test_database.drop
-
     expect { db.databases["baza-test-create"] }.to raise_error(Baza::Errors::DatabaseNotFound)
+  end
+
+  it "creates tables" do
+    if test_database.table_exists?("test")
+      puts "DROPPING TEST TABLE"
+      test_database.table("test").drop
+    end
+
+    test_database.create_table(
+      "test",
+      columns: [
+        {name: :id, type: :int, autoincr: true, primarykey: true},
+        {name: :name, type: :varchar}
+      ]
+    )
+
+    tables = test_database.tables.map(&:name).to_a
+    expect(tables).to eq ["test"]
+
+    table = test_database.table("test")
+    expect(table.name).to eq "test"
   end
 end

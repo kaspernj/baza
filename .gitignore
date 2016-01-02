@@ -53,3 +53,7 @@ pkg
 spec/info_mysql.rb
 spec/info_mysql2.rb
 spec/info_active_record.rb
+spec/info_active_record_pg.rb
+spec/info_active_record_mysql.rb
+spec/info_active_record_mysql2.rb
+spec/info_pg.rb
