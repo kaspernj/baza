@@ -22,7 +22,7 @@ before_script:
   - source ~/.bashrc && ~/.rvm/scripts/rvm && rvm use $SHIPPABLE_RUBY
   - ruby -v
   - gem uninstall --all --ignore-dependencies mysql2
-  - gem install mysql2 -- --with-mysql-dir=/usr/local/mysql
+  - gem install mysql2
   - bundle
 install:
   - ruby -v
