@@ -58,12 +58,7 @@ class Baza::Driver::MysqlJava < Baza::JdbcDriver
     super
 
     @opts = @db.opts
-
-    if @opts[:encoding]
-      @encoding = @opts[:encoding]
-    else
-      @encoding = "utf8"
-    end
+    @encoding = @opts[:encoding] || "utf8"
 
     if @db.opts.key?(:port)
       @port = @db.opts[:port].to_i
@@ -83,7 +78,7 @@ class Baza::Driver::MysqlJava < Baza::JdbcDriver
         @conn = @db.opts.fetch(:conn)
       else
         com.mysql.jdbc.Driver
-        @conn = java.sql::DriverManager.getConnection("jdbc:mysql://#{@db.opts.fetch(:host)}:#{@port}/#{@db.opts.fetch(:db)}?user=#{@db.opts.fetch(:user)}&password=#{@db.opts.fetch(:pass)}&populateInsertRowWithDefaultValues=true&zeroDateTimeBehavior=round&characterEncoding=#{@encoding}&holdResultsOpenOverStatementClose=true")
+        @conn = java.sql::DriverManager.getConnection(jdbc_connect_command)
       end
 
       query_no_result_set("SET SQL_MODE = ''")
@@ -94,8 +89,8 @@ class Baza::Driver::MysqlJava < Baza::JdbcDriver
   # Returns the last inserted ID for the connection.
   def last_id
     data = query("SELECT LAST_INSERT_ID() AS id").fetch
-    return data[:id].to_i if data[:id]
-    raise "Could not figure out last inserted ID."
+    return data.fetch(:id).to_i if data[:id]
+    raise "Could not figure out last inserted ID"
   end
 
   # Closes the connection threadsafe.
@@ -200,5 +195,29 @@ class Baza::Driver::MysqlJava < Baza::JdbcDriver
       query_no_result_set("ROLLBACK")
       raise
     end
+  end
+
+private
+
+  def jdbc_connect_command
+    conn_options = {
+      "populateInsertRowWithDefaultValues" => true,
+      "zeroDateTimeBehavior" => "round",
+      "holdResultsOpenOverStatementClose" => true
+    }
+
+    conn_options["user"] = @db.opts.fetch(:user) if @db.opts[:user]
+    conn_options["password"] = @db.opts.fetch(:pass) if db.opts[:pass]
+    conn_options["characterEncoding"] = @encoding if @encoding
+
+    conn_command = "jdbc:mysql://#{@db.opts.fetch(:host)}:#{@port}/#{@db.opts.fetch(:db)}?"
+    first = true
+    conn_options.each do |key, value|
+      conn_command << "&" unless first
+      first = false if first
+      conn_command << "#{key}=#{value}"
+    end
+
+    conn_command
   end
 end

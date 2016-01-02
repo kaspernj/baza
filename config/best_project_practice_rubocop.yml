@@ -7,3 +7,4 @@ AllCops:
 
   Exclude:
     - baza.gemspec
+    - vendor/**/*

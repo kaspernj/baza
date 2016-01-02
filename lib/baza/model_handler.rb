@@ -349,8 +349,8 @@ class Baza::ModelHandler
 
     @locks[classname].synchronize do
       # Maybe the object got spawned while we waited for the lock? If so we shouldnt spawn another instance.
-      if @args[:cache] == :weak && obj = @objects[classname].get(id) && obj.id.to_i == id
-        return obj
+      if @args[:cache] == :weak && obj = @objects[classname].get(id)
+        return obj if obj.id.to_i == id
       end
 
       # Spawn object.

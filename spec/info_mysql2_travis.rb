@@ -5,7 +5,7 @@ class Baza::InfoMysql2
     @db = Baza::Db.new({
       type: :mysql2,
       host: "localhost",
-      user: "shippa",
+      user: "travis",
       db: "baza"
     }.merge(args))
   end

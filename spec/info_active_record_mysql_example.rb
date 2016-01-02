@@ -18,12 +18,12 @@ class Baza::InfoActiveRecordMysql
   end
 
   def initialize(args = {})
-    @data = Baza::InfoActiveRecordMysql.connection
-    @data.fetch(:conn).reconnect!
+    data = Baza::InfoActiveRecordMysql.connection
+    data.fetch(:conn).reconnect!
 
     @db = Baza::Db.new({
       type: :active_record,
-      conn: @data.fetch(:conn)
+      conn: data.fetch(:conn)
     }.merge(args))
   end
 

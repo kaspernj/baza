@@ -23,10 +23,10 @@ class Baza::Driver::Mysql::Columns
     if data.key?(:default_func)
       sql << " DEFAULT #{data[:default_func]}"
     elsif data.key?(:default) && !data[:default].nil?
-      sql << " DEFAULT '#{@db.escape(data[:default])}'"
+      sql << " DEFAULT #{@db.sqlval(data.fetch(:default))}"
     end
 
-    sql << " COMMENT '#{@db.escape(data[:comment])}'" if data.key?(:comment)
+    sql << " COMMENT '#{@db.escape(data.fetch(:comment))}'" if data.key?(:comment)
     sql << " AFTER #{@db.sep_col}#{@db.escape_column(data.fetch(:after))}#{@db.sep_col}" if data[:after] && !data[:first]
     sql << " FIRST" if data[:first]
     sql << " STORAGE #{data[:storage].to_s.upcase}" if data[:storage]

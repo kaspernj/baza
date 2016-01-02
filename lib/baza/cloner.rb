@@ -17,6 +17,7 @@ class Baza::Cloner
       Baza::Db.new(db_args)
     elsif connection.class.name.include?("MysqlAdapter")
       connection = connection.instance_variable_get(:@connection)
+      connection = connection.instance_variable_get(:@connection) if RUBY_PLATFORM == "java"
 
       db_args = {
         type: :mysql,

@@ -191,7 +191,35 @@ class Baza::Driver::Pg::Table < Baza::Table
     end
 
     @db.tables.create(newname, columns: columns_list, indexes: indexes_list)
-    @db.query("INSERT INTO #{@db.sep_table}#{@db.escape_table(newname)}#{@db.sep_table} SELECT * FROM #{@db.sep_table}#{@db.escape_table(name)}#{@db.sep_table}")
+
+    clone_insert_from_original_table(newname, columns_list)
+
     @db.tables[newname]
+  end
+
+private
+
+  def clone_insert_from_original_table(newname, columns_list)
+    sql_clone = "INSERT INTO #{@db.sep_table}#{@db.escape_table(newname)}#{@db.sep_table} ("
+
+    first = true
+    columns_list.each do |column_data|
+      sql_clone << "," unless first
+      first = false if first
+      sql_clone << "#{@db.sep_col}#{@db.escape_column(column_data.fetch(:name))}#{@db.sep_col}"
+    end
+
+    sql_clone << ") SELECT "
+
+    first = true
+    columns_list.each do |column_data|
+      sql_clone << "," unless first
+      first = false if first
+      sql_clone << "#{@db.sep_col}#{@db.escape_column(column_data.fetch(:name))}#{@db.sep_col}"
+    end
+
+    sql_clone << " FROM #{@db.sep_table}#{@db.escape_table(name)}#{@db.sep_table}"
+
+    @db.query(sql_clone)
   end
 end

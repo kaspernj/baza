@@ -545,8 +545,9 @@ class Baza::Model
   #  user.reload
   #  print "The username changed in the database!" if user[:username] != old_username
   def reload
-    @data = self.class.db.single(self.class.table, id: @id)
-    raise Errno::ENOENT, "Could not find any data for the object with ID: '#{@id}' in the table '#{self.class.table}'." unless @data
+    data = self.class.db.single(self.class.table, id: @id)
+    raise Errno::ENOENT, "Could not find any data for the object with ID: '#{@id}' in the table '#{self.class.table}'." unless data
+    @data = data
     @should_reload = false
   end
 
@@ -556,7 +557,6 @@ class Baza::Model
   #  obj.should_reload
   def should_reload
     @should_reload = true
-    @data = nil
   end
 
   # Returns the data-hash that contains all the data from the database.
@@ -576,8 +576,7 @@ class Baza::Model
 
   # Forcefully destroys the object. This is done after deleting it and should not be called manually.
   def destroy
-    @id = nil
-    @data = nil
+    @destroyed = true
     @should_reload = nil
   end
 
@@ -594,7 +593,7 @@ class Baza::Model
   #===Examples
   #  print "That user is deleted." if user.deleted?
   def deleted?
-    return true if !@data && !@id
+    return true if @destroyed
     false
   end
 
@@ -603,7 +602,7 @@ class Baza::Model
   # print "That user is deleted." if user.deleted_from_db?
   def deleted_from_db?
     # Try to avoid db-query if object is already deleted.
-    return true if self.deleted?
+    return true if deleted?
 
     # Try to reload data. Destroy object and return true if the row is gone from the database.
     begin
@@ -638,7 +637,6 @@ class Baza::Model
 
   # Returns the objects ID.
   def id
-    raise Errno::ENOENT, "This object has been deleted." if deleted?
     raise "No ID on object." unless @id
     @id
   end

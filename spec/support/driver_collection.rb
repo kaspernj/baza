@@ -371,7 +371,15 @@ shared_examples_for "a baza driver" do
     expect(row.fetch(:number).class).to eq Fixnum
     expect(row.fetch(:float).class).to eq Float
 
-    unless db.driver.conn.class.name == "ActiveRecord::ConnectionAdapters::SQLite3Adapter"
+    if db.driver.conn.class.name == "ActiveRecord::ConnectionAdapters::SQLite3Adapter"
+      check_time_and_date = false
+    elsif db.driver.class.name == "Baza::Driver::ActiveRecord" && RUBY_PLATFORM == "java"
+      check_time_and_date = false
+    else
+      check_time_and_date = true
+    end
+
+    if check_time_and_date
       expect(row.fetch(:created_at).class).to eq Time
       expect(row.fetch(:date).class).to eq Date
     end

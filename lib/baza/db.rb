@@ -236,15 +236,15 @@ class Baza::Db
     return @conn.sqlval(val) if @conn.respond_to?(:sqlval)
 
     if val.is_a?(Fixnum) || val.is_a?(Integer)
-      return val.to_s
+      val.to_s
     elsif val == nil
-      return "NULL"
+      "NULL"
     elsif val.is_a?(Date)
-      return "#{@sep_val}#{Datet.in(val).dbstr(time: false)}#{@sep_val}"
+      "#{@sep_val}#{Datet.in(val).dbstr(time: false)}#{@sep_val}"
     elsif val.is_a?(Time) || val.is_a?(DateTime)
-      return "#{@sep_val}#{Datet.in(val).dbstr}#{@sep_val}"
+      "#{@sep_val}#{Datet.in(val).dbstr}#{@sep_val}"
     else
-      return "#{@sep_val}#{escape(val)}#{@sep_val}"
+      "#{@sep_val}#{escape(val)}#{@sep_val}"
     end
   end
 
@@ -308,7 +308,7 @@ class Baza::Db
       sql << sqlval(value)
     end
 
-    sql << " WHERE #{makeWhere(arr_terms)}" if arr_terms && arr_terms.length > 0
+    sql << " WHERE #{sql_make_where(arr_terms)}" if arr_terms && arr_terms.length > 0
 
     return sql if args && args[:return_sql]
 
@@ -345,12 +345,12 @@ class Baza::Db
 
     # Set up IDQuery-stuff if that is given in arguments.
     if args && args[:idquery]
-      if args[:idquery] == true
+      if args.fetch(:idquery) == true
         select_sql = "#{sep_col}id#{sep_col}"
         col = :id
       else
         select_sql = "#{sep_col}#{escape_column(args.fetch(:idquery))}#{sep_col}"
-        col = args[:idquery]
+        col = args.fetch(:idquery)
       end
     end
 
@@ -363,7 +363,7 @@ class Baza::Db
     end
 
     if !arr_terms.nil? && !arr_terms.empty?
-      sql << " WHERE #{makeWhere(arr_terms)}"
+      sql << " WHERE #{sql_make_where(arr_terms)}"
     end
 
     unless args.nil?
@@ -424,10 +424,10 @@ class Baza::Db
     sql = "SELECT COUNT(*) AS count FROM #{@sep_table}#{tablename}#{@sep_table}"
 
     if !arr_terms.nil? && !arr_terms.empty?
-      sql << " WHERE #{makeWhere(arr_terms)}"
+      sql << " WHERE #{sql_make_where(arr_terms)}"
     end
 
-    q(sql).fetch.fetch(:count).to_i
+    query(sql).fetch.fetch(:count).to_i
   end
 
   # Returns a single row from a database.
@@ -449,7 +449,7 @@ class Baza::Db
     sql = "DELETE FROM #{@sep_table}#{tablename}#{@sep_table}"
 
     if !arr_terms.nil? && !arr_terms.empty?
-      sql << " WHERE #{makeWhere(arr_terms)}"
+      sql << " WHERE #{sql_make_where(arr_terms)}"
     end
 
     return sql if args && args[:return_sql]
@@ -461,8 +461,8 @@ class Baza::Db
   # Internally used to generate SQL.
   #
   #===Examples
-  # sql = db.makeWhere({lastname: "Doe"}, driver_obj)
-  def makeWhere(arr_terms, _driver = nil)
+  # sql = db.sql_make_where({lastname: "Doe"}, driver_obj)
+  def sql_make_where(arr_terms, _driver = nil)
     sql = ""
 
     first = true

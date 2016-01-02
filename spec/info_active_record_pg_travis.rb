@@ -17,11 +17,11 @@ class Baza::InfoActiveRecordPg
   end
 
   def initialize(args = {})
-    @data = Baza::InfoActiveRecordPg.connection
+    data = Baza::InfoActiveRecordPg.connection
 
     @db = Baza::Db.new({
       type: :active_record,
-      conn: @data.fetch(:conn)
+      conn: data.fetch(:conn)
     }.merge(args))
   end
 

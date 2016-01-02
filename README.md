@@ -1,6 +1,6 @@
 [![Code Climate](https://codeclimate.com/github/kaspernj/baza/badges/gpa.svg)](https://codeclimate.com/github/kaspernj/baza)
 [![Test Coverage](https://codeclimate.com/github/kaspernj/baza/badges/coverage.svg)](https://codeclimate.com/github/kaspernj/baza)
-[![Build Status](https://img.shields.io/shippable/540e7b993479c5ea8f9ec1fe.svg)](https://app.shippable.com/projects/540e7b993479c5ea8f9ec1fe/builds/latest)
+[![Build Status](https://travis-ci.org/kaspernj/baza.svg)](https://travis-ci.org/kaspernj/baza)
 
 # baza
 
@@ -81,6 +81,34 @@ db.upsert(:users, {name: "Kasper"}, {age: 27})
 ```
 
 ## Structure
+
+### Database creation
+```ruby
+db.databases.create(name: "test-db")
+```
+
+### Database renaming
+```ruby
+database = db.databases["test-db"]
+database.name = "new-name"
+database.save!
+```
+
+### Listing databases
+```ruby
+db.databases.list.each do |database|
+  puts "Database: #{database.name}"
+end
+```
+
+### Listing tables on non-used-database
+```ruby
+database = db.database["test-db"]
+database.tables.each do |table|
+  puts "TableName: #{table.name}"
+  puts "Columns: #{table.columns.map(&:name)}"
+end
+```
 
 ### Table creation
 ```ruby
