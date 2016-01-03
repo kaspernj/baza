@@ -1,16 +1,11 @@
+require "auto_autoloader"
 require "array_enumerator"
 require "wref"
 require "datet"
 require "string-cases"
 
 class Baza
-  # Autoloader for subclasses.
-  def self.const_missing(name)
-    file_name = name.to_s.gsub(/(.)([A-Z])/, '\1_\2').downcase
-    require "#{File.dirname(__FILE__)}/baza/#{file_name}.rb"
-    raise "Still not defined: '#{name}'." unless Baza.const_defined?(name)
-    Baza.const_get(name)
-  end
+  AutoAutoloader.autoload_sub_classes(self, __FILE__)
 
   class << self
     attr_writer :default_db
@@ -37,7 +32,7 @@ class Baza
 
   def self.drivers
     Enumerator.new do |yielder|
-      Dir.foreach("#{File.dirname(__FILE__)}/baza/drivers") do |file|
+      Dir.foreach("#{File.dirname(__FILE__)}/baza/driver") do |file|
         if (match = file.match(/\A(.+?)\.rb\Z/))
           load_driver(match[1])
 
@@ -53,11 +48,11 @@ class Baza
   end
 
   def self.load_driver(name)
-    require_relative "baza/drivers/#{name}"
+    require_relative "baza/driver/#{name}"
 
     loads = %w(databases database tables table columns column indexes index result)
     loads.each do |load|
-      file_path = "#{File.dirname(__FILE__)}/baza/drivers/#{name}/#{load}"
+      file_path = "#{File.dirname(__FILE__)}/baza/driver/#{name}/#{load}"
       require_relative file_path if File.exist?(file_path)
     end
   end

@@ -8,6 +8,7 @@ gem "wref", "~> 0.0.8"
 gem "array_enumerator", "~> 0.0.10"
 gem "string-cases", "~> 0.0.1"
 gem "event_handler", "~> 0.0.0"
+gem "auto_autoloader", "~> 0.0.1"
 
 # Add dependencies to develop your gem here.
 # Include everything needed to run rake, tests, features, etc.

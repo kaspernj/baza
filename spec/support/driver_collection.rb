@@ -315,4 +315,13 @@ shared_examples_for "a baza driver" do
       expect(args).to be_a Array
     end
   end
+
+  it "#new_query" do
+    test_table
+    test_table.insert(text: "Kasper")
+
+    query = db.new_query.from(:test).where(text: "Kasper").to_a
+    query[0][:float] = query[0][:float].to_f.to_s if query[0][:float] == "0"
+    expect(query.to_a).to eq [{id: "1", text: "Kasper", number: "0", float: "0.0"}]
+  end
 end

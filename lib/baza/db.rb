@@ -16,7 +16,7 @@ class Baza::Db
 
   # Returns an array containing hashes of information about each registered driver.
   def self.drivers
-    path = "#{File.dirname(__FILE__)}/drivers"
+    path = "#{File.dirname(__FILE__)}/driver"
     drivers = []
 
     Dir.foreach(path) do |file|
@@ -106,7 +106,7 @@ class Baza::Db
   # driver_instance = db.spawn
   def spawn
     raise "No type given (#{@opts.keys.join(",")})." unless @opts[:type]
-    rpath = "#{File.dirname(__FILE__)}/drivers/#{@opts[:type]}.rb"
+    rpath = "#{File.dirname(__FILE__)}/driver/#{@opts.fetch(:type)}.rb"
     require rpath if File.exist?(rpath)
     Baza::Driver.const_get(@type_cc).new(self)
   end
@@ -637,7 +637,7 @@ class Baza::Db
   end
 
   def databases
-    require_relative "drivers/#{@opts.fetch(:type)}/databases"
+    require_relative "driver/#{@opts.fetch(:type)}/databases"
     @databases ||= Baza::Driver.const_get(@type_cc).const_get(:Databases).new(db: self)
   end
 
@@ -706,5 +706,9 @@ class Baza::Db
 
   def inspect
     to_s
+  end
+
+  def new_query
+    Baza::SqlQueries::Select.new(db: self)
   end
 end
