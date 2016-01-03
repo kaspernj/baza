@@ -1,10 +1,5 @@
 class Baza::Driver::ActiveRecord < Baza::BaseSqlDriver
-  path = "#{File.dirname(__FILE__)}/active_record"
-
-  autoload :Tables, "#{path}/tables"
-  autoload :Columns, "#{path}/columns"
-  autoload :Indexes, "#{path}/indexes"
-  autoload :Result, "#{path}/result"
+  AutoAutoloader.autoload_sub_classes(self, __FILE__)
 
   attr_reader :db, :conn, :sep_table, :sep_col, :sep_val, :symbolize, :driver_type
   attr_accessor :tables, :cols, :indexes

@@ -1,18 +1,6 @@
 # This class handels SQLite3-specific behaviour.
 class Baza::Driver::Sqlite3Java < Baza::JdbcDriver
-  path = "#{File.dirname(__FILE__)}/sqlite3_java"
-
-  autoload :Database, "#{path}/database"
-  autoload :Databases, "#{path}/databases"
-  autoload :Table, "#{path}/table"
-  autoload :Tables, "#{path}/tables"
-  autoload :Column, "#{path}/column"
-  autoload :Columns, "#{path}/columns"
-  autoload :Index, "#{path}/index"
-  autoload :Indexes, "#{path}/indexes"
-  autoload :Result, "#{path}/result"
-  autoload :Sqlspecs, "#{path}/sqlspecs"
-  autoload :UnbufferedResult, "#{path}/unbuffered_result"
+  AutoAutoloader.autoload_sub_classes(self, __FILE__)
 
   attr_reader :mutex_statement_reader
 
