@@ -109,13 +109,4 @@ class Baza::MysqlBaseDriver < Baza::BaseSqlDriver
       raise
     end
   end
-
-  def upsert_duplicate_key(table_name, updates, terms)
-    Baza::SqlQueries::MysqlUpsertDuplicateKey.new(
-      db: @db,
-      table_name: table_name,
-      updates: updates,
-      terms: terms
-    ).execute
-  end
 end

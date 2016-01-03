@@ -335,7 +335,7 @@ class Baza::Db
   end
 
   def upsert_duplicate_key(table_name, data, terms)
-    @driver.upsert_duplicate_key(table_name, data, terms)
+    commands.upsert_duplicate_key(table_name, data, terms)
   end
 
   SELECT_ARGS_ALLOWED_KEYS = [:limit, :limit_from, :limit_to]
@@ -652,9 +652,13 @@ class Baza::Db
     @tables ||= Baza::Driver.const_get(@type_cc).const_get(:Tables).new(db: self)
   end
 
+  def commands
+    @commands ||= Baza::Driver.const_get(@type_cc).const_get(:Commands).new(db: self)
+  end
+
   # Returns the columns-module and spawns it if it isnt already spawned.
   def cols
-    @cols || Baza::Driver.const_get(@type_cc).const_get(:Columns).new(db: self)
+    @cols ||= Baza::Driver.const_get(@type_cc).const_get(:Columns).new(db: self)
   end
 
   # Returns the index-module and spawns it if it isnt already spawned.
