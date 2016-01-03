@@ -317,6 +317,8 @@ class Baza::Db
 
   # Checks if a given terms exists. If it does, updates it to match data. If not inserts the row.
   def upsert(table, data, terms, args = nil)
+    return @driver.upsert(table, data, terms) if @driver.respond_to?(:upsert)
+
     row = single(table, terms)
 
     if args && args[:buffer]
@@ -330,6 +332,10 @@ class Baza::Db
     else
       obj.insert(table, terms.merge(data))
     end
+  end
+
+  def upsert_duplicate_key(table_name, data, terms)
+    @driver.upsert_duplicate_key(table_name, data, terms)
   end
 
   SELECT_ARGS_ALLOWED_KEYS = [:limit, :limit_from, :limit_to]

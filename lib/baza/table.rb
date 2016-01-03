@@ -38,6 +38,10 @@ class Baza::Table
     @db.insert(name, data)
   end
 
+  def upsert_duplicate_key(data, terms)
+    @db.upsert_duplicate_key(name, data, terms)
+  end
+
   def rows_count
     @db.query("SELECT COUNT(*) AS count FROM #{@db.sep_table}#{@db.escape_table(name)}#{@db.sep_table}").fetch.fetch(:count).to_i
   end

@@ -96,6 +96,22 @@ shared_examples_for "a baza driver" do
     expect(table.rows_count).to eq rows_count + 1
   end
 
+  describe "#upsert_duplicate_key" do
+    before do
+      test_table.create_indexes([name: "unique_text", columns: ["text"], unique: true])
+    end
+
+    it "updates existing records" do
+      test_table.insert(text: "test1", number: 1)
+      test_table.upsert_duplicate_key({number: 2}, text: "test1")
+      expect(test_table.rows_count).to eq 1
+
+      rows = test_table.rows.to_a.map(&:to_hash)
+      rows[0][:float] = "0.0" if rows[0][:float] == "0"
+      expect(rows).to eq [{id: "1", text: "test1", number: "2", float: "0.0"}]
+    end
+  end
+
   it "dumps as SQL" do
     dump = Baza::Dump.new(db: db, debug: false)
     str_io = StringIO.new

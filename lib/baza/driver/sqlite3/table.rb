@@ -333,13 +333,13 @@ class Baza::Driver::Sqlite3::Table < Baza::Table
 
       sql = "CREATE"
       sql << " UNIQUE" if index_data[:unique]
-      sql << " INDEX '#{@db.escape_column(index_name)}' ON `#{@db.escape_table(name)}` ("
+      sql << " INDEX #{@db.sep_index}#{@db.escape_column(index_name)}#{@db.sep_index} ON #{@db.sep_table}#{@db.escape_table(name)}#{@db.sep_table} ("
 
       first = true
       index_data.fetch(:columns).each do |col_name|
         sql << ", " unless first
         first = false if first
-        sql << "`#{@db.escape_column(col_name)}`"
+        sql << "#{@db.sep_col}#{@db.escape_column(col_name)}#{@db.sep_col}"
       end
 
       sql << ")"

@@ -42,6 +42,15 @@ class Baza::Driver::Sqlite3 < Baza::BaseSqlDriver
     end
   end
 
+  def upsert_duplicate_key(table_name, updates, terms)
+    Baza::SqlQueries::SqliteUpsertDuplicateKey.new(
+      db: @db,
+      table_name: table_name,
+      updates: updates,
+      terms: terms
+    ).execute
+  end
+
   # Executes a query against the driver.
   def query(sql)
     @mutex_statement_reader.synchronize do

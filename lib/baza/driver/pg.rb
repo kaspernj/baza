@@ -74,6 +74,15 @@ class Baza::Driver::Pg < Baza::BaseSqlDriver
     Baza::Driver::Pg::Result.new(self, result, unbuffered: true)
   end
 
+  def upsert_duplicate_key(table_name, updates, terms)
+    Baza::SqlQueries::PostgresUpsertDuplicateKey.new(
+      db: @db,
+      table_name: table_name,
+      updates: updates,
+      terms: terms
+    ).execute
+  end
+
   def close
     @conn.close
   end
