@@ -69,7 +69,7 @@ shared_examples_for "a baza driver" do
     expect(count_results).to eq 10
   end
 
-  it "does upserting" do
+  it "#upser" do
     test_table.create_columns([{name: "nickname", type: :varchar}])
 
     # Test upserting.

@@ -317,7 +317,7 @@ class Baza::Db
 
   # Checks if a given terms exists. If it does, updates it to match data. If not inserts the row.
   def upsert(table, data, terms, args = nil)
-    return @driver.upsert(table, data, terms) if @driver.respond_to?(:upsert)
+    return commands.upsert(table, data, terms) if commands.respond_to?(:upsert)
 
     row = single(table, terms)
 

@@ -11,4 +11,13 @@ class Baza::Driver::Mysql::Commands
       terms: terms
     ).execute
   end
+
+  def upsert(table_name, updates, terms)
+    Baza::SqlQueries::MysqlUpsert.new(
+      db: @db,
+      table_name: table_name,
+      updates: updates,
+      terms: terms
+    ).execute
+  end
 end
