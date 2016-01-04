@@ -3,13 +3,13 @@ class Baza::Driver::Sqlite3::Commands
     @db = args.fetch(:db)
   end
 
-  def upsert_duplicate_key(table_name, updates, terms)
-    Baza::SqlQueries::SqliteUpsertDuplicateKey.new(
+  def upsert_duplicate_key(table_name, updates, terms, args = {})
+    Baza::SqlQueries::SqliteUpsertDuplicateKey.new({
       db: @db,
       table_name: table_name,
       updates: updates,
       terms: terms
-    ).execute
+    }.merge(args)).execute
   end
 
   def upsert(table_name, updates, terms, args = {})
@@ -20,5 +20,9 @@ class Baza::Driver::Sqlite3::Commands
       terms: terms,
       updates: updates
     ).execute
+  end
+
+  def last_id
+    @db.query("SELECT last_insert_rowid() AS id").fetch.fetch(:id).to_i
   end
 end

@@ -3,22 +3,33 @@ class Baza::Driver::Pg::Commands
     @db = args.fetch(:db)
   end
 
-  def upsert_duplicate_key(table_name, updates, terms)
-    Baza::SqlQueries::PostgresUpsertDuplicateKey.new(
+  def upsert_duplicate_key(table_name, updates, terms, args = {})
+    @last_insert_table_name = table_name.to_s
+
+    Baza::SqlQueries::PostgresUpsertDuplicateKey.new({
       db: @db,
       table_name: table_name,
       updates: updates,
       terms: terms
-    ).execute
+    }.merge(args)).execute
   end
 
   def upsert(table_name, updates, terms, args = {})
-    Baza::SqlQueries::NonAtomicUpsert.new(
+    @last_insert_table_name = table_name.to_s
+
+    Baza::SqlQueries::NonAtomicUpsert.new({
       db: @db,
       table_name: table_name,
-      buffer: args[:buffer],
       terms: terms,
       updates: updates
-    ).execute
+    }.merge(args)).execute
+  end
+
+  def last_id
+    @db.query("SELECT LASTVAL() AS id").fetch.fetch(:id).to_i
+  end
+
+  def version
+    @version ||= @db.query("SELECT VERSION() AS version").fetch.fetch(:version).match(/\APostgreSQL ([\d\.]+)/)[1]
   end
 end

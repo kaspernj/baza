@@ -311,8 +311,8 @@ class Baza::Db
     @in_transaction
   end
 
-  def upsert_duplicate_key(table_name, data, terms)
-    commands.upsert_duplicate_key(table_name, data, terms)
+  def upsert_duplicate_key(table_name, data, terms = {}, args = {})
+    commands.upsert_duplicate_key(table_name, data, terms, args)
   end
 
   SELECT_ARGS_ALLOWED_KEYS = [:limit, :limit_from, :limit_to]
@@ -559,7 +559,7 @@ class Baza::Db
   #===Examples
   # id = db.last_id
   def last_id
-    @driver.last_id
+    commands.last_id
   end
 
   def current_database_name

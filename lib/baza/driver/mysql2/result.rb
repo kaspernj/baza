@@ -15,6 +15,8 @@ class Baza::Driver::Mysql2::Result < Baza::ResultBase
 
   # Loops over every single result yielding it.
   def each
+    return unless @result
+
     @result.each(as: :hash, symbolize_keys: true) do |row|
       next unless row # This sometimes happens when streaming results...
       row = Hash[row.map { |k, v| [k, v.to_s] }] if @type_translation == :string

@@ -74,13 +74,6 @@ class Baza::Driver::MysqlJava < Baza::JdbcDriver
     end
   end
 
-  # Returns the last inserted ID for the connection.
-  def last_id
-    data = query("SELECT LAST_INSERT_ID() AS id").fetch
-    return data.fetch(:id).to_i if data[:id]
-    raise "Could not figure out last inserted ID"
-  end
-
   # Closes the connection threadsafe.
   def close
     @mutex.synchronize { @conn.close }

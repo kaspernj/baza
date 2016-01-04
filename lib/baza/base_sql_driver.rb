@@ -73,20 +73,11 @@ class Baza::BaseSqlDriver
   # id = db.insert(:users, {name: "John", lastname: "Doe"}, return_id: true)
   # sql = db.insert(:users, {name: "John", lastname: "Doe"}, return_sql: true) #=> "INSERT INTO `users` (`name`, `lastname`) VALUES ('John', 'Doe')"
   def insert(table_name, data, args = {})
-    command = Baza::SqlQueries::GenericInsert.new(
+    command = Baza::SqlQueries::GenericInsert.new({
       db: @db,
       table_name: table_name,
-      data: data,
-      buffer: args[:buffer],
-      return_id: args[:return_id]
-    )
-
-    if args[:return_sql]
-      command.to_sql
-    else
-      command.execute
-      self
-    end
+      data: data
+    }.merge(args)).execute
   end
 
   def insert_multi(tablename, arr_hashes, args = {})

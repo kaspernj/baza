@@ -60,12 +60,6 @@ class Baza::Driver::Sqlite3 < Baza::BaseSqlDriver
     string.to_s.gsub(/'/, "''")
   end
 
-  # Returns the last inserted ID.
-  def last_id
-    return @conn.last_insert_row_id if @conn.respond_to?(:last_insert_row_id)
-    query("SELECT last_insert_rowid() AS id").fetch[:id].to_i
-  end
-
   # Closes the connection to the database.
   def close
     @mutex_statement_reader.synchronize { @conn.close }

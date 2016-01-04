@@ -88,11 +88,6 @@ class Baza::Driver::Mysql < Baza::MysqlBaseDriver
     @conn.escape_string(string.to_s)
   end
 
-  # Returns the last inserted ID for the connection.
-  def last_id
-    @mutex.synchronize { return @conn.insert_id.to_i }
-  end
-
   # Closes the connection threadsafe.
   def close
     @mutex.synchronize { @conn.close }

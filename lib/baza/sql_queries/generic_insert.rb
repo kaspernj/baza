@@ -4,13 +4,18 @@ class Baza::SqlQueries::GenericInsert
     @table_name = args.fetch(:table_name)
     @data = args.fetch(:data)
     @buffer = args[:buffer]
+    @return_sql = args[:return_sql]
+    @return_id = args[:return_id]
   end
 
   def execute
-    if @buffer
+    if @return_sql
+      to_sql
+    elsif @buffer
       @buffer.query(to_sql)
     else
       @db.query(to_sql)
+      @db.last_id if @return_id
     end
   end
 

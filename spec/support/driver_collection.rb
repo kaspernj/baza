@@ -69,7 +69,7 @@ shared_examples_for "a baza driver" do
     expect(count_results).to eq 10
   end
 
-  it "#upser" do
+  it "#upsert" do
     test_table.create_columns([{name: "nickname", type: :varchar}])
 
     # Test upserting.
@@ -238,16 +238,15 @@ shared_examples_for "a baza driver" do
       count = 0
       db.select(:test_table) do |row|
         count += 1
-
         time_start = Time.now.to_f if count == 1000
 
-        buffer.delete(:test_table, id: row[:id])
+        buffer.delete(:test_table, id: row.fetch(:id))
 
         next unless count == 1000
         time_end = Time.now.to_f
 
         time_spent = time_end - time_start
-        raise "Too much time spent: '#{time_spent}'." if time_spent > 0.01
+        raise "Too much time spent: '#{time_spent}'." if time_spent > 0.015
       end
     end
 
@@ -326,6 +325,8 @@ shared_examples_for "a baza driver" do
   end
 
   it "returns arguments used to connect" do
+    require_relative "../../lib/baza/driver/active_record"
+
     unless db.driver.is_a?(Baza::Driver::ActiveRecord)
       args = db.driver.class.args
       expect(args).to be_a Array
@@ -339,5 +340,10 @@ shared_examples_for "a baza driver" do
     query = db.new_query.from(:test).where(text: "Kasper").to_a
     query[0][:float] = query[0][:float].to_f.to_s if query[0][:float] == "0"
     expect(query.to_a).to eq [{id: "1", text: "Kasper", number: "0", float: "0.0"}]
+  end
+
+  it "#last_id" do
+    test_table.insert(text: "Kasper")
+    expect(db.last_id).to eq 1
   end
 end

@@ -4,9 +4,12 @@ class Baza::SqlQueries::SqliteUpsertDuplicateKey
     @table_name = args.fetch(:table_name)
     @updates = args.fetch(:updates)
     @terms = args.fetch(:terms)
+    @return_id = args[:return_id]
   end
 
   def execute
+    return insert_or_handle_duplicate if @terms.empty?
+
     @db.transaction do
       @db.query(insert_sql)
       @db.query(update_sql)
@@ -14,6 +17,23 @@ class Baza::SqlQueries::SqliteUpsertDuplicateKey
   end
 
 private
+
+  def insert_or_handle_duplicate
+    @db.insert(@table_name, @updates)
+    return @db.last_id if @return_id
+  rescue => e
+    if (match = e.message.match(/UNIQUE constraint failed: #{Regexp.escape(@table_name)}.(.+?):/))
+      column_name = match[1]
+      conflicting_value = @updates.fetch(column_name)
+      @db.update(@table_name, @updates, column_name => conflicting_value)
+
+      if @return_id
+        data = @db.single(@table_name, column_name => conflicting_value)
+        primary_column = @db.tables[@table_name.to_s].columns.find(&:primarykey?).name.to_sym
+        return data.fetch(primary_column)
+      end
+    end
+  end
 
   def insert_sql
     sql = "INSERT OR IGNORE INTO #{@db.sep_table}#{@db.escape_table(@table_name)}#{@db.sep_table} ("
