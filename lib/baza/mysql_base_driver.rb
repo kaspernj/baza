@@ -22,7 +22,7 @@ class Baza::MysqlBaseDriver < Baza::BaseSqlDriver
   end
 
   # Inserts multiple rows in a table. Can return the inserted IDs if asked to in arguments.
-  def insert_multi(tablename, arr_hashes, args = nil)
+  def insert_multi(tablename, arr_hashes, args = {})
     sql = "INSERT INTO `#{tablename}` ("
 
     first = true

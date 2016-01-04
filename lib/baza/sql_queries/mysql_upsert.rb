@@ -43,18 +43,7 @@ private
   end
 
   def update_sql
-    sql = ""
-    sql << "UPDATE #{@db.sep_table}#{@db.escape_table(@table_name)}#{@db.sep_table} SET"
-
-    first = true
-    @updates.each do |column, value|
-      sql << ", " unless first
-      first = false if first
-      sql << " #{@db.sep_col}#{@db.escape_column(column)}#{@db.sep_col} = #{@db.sqlval(value)}"
-    end
-
-    sql << " WHERE #{@db.sql_make_where(@terms)}"
-    sql
+    @db.update(@table_name, @updates, @terms, return_sql: true)
   end
 
   def insert_sql

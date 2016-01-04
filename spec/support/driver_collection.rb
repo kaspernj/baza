@@ -177,7 +177,7 @@ shared_examples_for "a baza driver" do
     expect(count_found).to eq 10_000
   end
 
-  it "should be able to use query buffers" do
+  it "uses query buffers" do
     db.tables.create(:test_table, columns: [
       {name: :id, type: :int, autoincr: true, primarykey: true},
       {name: :name, type: :varchar}

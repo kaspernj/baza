@@ -23,27 +23,6 @@ class Baza::SqlQueries::MysqlUpsertDuplicateKey
 private
 
   def insert_sql
-    sql = "INSERT INTO #{@db.sep_table}#{@db.escape_table(@table_name)}#{@db.sep_table} ("
-
-    combined_data = @updates.merge(@terms)
-
-    first = true
-    combined_data.each_key do |column_name|
-      sql << ", " unless first
-      first = false if first
-      sql << "#{@db.sep_col}#{@db.escape_column(column_name)}#{@db.sep_col}"
-    end
-
-    sql << ") VALUES ("
-
-    first = true
-    combined_data.each_value do |value|
-      sql << ", " unless first
-      first = false if first
-      sql << @db.sqlval(value).to_s
-    end
-
-    sql << ")"
-    sql
+    @db.insert(@table_name, @updates.merge(@terms), return_sql: true)
   end
 end

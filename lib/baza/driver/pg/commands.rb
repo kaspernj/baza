@@ -11,4 +11,14 @@ class Baza::Driver::Pg::Commands
       terms: terms
     ).execute
   end
+
+  def upsert(table_name, updates, terms, args = {})
+    Baza::SqlQueries::NonAtomicUpsert.new(
+      db: @db,
+      table_name: table_name,
+      buffer: args[:buffer],
+      terms: terms,
+      updates: updates
+    ).execute
+  end
 end

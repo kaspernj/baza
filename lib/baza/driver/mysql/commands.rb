@@ -12,12 +12,22 @@ class Baza::Driver::Mysql::Commands
     ).execute
   end
 
-  def upsert(table_name, updates, terms)
-    Baza::SqlQueries::MysqlUpsert.new(
-      db: @db,
-      table_name: table_name,
-      updates: updates,
-      terms: terms
-    ).execute
+  def upsert(table_name, updates, terms, args = {})
+    if args[:buffer]
+      Baza::SqlQueries::NonAtomicUpsert.new(
+        db: @db,
+        table_name: table_name,
+        buffer: args[:buffer],
+        terms: terms,
+        updates: updates
+      ).execute
+    else
+      Baza::SqlQueries::MysqlUpsert.new(
+        db: @db,
+        table_name: table_name,
+        updates: updates,
+        terms: terms
+      ).execute
+    end
   end
 end
