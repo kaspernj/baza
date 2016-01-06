@@ -704,4 +704,16 @@ class Baza::Db
   def new_query
     Baza::SqlQueries::Select.new(db: self)
   end
+
+  def sqlite?
+    @sqlite ||= @driver.class.name.downcase.include?("sqlite")
+  end
+
+  def mysql?
+    @mysql ||= @driver.class.name.downcase.include?("mysql")
+  end
+
+  def postgres?
+    @postgres ||= @driver.class.name.downcase.include?("pg")
+  end
 end

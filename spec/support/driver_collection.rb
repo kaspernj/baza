@@ -346,4 +346,12 @@ shared_examples_for "a baza driver" do
     test_table.insert(text: "Kasper")
     expect(db.last_id).to eq 1
   end
+
+  describe "#insert" do
+    it "returns id" do
+      test_table
+      id = db.insert("test", {text: "Kasper"}, return_id: true)
+      expect(id).to eq 1
+    end
+  end
 end
