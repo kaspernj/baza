@@ -24,8 +24,8 @@ class Baza::SqlQueries::Select
     self
   end
 
-  def where(arg)
-    @wheres << arg
+  def where(*args)
+    @wheres << args
     self
   end
 
@@ -39,8 +39,18 @@ class Baza::SqlQueries::Select
     self
   end
 
+  def limit(limit)
+    @limit = limit
+    self
+  end
+
+  def offset(offset)
+    @offset = offset
+    self
+  end
+
   def to_sql
-    "#{select_sql} #{from_sql} #{where_sql} #{group_sql}"
+    "#{select_sql} #{from_sql} #{where_sql} #{group_sql} #{limit_sql}"
   end
 
   def to_a
@@ -49,6 +59,16 @@ class Baza::SqlQueries::Select
 
   def each(&blk)
     query(&blk)
+  end
+
+  def each_row
+    query do |data|
+      yield Baza::Row.new(
+        db: @db,
+        table: first_from,
+        data: data
+      )
+    end
   end
 
   def to_enum
@@ -101,7 +121,7 @@ private
   end
 
   def first_from
-    @froms.first
+    @first_from ||= @froms.first
   end
 
   def where_sql
@@ -110,7 +130,9 @@ private
     sql = " WHERE"
 
     first = true
-    @wheres.each do |where|
+    @wheres.each do |args|
+      where = args.shift
+
       sql << " AND " unless first
       first = false if first
 
@@ -118,6 +140,13 @@ private
         where.each do |key, value|
           sql << "#{@db.sep_col}#{@db.escape_column(key)}#{@db.sep_col} = #{@db.sqlval(value)}"
         end
+      elsif where.is_a?(String)
+        sql_arg = where.clone
+        args.each do |arg|
+          sql_arg.sub!("?", @db.sqlval(arg))
+        end
+
+        sql << sql_arg
       else
         raise "Dont know what to do with that argument: #{where}"
       end
@@ -128,5 +157,11 @@ private
 
   def group_sql
     return if @groups.empty?
+  end
+
+  def limit_sql
+    sql = "LIMIT #{@db.sqlval(@limit)}"
+    sql << ", #{@db.sqlval(@offset)}" if @offset
+    sql
   end
 end
