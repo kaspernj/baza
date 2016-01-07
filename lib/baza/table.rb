@@ -43,7 +43,8 @@ class Baza::Table
   end
 
   def rows_count
-    @db.query("SELECT COUNT(*) AS count FROM #{@db.sep_table}#{@db.escape_table(name)}#{@db.sep_table}").fetch.fetch(:count).to_i
+    sql = "SELECT COUNT(*) AS count FROM #{@db.sep_table}#{@db.escape_table(name)}#{@db.sep_table}"
+    @db.query(sql).fetch.fetch(:count).to_i
   end
 
   def truncate
