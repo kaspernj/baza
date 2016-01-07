@@ -151,7 +151,11 @@ class Baza::Driver::ActiveRecord < Baza::BaseSqlDriver
         id = @db.insert(table_name, attributes, return_id: true)
       end
 
-      model.id = id
+      if id && id.to_i > 0
+        model.id = id
+      else
+        raise "Invalid ID: #{id}" unless id.to_i > 0
+      end
     else
       @db.update(table_name, attributes, id: model.id)
     end
