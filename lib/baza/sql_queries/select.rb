@@ -160,8 +160,11 @@ private
   end
 
   def limit_sql
-    sql = "LIMIT #{@db.sqlval(@limit)}"
-    sql << ", #{@db.sqlval(@offset)}" if @offset
+    if @limit
+      sql = "LIMIT #{@db.sqlval(@limit)}"
+      sql << ", #{@db.sqlval(@offset)}" if @offset
+    end
+
     sql
   end
 end
