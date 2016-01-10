@@ -119,7 +119,7 @@ shared_examples_for "a baza driver" do
 
     it "inserts with empty terms" do
       expect(test_table.rows_count).to eq 0
-      id = test_table.upsert_duplicate_key({number: 2}, {}, return_id: true)
+      id = test_table.upsert_duplicate_key({text: "test2"}, {}, return_id: true)
       expect(test_table.rows_count).to eq 1
       expect(id).to eq 1
     end

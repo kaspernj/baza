@@ -2,8 +2,8 @@ class Baza::SqlQueries::MysqlUpsertDuplicateKey
   def initialize(args)
     @db = args.fetch(:db)
     @table_name = args.fetch(:table_name)
-    @updates = args.fetch(:updates)
-    @terms = args.fetch(:terms)
+    @updates = StringCases.stringify_keys(args.fetch(:updates))
+    @terms = StringCases.stringify_keys(args.fetch(:terms))
     @buffer = args[:buffer]
     @return_id = args[:return_id]
   end
@@ -33,7 +33,7 @@ class Baza::SqlQueries::MysqlUpsertDuplicateKey
       @buffer.query(to_sql)
     else
       @db.query(to_sql)
-      return @db.query(last_insert_sql).fetch.fetch(:id) if @return_id
+      return @db.query(last_insert_sql).fetch.fetch(:id).to_i if @return_id
     end
   end
 

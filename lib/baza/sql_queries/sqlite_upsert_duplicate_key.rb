@@ -2,8 +2,8 @@ class Baza::SqlQueries::SqliteUpsertDuplicateKey
   def initialize(args)
     @db = args.fetch(:db)
     @table_name = args.fetch(:table_name)
-    @updates = args.fetch(:updates)
-    @terms = args.fetch(:terms)
+    @updates = StringCases.stringify_keys(args.fetch(:updates))
+    @terms = StringCases.stringify_keys(args.fetch(:terms))
     @return_id = args[:return_id]
   end
 
@@ -35,7 +35,7 @@ private
     match = e.message.match(/UNIQUE constraint failed: #{Regexp.escape(@table_name)}\.(.+?)(:|\Z)/)
     raise e unless match
 
-    column_name = match[1].to_sym
+    column_name = match[1]
     conflicting_value = @updates.fetch(column_name)
     @db.update(@table_name, @updates, column_name => conflicting_value)
 
@@ -92,6 +92,4 @@ private
 
     sql
   end
-
-
 end

@@ -2,8 +2,8 @@ class Baza::SqlQueries::PostgresUpsertDuplicateKey
   def initialize(args)
     @db = args.fetch(:db)
     @table_name = args.fetch(:table_name)
-    @updates = args.fetch(:updates)
-    @terms = args.fetch(:terms)
+    @updates = StringCases.stringify_keys(args.fetch(:updates))
+    @terms = StringCases.stringify_keys(args.fetch(:terms))
     @return_id = args[:return_id]
   end
 
@@ -37,7 +37,7 @@ private
       if @return_id
         primary_column = table.columns.find(&:primarykey?).name.to_sym
         data = @db.single(@table_name, column_name => conflicting_value)
-        return data.fetch(primary_column)
+        return data.fetch(primary_column).to_i
       end
     else
       raise e
