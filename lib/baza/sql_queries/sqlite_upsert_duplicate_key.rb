@@ -32,10 +32,14 @@ private
     @db.insert(@table_name, @updates)
     return @db.last_id if @return_id
   rescue => e
-    match = e.message.match(/UNIQUE constraint failed: #{Regexp.escape(@table_name)}\.(.+?)(:|\Z)/)
-    raise e unless match
+    if (match = e.message.match(/UNIQUE constraint failed: #{Regexp.escape(@table_name)}\.(.+?)(:|\Z)/))
+      column_name = match[1]
+    elsif (match = e.message.match(/column (.+?) is not unique/))
+      column_name = match[1]
+    else
+      raise e
+    end
 
-    column_name = match[1]
     conflicting_value = @updates.fetch(column_name)
     @db.update(@table_name, @updates, column_name => conflicting_value)
 
