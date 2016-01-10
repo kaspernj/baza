@@ -32,7 +32,7 @@ private
     @db.insert(@table_name, @updates)
     return @db.last_id if @return_id
   rescue => e
-    if (match = e.message.match(/UNIQUE constraint failed: #{Regexp.escape(@table_name)}\.(.+?)(:|\Z)/))
+    if (match = e.message.match(/UNIQUE constraint failed: #{Regexp.escape(@table_name)}\.(.+?)(:|\Z|\))/))
       column_name = match[1]
     elsif (match = e.message.match(/column (.+?) is not unique/))
       column_name = match[1]
