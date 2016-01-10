@@ -223,7 +223,7 @@ class Baza::Db
     {tables: tables_ret}
   end
 
-  def insert(table_name, data, args = nil)
+  def insert(table_name, data, args = {})
     @driver.insert(table_name, data, args)
   end
 
@@ -241,7 +241,7 @@ class Baza::Db
       "NULL"
     elsif val.is_a?(Date)
       "#{@sep_val}#{Datet.in(val).dbstr(time: false)}#{@sep_val}"
-    elsif val.is_a?(Time) || val.is_a?(DateTime)
+    elsif val.is_a?(Time) || val.is_a?(DateTime) || val.is_a?(Datet)
       "#{@sep_val}#{Datet.in(val).dbstr}#{@sep_val}"
     else
       "#{@sep_val}#{escape(val)}#{@sep_val}"
@@ -255,7 +255,7 @@ class Baza::Db
   #   {name: "John", lastname: "Doe"},
   #   {name: "Kasper", lastname: "Johansen"}
   # ])
-  def insert_multi(tablename, arr_hashes, args = nil)
+  def insert_multi(tablename, arr_hashes, args = {})
     return false if arr_hashes.empty?
 
     if @driver.respond_to?(:insert_multi)
@@ -286,50 +286,35 @@ class Baza::Db
   #
   #===Examples
   # db.update(:users, {name: "John"}, {lastname: "Doe"})
-  def update(tablename, hash_update, arr_terms = {}, args = nil)
-    raise "'hash_update' was not a hash: '#{hash_update.class.name}'." unless hash_update.is_a?(Hash)
-    return false if hash_update.empty?
+  def update(table_name, data, terms = {}, args = {})
+    command = Baza::SqlQueries::GenericUpdate.new(
+      db: self,
+      table_name: table_name,
+      data: data,
+      terms: terms,
+      buffer: args[:buffer]
+    )
 
-    sql = ""
-    sql << "UPDATE #{@sep_col}#{tablename}#{@sep_col} SET "
-
-    first = true
-    hash_update.each do |key, value|
-      if first
-        first = false
-      else
-        sql << ", "
-      end
-
-      # Convert dates to valid dbstr.
-      value = date_out(value) if value.is_a?(Datet) || value.is_a?(Time)
-
-      sql << "#{@sep_col}#{escape_column(key)}#{@sep_col} = "
-      sql << sqlval(value)
+    if args[:return_sql]
+      command.to_sql
+    else
+      command.execute
     end
-
-    sql << " WHERE #{sql_make_where(arr_terms)}" if arr_terms && arr_terms.length > 0
-
-    return sql if args && args[:return_sql]
-
-    query(sql)
   end
 
   # Checks if a given terms exists. If it does, updates it to match data. If not inserts the row.
-  def upsert(table, data, terms, args = nil)
-    row = single(table, terms)
+  def upsert(table, data, terms, args = {})
+    commands.upsert(table, data, terms, args)
+  end
 
-    if args && args[:buffer]
-      obj = args[:buffer]
-    else
-      obj = self
-    end
+  # rubocop:disable Style/TrivialAccessors
+  def in_transaction?
+    # rubocop:enable Style/TrivialAccessors
+    @in_transaction
+  end
 
-    if row
-      obj.update(table, data, terms)
-    else
-      obj.insert(table, terms.merge(data))
-    end
+  def upsert_duplicate_key(table_name, data, terms = {}, args = {})
+    commands.upsert_duplicate_key(table_name, data, terms, args)
   end
 
   SELECT_ARGS_ALLOWED_KEYS = [:limit, :limit_from, :limit_to]
@@ -576,7 +561,7 @@ class Baza::Db
   #===Examples
   # id = db.last_id
   def last_id
-    @driver.last_id
+    commands.last_id
   end
 
   def current_database_name
@@ -646,9 +631,13 @@ class Baza::Db
     @tables ||= Baza::Driver.const_get(@type_cc).const_get(:Tables).new(db: self)
   end
 
+  def commands
+    @commands ||= Baza::Driver.const_get(@type_cc).const_get(:Commands).new(db: self)
+  end
+
   # Returns the columns-module and spawns it if it isnt already spawned.
   def cols
-    @cols || Baza::Driver.const_get(@type_cc).const_get(:Columns).new(db: self)
+    @cols ||= Baza::Driver.const_get(@type_cc).const_get(:Columns).new(db: self)
   end
 
   # Returns the index-module and spawns it if it isnt already spawned.
@@ -685,8 +674,14 @@ class Baza::Db
   #   db.insert(:users, name: "Kasper")
   # end
   def transaction(&block)
-    @driver.transaction(&block)
-    nil
+    @in_transaction = true
+    begin
+      @driver.transaction(&block)
+    ensure
+      @in_transaction = false
+    end
+
+    self
   end
 
   # Optimizes all tables in the database.
@@ -697,11 +692,11 @@ class Baza::Db
       table.optimize
     end
 
-    nil
+    self
   end
 
   def to_s
-    "#<Baza::Db driver=\"#{@opts[:type]}\">"
+    "#<Baza::Db driver=\"#{@opts.fetch(:type)}\">"
   end
 
   def inspect
@@ -710,5 +705,17 @@ class Baza::Db
 
   def new_query
     Baza::SqlQueries::Select.new(db: self)
+  end
+
+  def sqlite?
+    @sqlite ||= @driver.class.name.downcase.include?("sqlite")
+  end
+
+  def mysql?
+    @mysql ||= @driver.class.name.downcase.include?("mysql")
+  end
+
+  def postgres?
+    @postgres ||= @driver.class.name.downcase.include?("pg")
   end
 end

@@ -69,7 +69,7 @@ shared_examples_for "a baza driver" do
     expect(count_results).to eq 10
   end
 
-  it "does upserting" do
+  it "#upsert" do
     test_table.create_columns([{name: "nickname", type: :varchar}])
 
     # Test upserting.
@@ -94,6 +94,42 @@ shared_examples_for "a baza driver" do
 
     table.reload
     expect(table.rows_count).to eq rows_count + 1
+  end
+
+  describe "#upsert_duplicate_key" do
+    before do
+      test_table.create_indexes([name: "unique_text", columns: ["text"], unique: true])
+    end
+
+    it "inserts records with terms" do
+      expect(test_table.rows_count).to eq 0
+      test_table.upsert_duplicate_key({number: 2}, text: "test1")
+      expect(test_table.rows_count).to eq 1
+    end
+
+    it "updates existing records with terms" do
+      test_table.insert(text: "test1", number: 1)
+      test_table.upsert_duplicate_key({number: 2}, text: "test1")
+      expect(test_table.rows_count).to eq 1
+
+      rows = test_table.rows.to_a.map(&:to_hash)
+      rows[0][:float] = "0.0" if rows[0][:float] == "0"
+      expect(rows).to eq [{id: "1", text: "test1", number: "2", float: "0.0"}]
+    end
+
+    it "inserts with empty terms" do
+      expect(test_table.rows_count).to eq 0
+      id = test_table.upsert_duplicate_key({text: "test2"}, {}, return_id: true)
+      expect(test_table.rows_count).to eq 1
+      expect(id).to eq 1
+    end
+
+    it "updates existing records with empty terms" do
+      test_table.insert(text: "test1", number: 1)
+      id = test_table.upsert_duplicate_key({number: 2, text: "test1"}, {}, return_id: true)
+      expect(test_table.rows_count).to eq 1
+      expect(id).to eq 1
+    end
   end
 
   it "dumps as SQL" do
@@ -161,7 +197,7 @@ shared_examples_for "a baza driver" do
     expect(count_found).to eq 10_000
   end
 
-  it "should be able to use query buffers" do
+  it "uses query buffers" do
     db.tables.create(:test_table, columns: [
       {name: :id, type: :int, autoincr: true, primarykey: true},
       {name: :name, type: :varchar}
@@ -222,16 +258,15 @@ shared_examples_for "a baza driver" do
       count = 0
       db.select(:test_table) do |row|
         count += 1
-
         time_start = Time.now.to_f if count == 1000
 
-        buffer.delete(:test_table, id: row[:id])
+        buffer.delete(:test_table, id: row.fetch(:id))
 
         next unless count == 1000
         time_end = Time.now.to_f
 
         time_spent = time_end - time_start
-        raise "Too much time spent: '#{time_spent}'." if time_spent > 0.01
+        raise "Too much time spent: '#{time_spent}'." if time_spent > 0.015
       end
     end
 
@@ -310,6 +345,8 @@ shared_examples_for "a baza driver" do
   end
 
   it "returns arguments used to connect" do
+    require_relative "../../lib/baza/driver/active_record"
+
     unless db.driver.is_a?(Baza::Driver::ActiveRecord)
       args = db.driver.class.args
       expect(args).to be_a Array
@@ -323,5 +360,18 @@ shared_examples_for "a baza driver" do
     query = db.new_query.from(:test).where(text: "Kasper").to_a
     query[0][:float] = query[0][:float].to_f.to_s if query[0][:float] == "0"
     expect(query.to_a).to eq [{id: "1", text: "Kasper", number: "0", float: "0.0"}]
+  end
+
+  it "#last_id" do
+    test_table.insert(text: "Kasper")
+    expect(db.last_id).to eq 1
+  end
+
+  describe "#insert" do
+    it "returns id" do
+      test_table
+      id = db.insert("test", {text: "Kasper"}, return_id: true)
+      expect(id).to eq 1
+    end
   end
 end

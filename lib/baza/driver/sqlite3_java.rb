@@ -53,11 +53,6 @@ class Baza::Driver::Sqlite3Java < Baza::JdbcDriver
     string.to_s.gsub(/'/, "''")
   end
 
-  # Returns the last inserted ID.
-  def last_id
-    query("SELECT LAST_INSERT_ROWID() AS id").fetch[:id].to_i
-  end
-
   def transaction
     query_no_result_set("BEGIN TRANSACTION")
 

@@ -50,7 +50,7 @@ class Baza
   def self.load_driver(name)
     require_relative "baza/driver/#{name}"
 
-    loads = %w(databases database tables table columns column indexes index result)
+    loads = %w(databases database tables table columns column indexes index result commands)
     loads.each do |load|
       file_path = "#{File.dirname(__FILE__)}/baza/driver/#{name}/#{load}"
       require_relative file_path if File.exist?(file_path)

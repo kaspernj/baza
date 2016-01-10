@@ -72,56 +72,15 @@ class Baza::BaseSqlDriver
   # db.insert(:users, name: "John", lastname: "Doe")
   # id = db.insert(:users, {name: "John", lastname: "Doe"}, return_id: true)
   # sql = db.insert(:users, {name: "John", lastname: "Doe"}, return_sql: true) #=> "INSERT INTO `users` (`name`, `lastname`) VALUES ('John', 'Doe')"
-  def insert(tablename, arr_insert, args = nil)
-    sql = "INSERT INTO #{@sep_table}#{escape_table(tablename)}#{@sep_table}"
-
-    if !arr_insert || arr_insert.empty?
-      # This is the correct syntax for inserting a blank row in MySQL.
-      if @db.opts.fetch(:type).to_s.include?("mysql")
-        sql << " VALUES ()"
-      elsif @db.opts.fetch(:type).to_s.include?("sqlite3")
-        sql << " DEFAULT VALUES"
-      else
-        raise "Unknown database-type: '#{@db.opts.fetch(:type)}'."
-      end
-    else
-      sql << " ("
-
-      first = true
-      arr_insert.each_key do |key|
-        if first
-          first = false
-        else
-          sql << ", "
-        end
-
-        sql << "#{@db.sep_col}#{@db.escape_column(key)}#{@db.sep_col}"
-      end
-
-      sql << ") VALUES ("
-
-      first = true
-      arr_insert.each_value do |value|
-        if first
-          first = false
-        else
-          sql << ", "
-        end
-
-        sql << @db.sqlval(value)
-      end
-
-      sql << ")"
-    end
-
-    return sql if args && args[:return_sql]
-
-    @db.query(sql)
-    return @db.last_id if args && args[:return_id]
-    nil
+  def insert(table_name, data, args = {})
+    command = Baza::SqlQueries::GenericInsert.new({
+      db: @db,
+      table_name: table_name,
+      data: data
+    }.merge(args)).execute
   end
 
-  def insert_multi(tablename, arr_hashes, args = nil)
+  def insert_multi(tablename, arr_hashes, args = {})
     sql = [] if args && args[:return_sql]
 
     @db.transaction do

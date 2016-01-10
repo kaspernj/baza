@@ -54,6 +54,8 @@ class Baza::Driver::Mysql2 < Baza::MysqlBaseDriver
   # Respawns the connection to the MySQL-database.
   def reconnect
     @mutex.synchronize do
+      require "mysql2" unless ::Object.const_defined?("Mysql2")
+
       args = {
         host: @db.opts[:host],
         username: @db.opts[:user],
@@ -76,25 +78,10 @@ class Baza::Driver::Mysql2 < Baza::MysqlBaseDriver
 
       args[:as] = :array
 
-      tries = 0
-      begin
-        tries += 1
-        if @db.opts[:conn]
-          @conn = @db.opts[:conn]
-        else
-          require "mysql2"
-          @conn = Mysql2::Client.new(args)
-        end
-      rescue => e
-        if tries <= 3
-          if e.message == "Can't connect to local MySQL server through socket '/var/run/mysqld/mysqld.sock' (111)"
-            sleep 1
-            tries += 1
-            retry
-          end
-        end
-
-        raise e
+      if @db.opts[:conn]
+        @conn = @db.opts[:conn]
+      else
+        @conn = ::Mysql2::Client.new(args)
       end
 
       query("SET NAMES '#{esc(@encoding)}'") if @encoding
@@ -138,11 +125,6 @@ class Baza::Driver::Mysql2 < Baza::MysqlBaseDriver
   # Escapes a string to be safe to use in a query.
   def escape(string)
     @conn.escape(string.to_s)
-  end
-
-  # Returns the last inserted ID for the connection.
-  def last_id
-    @mutex.synchronize { return @conn.last_id.to_i }
   end
 
   # Closes the connection threadsafe.

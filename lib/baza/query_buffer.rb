@@ -6,6 +6,7 @@ class Baza::QueryBuffer
   # Constructor. Takes arguments to be used and a block.
   def initialize(args)
     @args = args
+    @db = args.fetch(:db)
     @queries = []
     @inserts = {}
     @queries_count = 0
@@ -14,25 +15,25 @@ class Baza::QueryBuffer
 
     STDOUT.puts "Query buffer started." if @debug
 
-    if block_given?
-      if @args[:flush_async]
-        @args[:db].clone_conn do |db_flush_async|
-          @db_flush_async = db_flush_async
+    return unless block_given?
 
-          begin
-            yield(self)
-          ensure
-            flush
-            thread_async_join
-          end
-        end
-      else
+    if @args[:flush_async]
+      @db.clone_conn do |db_flush_async|
+        @db_flush_async = db_flush_async
+
         begin
           yield(self)
         ensure
           flush
           thread_async_join
         end
+      end
+    else
+      begin
+        yield(self)
+      ensure
+        flush
+        thread_async_join
       end
     end
   end
@@ -54,7 +55,7 @@ class Baza::QueryBuffer
   # buffer.delete(:users, {:id => 5})
   def delete(table, where)
     STDOUT.puts "Delete called on table #{table} with arguments: '#{where}'." if @debug
-    query(@args[:db].delete(table, where, return_sql: true))
+    query(@db.delete(table, where, return_sql: true))
     nil
   end
 
@@ -63,7 +64,7 @@ class Baza::QueryBuffer
   # buffer.update(:users, {:name => "Kasper"}, {:id => 5})
   def update(table, update, terms)
     STDOUT.puts "Update called on table #{table}." if @debug
-    query(@args[:db].update(table, update, terms, return_sql: true))
+    query(@db.update(table, update, terms, return_sql: true))
     nil
   end
 
@@ -71,7 +72,7 @@ class Baza::QueryBuffer
   #===Example
   # buffer.upsert(:users, {:id => 5}, {:name => "Kasper"})
   def upsert(table, data, terms)
-    @args[:db].upsert(table, data, terms, buffer: self)
+    @db.upsert(table, data, terms, buffer: self)
     nil
   end
 
@@ -79,7 +80,7 @@ class Baza::QueryBuffer
   #===Examples
   # buffer.insert(:users, {:name => "John Doe"})
   def insert(table, data)
-    query(@args[:db].insert(table, data, return_sql: true))
+    query(@db.insert(table, data, return_sql: true))
     nil
   end
 
@@ -117,7 +118,7 @@ private
   # Flushes the queries for real.
   def flush_real(db = nil)
     return nil if @queries_count <= 0
-    db = @args[:db] if db == nil
+    db = @db if db == nil
 
     @lock.synchronize do
       unless @queries.empty?

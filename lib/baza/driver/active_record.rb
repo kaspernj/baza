@@ -131,4 +131,35 @@ class Baza::Driver::ActiveRecord < Baza::BaseSqlDriver
   def supports_multiple_databases?
     conn_name.include?("mysql") || @driver_type == :pg
   end
+
+  def save_model!(model, args = {})
+    raise ActiveRecord::InvalidRecord, model if (!args.key?(:validate) || args[:validate]) && !model.valid?
+
+    attributes = {}
+    model.changes.each do |column_name, value_array|
+      attributes[column_name.to_s] = value_array.last
+    end
+
+    attributes = attributes.delete_if { |_key, value| value.nil? } if model.new_record?
+
+    table_name = model.class.table_name
+
+    if model.new_record?
+      if args[:update_on_duplicate_key]
+        id = @db.upsert_duplicate_key(table_name, attributes, {}, return_id: true)
+      else
+        id = @db.insert(table_name, attributes, return_id: true)
+      end
+
+      if id && id.to_i > 0
+        model.id = id
+      else
+        raise "Invalid ID: #{id}" unless id.to_i > 0
+      end
+    else
+      @db.update(table_name, attributes, id: model.id)
+    end
+
+    model.reload
+  end
 end

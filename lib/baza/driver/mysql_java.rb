@@ -74,13 +74,6 @@ class Baza::Driver::MysqlJava < Baza::JdbcDriver
     end
   end
 
-  # Returns the last inserted ID for the connection.
-  def last_id
-    data = query("SELECT LAST_INSERT_ID() AS id").fetch
-    return data.fetch(:id).to_i if data[:id]
-    raise "Could not figure out last inserted ID"
-  end
-
   # Closes the connection threadsafe.
   def close
     @mutex.synchronize { @conn.close }
@@ -97,7 +90,7 @@ class Baza::Driver::MysqlJava < Baza::JdbcDriver
   end
 
   # Inserts multiple rows in a table. Can return the inserted IDs if asked to in arguments.
-  def insert_multi(tablename, arr_hashes, args = nil)
+  def insert_multi(tablename, arr_hashes, args = {})
     sql = "INSERT INTO `#{tablename}` ("
 
     first = true
