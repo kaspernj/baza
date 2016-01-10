@@ -38,7 +38,7 @@ class Baza::Table
     @db.insert(name, data)
   end
 
-  def upsert_duplicate_key(data, terms, args = {})
+  def upsert_duplicate_key(data, terms = {}, args = {})
     @db.upsert_duplicate_key(name, data, terms, args)
   end
 

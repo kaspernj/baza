@@ -101,7 +101,13 @@ shared_examples_for "a baza driver" do
       test_table.create_indexes([name: "unique_text", columns: ["text"], unique: true])
     end
 
-    it "updates existing records" do
+    it "inserts records with terms" do
+      expect(test_table.rows_count).to eq 0
+      test_table.upsert_duplicate_key({number: 2}, text: "test1")
+      expect(test_table.rows_count).to eq 1
+    end
+
+    it "updates existing records with terms" do
       test_table.insert(text: "test1", number: 1)
       test_table.upsert_duplicate_key({number: 2}, text: "test1")
       expect(test_table.rows_count).to eq 1
@@ -109,6 +115,20 @@ shared_examples_for "a baza driver" do
       rows = test_table.rows.to_a.map(&:to_hash)
       rows[0][:float] = "0.0" if rows[0][:float] == "0"
       expect(rows).to eq [{id: "1", text: "test1", number: "2", float: "0.0"}]
+    end
+
+    it "inserts with empty terms" do
+      expect(test_table.rows_count).to eq 0
+      id = test_table.upsert_duplicate_key({number: 2}, {}, return_id: true)
+      expect(test_table.rows_count).to eq 1
+      expect(id).to eq 1
+    end
+
+    it "updates existing records with empty terms" do
+      test_table.insert(text: "test1", number: 1)
+      id = test_table.upsert_duplicate_key({number: 2, text: "test1"}, {}, return_id: true)
+      expect(test_table.rows_count).to eq 1
+      expect(id).to eq 1
     end
   end
 
