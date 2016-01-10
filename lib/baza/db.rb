@@ -307,7 +307,9 @@ class Baza::Db
     commands.upsert(table, data, terms, args)
   end
 
+  # rubocop:disable Style/TrivialAccessors
   def in_transaction?
+    # rubocop:enable Style/TrivialAccessors
     @in_transaction
   end
 
