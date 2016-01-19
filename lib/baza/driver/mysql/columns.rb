@@ -12,7 +12,7 @@ class Baza::Driver::Mysql::Columns
     raise "No type given." unless data[:type]
     type = data[:type].to_sym
 
-    data[:maxlength] = 255 if type == :varchar && !data.key?(:maxlength)
+    data[:maxlength] = 255 if type == :varchar && data[:maxlength].to_s.strip.length == 0
 
     sql = "#{@db.sep_col}#{@db.escape_column(data.fetch(:name))}#{@db.sep_col} #{type}"
     sql << "(#{data[:maxlength]})" if data[:maxlength]
