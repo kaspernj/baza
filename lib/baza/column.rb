@@ -17,6 +17,16 @@ class Baza::Column
     @db.tables[table_name]
   end
 
+  def after
+    last = nil
+    table.columns.each do |column|
+      break if column.name == name
+      last = column.name
+    end
+
+    last
+  end
+
   def data
     {
       type: type,
