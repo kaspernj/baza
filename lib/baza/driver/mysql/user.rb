@@ -1,0 +1,18 @@
+class Baza::Driver::Mysql::User
+  attr_reader :name
+
+  def initialize(args)
+    @args = args
+    @data = args.fetch(:data)
+    @db = args.fetch(:db)
+  end
+
+  def name
+    @data.fetch(:User)
+  end
+
+  def drop
+    @db.query("DROP USER '#{@db.esc(name)}'")
+    true
+  end
+end

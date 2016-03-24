@@ -645,6 +645,10 @@ class Baza::Db
     @indexes ||= Baza::Driver.const_get(@type_cc).const_get(:Indexes).new(db: self)
   end
 
+  def users
+    @users ||= Baza::Driver.const_get(@type_cc).const_get(:Users).new(db: self)
+  end
+
   # Returns the SQLSpec-module and spawns it if it isnt already spawned.
   def sqlspecs
     @sqlspecs ||= Baza::Driver.const_get(@type_cc).const_get(:Sqlspecs).new(db: self)

@@ -14,6 +14,7 @@ describe Baza.const_get(:Driver).const_get(:Mysql) do
   it_should_behave_like "a baza tables driver"
   it_should_behave_like "a baza columns driver"
   it_should_behave_like "a baza indexes driver"
+  it_should_behave_like "a baza users driver"
 
   it "should dump to sqlite3" do
     require "info_sqlite3"
