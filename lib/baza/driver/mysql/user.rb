@@ -11,8 +11,12 @@ class Baza::Driver::Mysql::User
     @data.fetch(:User)
   end
 
+  def host
+    @data.fetch(:Host)
+  end
+
   def drop
-    @db.query("DROP USER '#{@db.esc(name)}'")
+    @db.query("DROP USER '#{@db.esc(name)}'@'#{@db.esc(host)}'")
     true
   end
 end

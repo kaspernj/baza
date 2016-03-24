@@ -29,7 +29,7 @@ class Baza::Driver::Mysql::Users
       return user if user.name == name.to_s
     end
 
-    raise "Could not find a user by that name: #{name}"
+    raise Baza::Errors::UserNotFound, "Could not find a user by that name: #{name}"
   end
 
   def create(data)
