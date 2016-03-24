@@ -234,6 +234,30 @@ db.transaction do
 end
 ```
 
+## Users
+
+### Listing users
+```ruby
+db.users.list do |user|
+  puts "User found: #{user.name}"
+end
+```
+
+```ruby
+root_user = db.users.find_by_name("root")
+root_user.name #=> "root"
+```
+
+### Dropping users
+```ruby
+user.drop
+```
+
+### Creating users
+```ruby
+user = db.users.create(name: "myuser", host: "localhost")
+```
+
 ## Query Buffer
 In order to speed things up, but without using transactions directly, you can use a query buffer. This stores various instructions in memory and flushes them every now and then through transactions or intelligent queries (like multi-insertion). The drawback is that it will not be possible to test the queries for errors before a flush is executed and it wont be possible to read results from any of the queries.
 
