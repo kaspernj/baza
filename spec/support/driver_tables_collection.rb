@@ -4,10 +4,13 @@ shared_examples_for "a baza tables driver" do
   let(:db) { driver.db }
   let(:db2) { driver2.db }
   let(:test_table) do
-    db.tables.create("test", columns: [
-      {name: "id", type: :int, autoincr: true, primarykey: true},
-      {name: "text", type: :varchar}
-    ])
+    db.tables.create(
+      "test",
+      columns: [
+        {name: "id", type: :int, autoincr: true, primarykey: true},
+        {name: "text", type: :varchar}
+      ]
+    )
     db.tables[:test]
   end
 
