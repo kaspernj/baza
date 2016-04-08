@@ -13,7 +13,7 @@ gem "auto_autoloader", "~> 0.0.1"
 # Add dependencies to develop your gem here.
 # Include everything needed to run rake, tests, features, etc.
 group :development, :test do
-  gem "rspec"
+  gem "rspec", "3.4.0"
   gem "rdoc"
   gem "bundler"
   gem "jeweler"
