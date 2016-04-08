@@ -1,8 +1,9 @@
-require "auto_autoloader"
 require "array_enumerator"
-require "wref"
+require "auto_autoloader"
 require "datet"
+require "simple_delegate"
 require "string-cases"
+require "wref"
 
 class Baza
   AutoAutoloader.autoload_sub_classes(self, __FILE__)

@@ -63,7 +63,7 @@ class Baza::Driver::Mysql::Table < Baza::Table
   end
 
   def columns(args = nil)
-    @db.cols
+    @db.columns
     ret = []
     sql = "SHOW FULL COLUMNS FROM `#{@db.escape_table(name)}`"
     sql << " WHERE `Field` = '#{@db.esc(args.fetch(:name))}'" if args && args.key?(:name)
@@ -265,7 +265,7 @@ class Baza::Driver::Mysql::Table < Baza::Table
 
       col_data[:storage] = args[:all_cols_storage] if args[:all_cols_storage]
 
-      sql << @db.cols.data_sql(col_data)
+      sql << @db.columns.data_sql(col_data)
     end
 
     unless pkeys.empty?

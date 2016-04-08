@@ -60,7 +60,7 @@ class Baza::Table
 
   def create_columns(col_arr)
     col_arr.each do |col_data|
-      sql = "ALTER TABLE #{db.sep_col}#{name}#{db.sep_col} ADD COLUMN #{@db.cols.data_sql(col_data)};"
+      sql = "ALTER TABLE #{db.sep_col}#{name}#{db.sep_col} ADD COLUMN #{@db.columns.data_sql(col_data)};"
       @db.query(sql)
     end
   end

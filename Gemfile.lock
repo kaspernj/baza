@@ -118,6 +118,7 @@ GEM
       ruby-progressbar (~> 1.7)
       unicode-display_width (~> 1.0, >= 1.0.1)
     ruby-progressbar (1.7.5)
+    simple_delegate (0.0.1)
     simplecov (0.10.0)
       docile (~> 1.1.0)
       json (~> 1.8)
@@ -159,6 +160,7 @@ DEPENDENCIES
   rdoc
   rspec (= 3.4.0)
   rubocop (= 0.39.0)
+  simple_delegate (= 0.0.1)
   sqlite3
   string-cases (~> 0.0.4)
   wref (~> 0.0.8)

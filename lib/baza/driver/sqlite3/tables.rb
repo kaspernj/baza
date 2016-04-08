@@ -89,7 +89,7 @@ class Baza::Driver::Sqlite3::Tables
     data.fetch(:columns).each do |col_data|
       sql << ", " unless first
       first = false if first
-      sql << @db.cols.data_sql(col_data)
+      sql << @db.columns.data_sql(col_data)
     end
 
     sql << ")"
