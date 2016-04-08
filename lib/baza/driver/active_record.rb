@@ -88,7 +88,7 @@ class Baza::Driver::ActiveRecord < Baza::BaseSqlDriver
     @result_constant.new(self, @conn.execute(sql))
   end
 
-  alias_method :query_ubuf, :query
+  alias query_ubuf query
 
   def escape(str)
     @conn.quote_string(str.to_s)

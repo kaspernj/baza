@@ -10,7 +10,7 @@ class Baza::Driver::Mysql::Database < Baza::Database
     self
   end
 
-  CREATE_ALLOWED_KEYS = [:columns, :indexes, :temp, :return_sql]
+  CREATE_ALLOWED_KEYS = [:columns, :indexes, :temp, :return_sql].freeze
   # Creates a new table by the given name and data.
   def create_table(name, data, args = nil)
     raise "No columns was given for '#{name}'." if !data[:columns] || data[:columns].empty?

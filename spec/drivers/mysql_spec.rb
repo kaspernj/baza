@@ -2,7 +2,6 @@ require "spec_helper"
 
 describe Baza.const_get(:Driver).const_get(:Mysql) do
   let(:constant) do
-    name = described_class.name.split("::").last
     const_name = "InfoMysql"
     require "#{File.dirname(__FILE__)}/../#{StringCases.camel_to_snake(const_name)}"
     raise "Constant was not defined: '#{const_name}'." unless Baza.const_defined?(const_name)
@@ -29,9 +28,9 @@ describe Baza.const_get(:Driver).const_get(:Mysql) do
 
     begin
       db1.tables.create(:test_table, columns: [
-        {name: :id, type: :int, autoincr: true, primarykey: true},
-        {name: :name, type: :varchar, maxlength: 100}
-      ])
+                          {name: :id, type: :int, autoincr: true, primarykey: true},
+                          {name: :name, type: :varchar, maxlength: 100}
+                        ])
       test_table = db1.tables[:test_table]
 
 

@@ -9,12 +9,16 @@ shared_examples_for "a baza driver" do
     db.select(:test, text: "Kasper").fetch
   end
   let(:test_table) do
-    db.tables.create("test", columns: [
-      {name: "id", type: :int, autoincr: true, primarykey: true},
-      {name: "text", type: :varchar},
-      {name: "number", type: :int, default: 0},
-      {name: "float", type: :float, default: 0.0}
-    ])
+    db.tables.create(
+      "test",
+      columns: [
+        {name: "id", type: :int, autoincr: true, primarykey: true},
+        {name: "text", type: :varchar},
+        {name: "number", type: :int, default: 0},
+        {name: "float", type: :float, default: 0.0},
+        {name: "created_at", type: :datetime}
+      ]
+    )
     db.tables[:test]
   end
 
@@ -39,7 +43,7 @@ shared_examples_for "a baza driver" do
     end
 
     block_ran = 0
-    idq = Baza::Idquery.new(db: db, debug: false, table: :test, query: "SELECT id FROM test") do
+    Baza::Idquery.new(db: db, debug: false, table: :test, query: "SELECT id FROM test") do
       block_ran += 1
     end
 
@@ -114,7 +118,7 @@ shared_examples_for "a baza driver" do
 
       rows = test_table.rows.to_a.map(&:to_hash)
       rows[0][:float] = "0.0" if rows[0][:float] == "0"
-      expect(rows).to eq [{id: "1", text: "test1", number: "2", float: "0.0"}]
+      expect(rows).to eq [{id: "1", text: "test1", number: "2", float: "0.0", created_at: ""}]
     end
 
     it "inserts with empty terms" do
@@ -166,15 +170,18 @@ shared_examples_for "a baza driver" do
   it "is able to make new connections based on given objects" do
     # Mysql doesn't support it...
     unless db.opts.fetch(:type) == :mysql
-      new_db = Baza::Db.from_object(object: db.driver.conn)
+      Baza::Db.from_object(object: db.driver.conn)
     end
   end
 
   it "is able to do ID-queries through the select-method" do
-    db.tables.create(:test_table, columns: [
-      {name: :idrow, type: :int, autoincr: true, primarykey: true},
-      {name: :name, type: :varchar}
-    ])
+    db.tables.create(
+      :test_table,
+      columns: [
+        {name: :idrow, type: :int, autoincr: true, primarykey: true},
+        {name: :name, type: :varchar}
+      ]
+    )
 
     count = 0
     100.times do
@@ -198,10 +205,13 @@ shared_examples_for "a baza driver" do
   end
 
   it "uses query buffers" do
-    db.tables.create(:test_table, columns: [
-      {name: :id, type: :int, autoincr: true, primarykey: true},
-      {name: :name, type: :varchar}
-    ])
+    db.tables.create(
+      :test_table,
+      columns: [
+        {name: :id, type: :int, autoincr: true, primarykey: true},
+        {name: :name, type: :varchar}
+      ]
+    )
 
     upsert = false
     count_inserts = 0
@@ -313,14 +323,17 @@ shared_examples_for "a baza driver" do
   end
 
   it "does type translation" do
-    db_with_type_translation.tables.create(:test, columns: [
-      {name: "id", type: :int, autoincr: true, primarykey: true},
-      {name: "text", type: :varchar},
-      {name: "number", type: :int},
-      {name: "float", type: :float},
-      {name: "created_at", type: :datetime},
-      {name: "date", type: :date}
-    ])
+    db_with_type_translation.tables.create(
+      :test,
+      columns: [
+        {name: "id", type: :int, autoincr: true, primarykey: true},
+        {name: "text", type: :varchar},
+        {name: "number", type: :int},
+        {name: "float", type: :float},
+        {name: "created_at", type: :datetime},
+        {name: "date", type: :date}
+      ]
+    )
 
     db_with_type_translation.insert(:test, text: "Kasper", number: 30, float: 4.5, created_at: Time.now, date: Date.new(2015, 06, 17))
 
@@ -359,12 +372,18 @@ shared_examples_for "a baza driver" do
 
     query = db.new_query.from(:test).where(text: "Kasper").to_a
     query[0][:float] = query[0][:float].to_f.to_s if query[0][:float] == "0"
-    expect(query.to_a).to eq [{id: "1", text: "Kasper", number: "0", float: "0.0"}]
+    expect(query.to_a).to eq [{id: "1", text: "Kasper", number: "0", float: "0.0", created_at: ""}]
   end
 
   it "#last_id" do
     test_table.insert(text: "Kasper")
     expect(db.last_id).to eq 1
+  end
+
+  it "handels null values for datetimes" do
+    id = test_table.insert({text: "Kasper"}, return_id: true)
+    row = test_table.row(id)
+    expect(row[:created_at]).to eq ""
   end
 
   describe "#insert" do

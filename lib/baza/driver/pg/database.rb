@@ -49,7 +49,7 @@ class Baza::Driver::Pg::Database < Baza::Database
     self
   end
 
-  CREATE_ALLOWED_KEYS = [:columns, :indexes, :temp, :return_sql]
+  CREATE_ALLOWED_KEYS = [:columns, :indexes, :temp, :return_sql].freeze
   # Creates a new table by the given name and data.
   def create_table(table_name, data, args = nil)
     table_name = table_name.to_s

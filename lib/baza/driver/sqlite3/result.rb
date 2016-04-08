@@ -32,8 +32,14 @@ class Baza::Driver::Sqlite3::Result < Baza::ResultBase
 
   # Loops over every result yielding them.
   def each
-    while data = fetch
-      yield data
+    loop do
+      data = fetch
+
+      if data
+        yield data
+      else
+        break
+      end
     end
   end
 
@@ -50,12 +56,14 @@ private
   end
 
   def translate_type(value, type)
-    return if value.to_s.length == 0
+    return if value.to_s.empty?
 
     if type == "datetime"
-      Time.parse(value)
+      return nil if value == "NULL"
+      return Time.parse(value)
     elsif type == "date"
-      Date.parse(value)
+      return nil if value == "NULL"
+      return Date.parse(value)
     else
       value
     end
