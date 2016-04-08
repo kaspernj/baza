@@ -107,7 +107,7 @@ class Baza::Driver::Mysql::Column < Baza::Column
     drop_add = true if name.to_s != newdata[:name].to_s
 
     table.__send__(:remove_column_from_list, self) if drop_add
-    @db.query("ALTER TABLE #{table_escape} CHANGE #{col_escaped} #{@db.cols.data_sql(newdata)}")
+    @db.query("ALTER TABLE #{table_escape} CHANGE #{col_escaped} #{@db.columns.data_sql(newdata)}")
     @name = newdata[:name].to_s
     reload
     table.__send__(:add_column_to_list, self) if drop_add

@@ -24,7 +24,7 @@ class Baza::Driver::Mysql::Database < Baza::Database
       sql << ", " unless first
       first = false if first
       col_data.delete(:after) if col_data[:after]
-      sql << @db.cols.data_sql(col_data)
+      sql << @db.columns.data_sql(col_data)
     end
 
     if data[:indexes] && !data[:indexes].empty?

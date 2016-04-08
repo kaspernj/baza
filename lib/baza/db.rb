@@ -12,6 +12,12 @@
 #   print data[:name]
 # end
 class Baza::Db
+  include SimpleDelegate
+
+  delegate :last_id, :upsert, :upsert_duplicate_key, to_method: :commands
+  delegate :current_database, :current_database_name, :with_database, to_method: :databases
+  delegate :close, :count, :delete, :esc, :escape, :escape_column, :escape_table, :escape_database, :escape_index, :insert, :select, :single, :sqlval, :sql_make_where, to: :driver
+
   attr_reader :sep_database, :sep_col, :sep_table, :sep_val, :sep_index, :opts, :driver, :int_types
 
   # Returns an array containing hashes of information about each registered driver.
@@ -221,31 +227,8 @@ class Baza::Db
     {tables: tables_ret}
   end
 
-  def insert(table_name, data, args = {})
-    @driver.insert(table_name, data, args)
-  end
-
   def add_sql_to_error(error, sql)
     error.message << " (SQL: #{sql})"
-  end
-
-  # Returns the correct SQL-value for the given value.
-  # If it is a number, then just the raw number as a string will be returned.
-  # nil's will be NULL and strings will have quotes and will be escaped.
-  def sqlval(val)
-    return @conn.sqlval(val) if @conn.respond_to?(:sqlval)
-
-    if val.is_a?(Fixnum) || val.is_a?(Integer)
-      val.to_s
-    elsif val == nil
-      "NULL"
-    elsif val.is_a?(Date)
-      "#{@sep_val}#{Datet.in(val).dbstr(time: false)}#{@sep_val}"
-    elsif val.is_a?(Time) || val.is_a?(DateTime) || val.is_a?(Datet)
-      "#{@sep_val}#{Datet.in(val).dbstr}#{@sep_val}"
-    else
-      "#{@sep_val}#{escape(val)}#{@sep_val}"
-    end
   end
 
   # Simply and optimal insert multiple rows into a table in a single query. Uses the drivers functionality if supported or inserts each row manually.
@@ -302,168 +285,8 @@ class Baza::Db
     end
   end
 
-  # Checks if a given terms exists. If it does, updates it to match data. If not inserts the row.
-  def upsert(table, data, terms, args = {})
-    commands.upsert(table, data, terms, args)
-  end
-
   def in_transaction?
     @in_transaction
-  end
-
-  def upsert_duplicate_key(table_name, data, terms = {}, args = {})
-    commands.upsert_duplicate_key(table_name, data, terms, args)
-  end
-
-  SELECT_ARGS_ALLOWED_KEYS = [:limit, :limit_from, :limit_to].freeze
-  # Makes a select from the given arguments: table-name, where-terms and other arguments as limits and orders. Also takes a block to avoid raping of memory.
-  def select(tablename, arr_terms = nil, args = nil, &block)
-    # Set up vars.
-    sql = ""
-    args_q = nil
-    select_sql = "*"
-
-    # Give 'cloned_ubuf' argument to 'q'-method.
-    args_q = {cloned_ubuf: true} if args && args[:cloned_ubuf]
-
-    # Set up IDQuery-stuff if that is given in arguments.
-    if args && args[:idquery]
-      if args.fetch(:idquery) == true
-        select_sql = "#{sep_col}id#{sep_col}"
-        col = :id
-      else
-        select_sql = "#{sep_col}#{escape_column(args.fetch(:idquery))}#{sep_col}"
-        col = args.fetch(:idquery)
-      end
-    end
-
-    sql = "SELECT #{select_sql} FROM"
-
-    if tablename.is_a?(Array)
-      sql << " #{@sep_table}#{tablename.first}#{@sep_table}.#{@sep_table}#{tablename.last}#{@sep_table}"
-    else
-      sql << " #{@sep_table}#{tablename}#{@sep_table}"
-    end
-
-    if !arr_terms.nil? && !arr_terms.empty?
-      sql << " WHERE #{sql_make_where(arr_terms)}"
-    end
-
-    unless args.nil?
-      if args[:orderby]
-        sql << " ORDER BY"
-
-        if args.fetch(:orderby).is_a?(Array)
-          first = true
-          args.fetch(:orderby).each do |order_by|
-            sql << "," unless first
-            first = false if first
-            sql << " #{sep_col}#{escape_column(order_by)}#{sep_col}"
-          end
-        else
-          sql << " #{sep_col}#{escape_column(args.fetch(:orderby))}#{sep_col}"
-        end
-      end
-
-      sql << " LIMIT #{args[:limit]}" if args[:limit]
-
-      if args[:limit_from] && args[:limit_to]
-        begin
-          Float(args[:limit_from])
-        rescue
-          raise "'limit_from' was not numeric: '#{args.fetch(:limit_from)}'."
-        end
-
-        begin
-          Float(args[:limit_to])
-        rescue
-          raise "'limit_to' was not numeric: '#{args[:limit_to]}'."
-        end
-
-        sql << " LIMIT #{args.fetch(:limit_from)}, #{args.fetch(:limit_to)}"
-      end
-    end
-
-    # Do IDQuery if given in arguments.
-    if args && args[:idquery]
-      res = Baza::Idquery.new(db: self, table: tablename, query: sql, col: col, &block)
-    else
-      res = q(sql, args_q, &block)
-    end
-
-    # Return result if a block wasnt given.
-    if block
-      return nil
-    else
-      return res
-    end
-  end
-
-  def count(tablename, arr_terms = nil)
-    sql = "SELECT COUNT(*) AS count FROM #{@sep_table}#{tablename}#{@sep_table}"
-
-    if !arr_terms.nil? && !arr_terms.empty?
-      sql << " WHERE #{sql_make_where(arr_terms)}"
-    end
-
-    query(sql).fetch.fetch(:count).to_i
-  end
-
-  # Returns a single row from a database.
-  #
-  #===Examples
-  # row = db.single(:users, lastname: "Doe")
-  def single(tablename, terms = nil, args = {})
-    # Experienced very weird memory leak if this was not done by block. Maybe bug in Ruby 1.9.2? - knj
-    select(tablename, terms, args.merge(limit: 1)).fetch
-  end
-
-  alias selectsingle single
-
-  # Deletes rows from the database.
-  #
-  #===Examples
-  # db.delete(:users, {lastname: "Doe"})
-  def delete(tablename, arr_terms, args = nil)
-    sql = "DELETE FROM #{@sep_table}#{tablename}#{@sep_table}"
-
-    if !arr_terms.nil? && !arr_terms.empty?
-      sql << " WHERE #{sql_make_where(arr_terms)}"
-    end
-
-    return sql if args && args[:return_sql]
-
-    query(sql)
-    nil
-  end
-
-  # Internally used to generate SQL.
-  #
-  #===Examples
-  # sql = db.sql_make_where({lastname: "Doe"}, driver_obj)
-  def sql_make_where(arr_terms, _driver = nil)
-    sql = ""
-
-    first = true
-    arr_terms.each do |key, value|
-      if first
-        first = false
-      else
-        sql << " AND "
-      end
-
-      if value.is_a?(Array)
-        raise "Array for column '#{key}' was empty." if value.empty?
-        values = value.map { |v| "'#{escape(v)}'" }.join(",")
-        sql << "#{@sep_col}#{key}#{@sep_col} IN (#{values})"
-      elsif value.is_a?(Hash)
-        raise "Dont know how to handle hash."
-      else
-        sql << "#{@sep_col}#{key}#{@sep_col} = #{sqlval(value)}"
-      end
-    end
-
-    sql
   end
 
   # Executes a query and returns the result.
@@ -550,54 +373,6 @@ class Baza::Db
     nil
   end
 
-  # Returns the last inserted ID.
-  #
-  #===Examples
-  # id = db.last_id
-  def last_id
-    commands.last_id
-  end
-
-  def current_database_name
-    databases.current_database_name
-  end
-
-  def current_database
-    databases.current_database
-  end
-
-  def with_database(name, &blk)
-    databases.with_database(name, &blk)
-  end
-
-  # Escapes a string to be safe-to-use in a query-string.
-  #
-  #===Examples
-  # db.q("INSERT INTO users (name) VALUES ('#{db.esc('John')}')")
-  def escape(string)
-    @driver.escape(string)
-  end
-
-  alias esc escape
-
-  # Escapes the given string to be used as a column.
-  def escape_column(str)
-    @driver.escape_column(str)
-  end
-
-  # Escapes the given string to be used as a table.
-  def escape_table(str)
-    @driver.escape_table(str)
-  end
-
-  def escape_database(str)
-    @driver.escape_database(str)
-  end
-
-  def escape_index(str)
-    @driver.escape_index(str)
-  end
-
   # Returns a string which can be used in SQL with the current driver.
   #===Examples
   # str = db.date_out(Time.now) #=> "2012-05-20 22:06:09"
@@ -611,37 +386,23 @@ class Baza::Db
   # db.date_in('2012-05-20 22:06:09') #=> 2012-05-20 22:06:09 +0200
   def date_in(date_obj)
     return @driver.date_in(date_obj) if @driver.respond_to?(:date_in)
-
     Datet.in(date_obj)
   end
 
-  def databases
-    require_relative "driver/#{@opts.fetch(:type)}/databases"
-    @databases ||= Baza::Driver.const_get(@type_cc).const_get(:Databases).new(db: self)
-  end
+  # Defines all the driver methods: tables, columns and so on
+  DRIVER_PARTS = [:databases, :tables, :commands, :columns, :indexes, :users, :sqlspecs].freeze
+  DRIVER_PARTS.each do |driver_part|
+    define_method(driver_part) do
+      if instance_variable_defined?(:"@#{driver_part}")
+        instance_variable_get(:"@#{driver_part}")
+      else
+        require_relative "driver/#{@opts.fetch(:type)}/#{driver_part}"
 
-  # Returns the table-module and spawns it if it isnt already spawned.
-  def tables
-    @tables ||= Baza::Driver.const_get(@type_cc).const_get(:Tables).new(db: self)
-  end
-
-  def commands
-    @commands ||= Baza::Driver.const_get(@type_cc).const_get(:Commands).new(db: self)
-  end
-
-  # Returns the columns-module and spawns it if it isnt already spawned.
-  def cols
-    @cols ||= Baza::Driver.const_get(@type_cc).const_get(:Columns).new(db: self)
-  end
-
-  # Returns the index-module and spawns it if it isnt already spawned.
-  def indexes
-    @indexes ||= Baza::Driver.const_get(@type_cc).const_get(:Indexes).new(db: self)
-  end
-
-  # Returns the SQLSpec-module and spawns it if it isnt already spawned.
-  def sqlspecs
-    @sqlspecs ||= Baza::Driver.const_get(@type_cc).const_get(:Sqlspecs).new(db: self)
+        instance = Baza::Driver.const_get(@type_cc).const_get(StringCases.snake_to_camel(driver_part)).new(db: self)
+        instance_variable_set(:"@#{driver_part}", instance)
+        instance
+      end
+    end
   end
 
   def supports_multiple_databases?

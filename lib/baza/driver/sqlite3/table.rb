@@ -87,7 +87,7 @@ class Baza::Driver::Sqlite3::Table < Baza::Table
   end
 
   def columns
-    @db.cols
+    @db.columns
     ret = []
 
     @db.query("PRAGMA table_info(`#{@db.escape_table(name)}`)") do |d_cols|
@@ -122,7 +122,7 @@ class Baza::Driver::Sqlite3::Table < Baza::Table
       # if col_data.key?("after")
       #  self.create_column_programmatic(col_data)
       # else
-      @db.query("ALTER TABLE `#{name}` ADD COLUMN #{@db.cols.data_sql(col_data)};")
+      @db.query("ALTER TABLE `#{name}` ADD COLUMN #{@db.columns.data_sql(col_data)};")
       # end
     end
   end
@@ -138,10 +138,10 @@ class Baza::Driver::Sqlite3::Table < Baza::Table
     cols_cur.each do |name, col|
       sql << ", " unless first
       first = false if first
-      sql << @db.cols.data_sql(col.data)
+      sql << @db.columns.data_sql(col.data)
 
       if col_data[:after] && col_data[:after] == name
-        sql << ", #{@db.cols.data_sql(col_data)}"
+        sql << ", #{@db.columns.data_sql(col_data)}"
       end
     end
     sql << ");"
@@ -170,7 +170,7 @@ class Baza::Driver::Sqlite3::Table < Baza::Table
     columns.each do |col|
       sql << ", " unless first
       first = false if first
-      sql << @db.cols.data_sql(col.data)
+      sql << @db.columns.data_sql(col.data)
     end
     sql << ");"
 
@@ -219,15 +219,15 @@ class Baza::Driver::Sqlite3::Table < Baza::Table
       first = false if first
 
       if args.key?(:alter_columns) && args[:alter_columns][col.name]
-        sql << @db.cols.data_sql(args[:alter_columns][col.name])
+        sql << @db.columns.data_sql(args[:alter_columns][col.name])
       else
-        sql << @db.cols.data_sql(col.data)
+        sql << @db.columns.data_sql(col.data)
       end
 
       next unless args[:new]
       args[:new].each do |col_data|
         if col_data[:after] && col_data[:after] == col.name
-          sql << ", #{@db.cols.data_sql(col_data)}"
+          sql << ", #{@db.columns.data_sql(col_data)}"
         end
       end
     end

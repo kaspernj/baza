@@ -12,5 +12,6 @@ describe Baza::Driver::ActiveRecord do
   it_should_behave_like "a baza tables driver"
   it_should_behave_like "a baza columns driver"
   it_should_behave_like "a baza indexes driver"
+  it_should_behave_like "a baza users driver"
   it_should_behave_like "an active record driver"
 end
