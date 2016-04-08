@@ -4,7 +4,6 @@ class Baza::InfoPg
   def initialize(args = {})
     @db = Baza::Db.new({
       type: :pg,
-      host: "127.0.0.1",
       user: "postgres",
       db: "baza",
       debug: false
