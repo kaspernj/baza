@@ -11,7 +11,7 @@ before_script:
   - cp spec/info_active_record_mysql_travis.rb spec/info_active_record_mysql.rb
   - cp spec/info_active_record_mysql2_travis.rb spec/info_active_record_mysql2.rb
   - cp spec/info_active_record_pg_travis.rb spec/info_active_record_pg.rb
-  - mysql -e 'CREATE DATABASE baza;'
+  - mysql -e 'CREATE DATABASE IF NOT EXISTS baza;'
   - psql -c 'DROP DATABASE IF EXISTS "baza";' -U postgres
   - psql -c 'CREATE DATABASE "baza";' -U postgres
 script:
