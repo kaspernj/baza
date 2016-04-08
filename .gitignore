@@ -48,8 +48,6 @@ pkg
 # For rubinius:
 #*.rbc
 
-.rubocop.yml
-
 spec/info_mysql.rb
 spec/info_mysql2.rb
 spec/info_active_record.rb
