@@ -22,7 +22,8 @@ GEM
     ast (2.2.0)
     auto_autoloader (0.0.1)
       string-cases
-    best_practice_project (0.0.7)
+    best_practice_project (0.0.9)
+      auto_autoloader
     builder (3.2.2)
     codeclimate-test-reporter (0.4.7)
       simplecov (>= 0.7.1, < 1.0.0)
@@ -143,7 +144,7 @@ DEPENDENCIES
   activerecord-jdbc-adapter
   array_enumerator (~> 0.0.10)
   auto_autoloader (~> 0.0.1)
-  best_practice_project (= 0.0.7)
+  best_practice_project (= 0.0.9)
   bundler
   codeclimate-test-reporter
   datet (~> 0.0.25)

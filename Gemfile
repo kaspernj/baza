@@ -26,7 +26,7 @@ group :development, :test do
   gem "mysql2", "0.4.2", platform: :ruby
   gem "pg", "0.18.4", platform: :ruby
   gem "activerecord", "4.2.5"
-  gem "best_practice_project", "0.0.7", require: false
+  gem "best_practice_project", "0.0.9", require: false
   gem "rubocop", "0.39.0", require: false
 end
 
