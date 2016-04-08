@@ -50,8 +50,14 @@ class Baza::Driver::Mysql::UnbufferedResult < Baza::ResultBase
 
   # Loops over every single result yielding it.
   def each
-    while row = fetch
-      yield row
+    loop do
+      row = fetch
+
+      if row
+        yield row
+      else
+        break
+      end
     end
   end
 

@@ -2,7 +2,7 @@
 class Baza::QueryBuffer
   attr_reader :thread_async
 
-  INITIALIZE_ARGS_ALLOWED = [:db, :debug, :flush_async]
+  INITIALIZE_ARGS_ALLOWED = [:db, :debug, :flush_async].freeze
   # Constructor. Takes arguments to be used and a block.
   def initialize(args)
     @args = args
@@ -110,7 +110,7 @@ private
   end
 
   def thread_async_join
-    if thread = @thread_async
+    if (thread = @thread_async)
       thread.join
     end
   end

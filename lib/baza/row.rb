@@ -13,7 +13,6 @@ class Baza::Row
       @args[key.to_sym] = value
     end
 
-    @args[:objects] = $objects if !@args[:objects] && $objects && $objects.is_a?(Baza::ModelHandler)
     @args[:col_id] ||= :id
     raise "No table given." unless @args[:table]
 
@@ -44,7 +43,7 @@ class Baza::Row
     false
   end
 
-  alias_method :objects, :ob
+  alias objects ob
 
   def reload
     last_id = id
@@ -60,14 +59,14 @@ class Baza::Row
   end
 
   def update(newdata)
-    db.update(@args[:table], newdata, @args[:col_id] => id)
+    db.update(@args.fetch(:table), newdata, @args.fetch(:col_id) => id)
     reload
 
     ob.call("object" => self, "signal" => "update") if ob
   end
 
   def delete
-    db.delete(@args[:table], @args[:col_id] => id)
+    db.delete(@args.fetch(:table), @args.fetch(:col_id) => id)
     destroy
   end
 
@@ -101,7 +100,7 @@ class Baza::Row
   end
 
   def id
-    @data[@args[:col_id]]
+    @data.fetch(@args.fetch(:col_id))
   end
 
   def to_param
@@ -109,18 +108,18 @@ class Baza::Row
   end
 
   def title
-    return @data[@args[:col_title].to_sym] if @args[:col_title]
+    return @data[@args.fetch(:col_title).to_sym] if @args[:col_title]
 
     if @data.key?(:title)
-      return @data[:title]
+      return @data.fetch(:title)
     elsif @data.key?(:name)
-      return @data[:name]
+      return @data.fetch(:name)
     end
 
     raise "'col_title' has not been set for the class: '#{self.class}'."
   end
 
-  alias_method :name, :title
+  alias name title
 
   def each(*args, &blk)
     @data.each(*args, &blk)
@@ -139,10 +138,10 @@ class Baza::Row
   end
 
   def method_missing(func_name, *args)
-    if match = func_name.to_s.match(/^(\S+)\?$/) && @data.key?(match[1].to_sym)
-      if @data[match[1].to_sym] == "1" || @data[match[1].to_sym] == "yes"
+    if (match = func_name.to_s.match(/^(\S+)\?$/)) && @data.key?(match[1].to_sym)
+      if @data.fetch(match[1].to_sym) == "1" || @data.fetch(match[1].to_sym) == "yes"
         return true
-      elsif @data[match[1].to_sym] == "0" || @data[match[1].to_sym] == "no"
+      elsif @data.fetch(match[1].to_sym) == "0" || @data.fetch(match[1].to_sym) == "no"
         return false
       end
     end

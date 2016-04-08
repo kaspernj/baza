@@ -27,7 +27,7 @@ class Baza::Driver::Mysql::Table < Baza::Table
   end
 
   def drop
-    raise "Cant drop native table: '#{name}'" if self.native?
+    raise "Cant drop native table: '#{name}'" if native?
 
     @db.with_database(database_name) do
       @db.query("DROP TABLE `#{@db.escape_table(name)}`")
@@ -52,9 +52,8 @@ class Baza::Driver::Mysql::Table < Baza::Table
   def column(name)
     name = name.to_s
 
-    if col = @list.get(name)
-      return @list[name]
-    end
+    col = @list.get(name)
+    return col if col
 
     columns(name: name) do |col_i|
       return col_i if col_i.name == name
@@ -135,9 +134,8 @@ class Baza::Driver::Mysql::Table < Baza::Table
   def index(name)
     name = name.to_s
 
-    if index = @indexes_list.get(name)
-      return index
-    end
+    index = @indexes_list.get(name)
+    return index if index
 
     indexes(name: name) do |index_i|
       return index_i if index_i.name == name
@@ -317,7 +315,7 @@ class Baza::Driver::Mysql::Table < Baza::Table
 
   # Changes the engine for a table.
   def engine=(newengine)
-    raise "Invalid engine: '#{newengine}'." unless newengine.to_s.match(/^[A-z]+$/)
+    raise "Invalid engine: '#{newengine}'." unless newengine.to_s =~ /^[A-z]+$/
     @db.query("ALTER TABLE `#{@db.escape_table(name)}` ENGINE = #{newengine}") if engine.to_s != newengine.to_s
     @data[:ENGINE] = newengine
   end

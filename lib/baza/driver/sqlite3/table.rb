@@ -129,7 +129,7 @@ class Baza::Driver::Sqlite3::Table < Baza::Table
 
   def create_column_programmatic(col_data)
     temp_name = "temptable_#{Time.now.to_f.to_s.hash}"
-    cloned_tabled = clone(temp_name)
+    clone(temp_name)
     cols_cur = columns
     @db.query("DROP TABLE `#{name}`")
 
@@ -182,7 +182,7 @@ class Baza::Driver::Sqlite3::Table < Baza::Table
     indexes.each do |index|
       index_name = index.name.gsub(/\A#{Regexp.escape(name)}_/, "")
 
-      if @db.opts[:index_append_table_name] && match = index_name.match(/\A(.+?)__(.+)\Z/)
+      if @db.opts[:index_append_table_name] && (match = index_name.match(/\A(.+?)__(.+)\Z/))
         index_name = match[2]
       else
         # Two indexes with the same name can't exist, and we are cloning, so we need to change the name
@@ -206,7 +206,7 @@ class Baza::Driver::Sqlite3::Table < Baza::Table
 
   def copy(args = {})
     temp_name = "temptable_#{Time.now.to_f.to_s.hash}"
-    cloned_tabled = clone(temp_name)
+    clone(temp_name)
     cols_cur = columns
     @db.query("DROP TABLE `#{name}`")
 
@@ -376,8 +376,8 @@ class Baza::Driver::Sqlite3::Table < Baza::Table
     ret
   end
 
-  def insert(data)
-    @db.insert(name, data)
+  def insert(data, args = {})
+    @db.insert(name, data, args)
   end
 
   def to_s

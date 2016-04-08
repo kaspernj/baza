@@ -2,7 +2,6 @@ require "spec_helper"
 
 describe Baza::Driver::Sqlite3 do
   let(:constant) do
-    name = described_class.name.split("::").last
     const_name = "InfoSqlite3"
     require "#{File.dirname(__FILE__)}/../#{StringCases.camel_to_snake(const_name)}"
     raise "Constant was not defined: '#{const_name}'." unless Baza.const_defined?(const_name)
@@ -37,7 +36,7 @@ describe Baza::Driver::Sqlite3 do
       table1.insert(testname: "TestRow#{count}")
     end
 
-    expect { table2 = db2.tables[:test_table] }.to raise_error(Baza::Errors::TableNotFound)
+    expect { db2.tables[:test_table] }.to raise_error(Baza::Errors::TableNotFound)
 
     db.copy_to(db2)
 

@@ -39,16 +39,16 @@ class Baza::Driver::Sqlite3::Column < Baza::Column
   # Returns the type of the column.
   def type
     unless @type
-      if match = @data.fetch(:type).match(/^([A-z]+)$/)
+      if (match = @data.fetch(:type).match(/^([A-z]+)$/))
         @maxlength = false
         type = match[0].downcase.to_sym
-      elsif match = @data.fetch(:type).match(/^decimal\((\d+),(\d+)\)$/)
+      elsif (match = @data.fetch(:type).match(/^decimal\((\d+),(\d+)\)$/))
         @maxlength = "#{match[1]},#{match[2]}"
         type = :decimal
-      elsif match = @data.fetch(:type).match(/^enum\((.+)\)$/)
+      elsif (match = @data.fetch(:type).match(/^enum\((.+)\)$/))
         @maxlength = match[1]
         type = :enum
-      elsif match = @data.fetch(:type).match(/^(.+)\((\d+)\)$/)
+      elsif (match = @data.fetch(:type).match(/^(.+)\((\d+)\)$/))
         @maxlength = match[2]
         type = match[1].to_sym
       elsif @data.key?(:type) && @data.fetch(:type).to_s == ""
@@ -99,7 +99,7 @@ class Baza::Driver::Sqlite3::Column < Baza::Column
 
   # Returns true if the column is auto-increasing.
   def autoincr?
-    primarykey? && @data.fetch(:type).downcase == "integer"
+    primarykey? && @data.fetch(:type).casecmp("integer").zero?
   end
 
   # Drops the column from the table.
@@ -132,7 +132,7 @@ class Baza::Driver::Sqlite3::Column < Baza::Column
     @type = nil
     @maxlength = nil
 
-    new_table = table.copy(
+    table.copy(
       alter_columns: {
         name => newdata
       }

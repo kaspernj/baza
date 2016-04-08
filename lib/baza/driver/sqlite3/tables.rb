@@ -14,9 +14,8 @@ class Baza::Driver::Sqlite3::Tables
   def [](table_name)
     table_name = table_name.to_s
 
-    if ret = @list.get(table_name)
-      return ret
-    end
+    ret = @list.get(table_name)
+    return ret if ret
 
     list(name: table_name) do |table|
       return table if table.name == table_name
@@ -32,7 +31,7 @@ class Baza::Driver::Sqlite3::Tables
       tables_args = {type: "table"}
       tables_args[:name] = args.fetch(:name) if args[:name]
 
-      q_tables = @db.select("sqlite_master", tables_args, orderby: "name") do |d_tables|
+      @db.select("sqlite_master", tables_args, orderby: "name") do |d_tables|
         table_name = d_tables.fetch(:name)
         next if table_name == "sqlite_sequence"
 
@@ -76,7 +75,7 @@ class Baza::Driver::Sqlite3::Tables
     @list[table.name] = table
   end
 
-  CREATE_ALLOWED_KEYS = [:indexes, :columns]
+  CREATE_ALLOWED_KEYS = [:indexes, :columns].freeze
   def create(name, data, args = nil)
     data.each_key do |key|
       raise "Invalid key: '#{key}' (#{key.class.name})." unless CREATE_ALLOWED_KEYS.include?(key)

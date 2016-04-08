@@ -10,12 +10,10 @@ class Baza::SqlQueries::PostgresUpsertDuplicateKey
   def execute
     if @db.commands.version.to_f >= 9.5
       @db.query(on_conflict_sql)
+    elsif @terms.empty?
+      return insert_and_register_conflict
     else
-      if @terms.empty?
-        return insert_and_register_conflict
-      else
-        @db.query(begin_update_exception_sql)
-      end
+      @db.query(begin_update_exception_sql)
     end
 
     @db.last_id if @return_id
@@ -85,7 +83,7 @@ private
   end
 
   def update_sql
-    sql = "UPDATE #{@db.sep_table}#{@db.escape_table(@table_name)}#{@db.sep_table} #{update_set_sql} #{update_where_sql}"
+    "UPDATE #{@db.sep_table}#{@db.escape_table(@table_name)}#{@db.sep_table} #{update_set_sql} #{update_where_sql}"
   end
 
   def update_set_sql

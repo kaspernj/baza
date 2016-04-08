@@ -1,11 +1,11 @@
 # This class controls the result for the Java-MySQL-driver.
 class Baza::JdbcResult < Baza::ResultBase
-  INT_TYPES = {-6 => true, -5 => true, 4 => true, 5 => true}
-  FLOAT_TYPES = {2 => true, 3 => true, 7 => true, 8 => true}
-  TIME_TYPES = {93 => true}
-  DATE_TYPES = {91 => true}
-  STRING_TYPES = {-1 => true, 1 => true, 12 => true}
-  NIL_TYPES = {0 => true}
+  INT_TYPES = {-6 => true, -5 => true, 4 => true, 5 => true}.freeze
+  FLOAT_TYPES = {2 => true, 3 => true, 7 => true, 8 => true}.freeze
+  TIME_TYPES = {93 => true}.freeze
+  DATE_TYPES = {91 => true}.freeze
+  STRING_TYPES = {-1 => true, 1 => true, 12 => true}.freeze
+  NIL_TYPES = {0 => true}.freeze
 
   # Constructor. This should not be called manually.
   def initialize(driver, stmt, result_set, preload_results)
@@ -20,15 +20,21 @@ class Baza::JdbcResult < Baza::ResultBase
   def fetch
     if @read_results
       return false if @rows.empty?
-      row = @rows.shift
+      @rows.shift
     else
-      return read_row
+      read_row
     end
   end
 
   def each
-    while data = fetch
-      yield data
+    loop do
+      data = fetch
+
+      if data
+        yield data
+      else
+        break
+      end
     end
   end
 
@@ -61,7 +67,9 @@ private
     @read_results = true
 
     loop do
-      if row = read_row
+      row = read_row
+
+      if row
         @rows << row
       else
         break

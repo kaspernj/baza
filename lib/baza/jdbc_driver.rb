@@ -49,7 +49,7 @@ private
   def query_with_statement(sql, preload_results)
     @mutex.synchronize do
       begin
-        if sql.match(/^\s*(delete|update|create|drop|insert\s+into|alter|truncate)\s+/i)
+        if sql =~ /^\s*(delete|update|create|drop|insert\s+into|alter|truncate)\s+/i
           return query_no_result_set(sql)
         else
           stmt = yield

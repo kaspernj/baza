@@ -3,7 +3,6 @@ require_relative "../../lib/baza/driver/active_record"
 
 describe Baza::Driver::ActiveRecord do
   let(:constant) do
-    name = described_class.name.split("::").last
     const_name = "InfoActiveRecordSqlite3"
     require "#{File.dirname(__FILE__)}/../#{StringCases.camel_to_snake(const_name)}"
     raise "Constant was not defined: '#{const_name}'." unless Baza.const_defined?(const_name)
