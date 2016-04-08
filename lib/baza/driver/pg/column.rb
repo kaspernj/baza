@@ -92,7 +92,6 @@ class Baza::Driver::Pg::Column < Baza::Column
 
     if data.key?(:default) && data.fetch(:default) != default
       if data.fetch(:default).nil?
-        default = "NULL"
         @db.query("#{alter_column_sql} DROP DEFAULT")
       else
         default = "'#{@db.esc(data.fetch(:default))}'"

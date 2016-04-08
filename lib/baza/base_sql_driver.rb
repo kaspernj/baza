@@ -27,8 +27,8 @@ class Baza::BaseSqlDriver
     end
   end
 
-  alias_method :esc, :escape
-  alias_method :escape_alternative, :escape
+  alias esc escape
+  alias escape_alternative escape
 
   # Escapes a string to be used as a column.
   def escape_column(string)
@@ -61,8 +61,9 @@ class Baza::BaseSqlDriver
     begin
       yield @db
       @db.q("COMMIT")
-    rescue => e
+    rescue
       @db.q("ROLLBACK")
+      raise
     end
   end
 
@@ -73,7 +74,7 @@ class Baza::BaseSqlDriver
   # id = db.insert(:users, {name: "John", lastname: "Doe"}, return_id: true)
   # sql = db.insert(:users, {name: "John", lastname: "Doe"}, return_sql: true) #=> "INSERT INTO `users` (`name`, `lastname`) VALUES ('John', 'Doe')"
   def insert(table_name, data, args = {})
-    command = Baza::SqlQueries::GenericInsert.new({
+    Baza::SqlQueries::GenericInsert.new({
       db: @db,
       table_name: table_name,
       data: data

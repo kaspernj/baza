@@ -11,11 +11,11 @@ shared_examples_for "an active record driver" do
   end
   let(:test_table) do
     db.tables.create("test", columns: [
-      {name: "id", type: :int, autoincr: true, primarykey: true},
-      {name: "text", type: :varchar},
-      {name: "number", type: :int, default: 0},
-      {name: "float", type: :float, default: 0.0}
-    ])
+                       {name: "id", type: :int, autoincr: true, primarykey: true},
+                       {name: "text", type: :varchar},
+                       {name: "number", type: :int, default: 0},
+                       {name: "float", type: :float, default: 0.0}
+                     ])
     db.tables[:test]
   end
 

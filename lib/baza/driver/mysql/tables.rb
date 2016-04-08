@@ -22,9 +22,8 @@ class Baza::Driver::Mysql::Tables
   def [](table_name)
     table_name = table_name.to_s
 
-    if table = @list[table_name]
-      return table
-    end
+    table = @list[table_name]
+    return table if table
 
     list(name: table_name) do |table_i|
       return table_i if table_i.name == table_name

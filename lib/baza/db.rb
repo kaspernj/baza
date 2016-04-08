@@ -112,7 +112,7 @@ class Baza::Db
   end
 
   # Registers a driver to the current thread.
-  def get_and_register_thread
+  def register_thread
     raise "Baza-object is not in threadding mode" unless @conns
 
     thread_cur = Thread.current
@@ -143,15 +143,13 @@ class Baza::Db
     @closed = true
   end
 
-  # rubocop:disable Style/TrivialAccessors
   def closed?
-    # rubocop:enable Style/TrivialAccessors
     @closed
   end
 
   # Clones the current database-connection with possible extra arguments.
   def clone_conn(args = {})
-    conn = Baza::Db.new(opts = @opts.clone.merge(args))
+    conn = Baza::Db.new(@opts.merge(args))
 
     if block_given?
       begin
@@ -166,7 +164,7 @@ class Baza::Db
     end
   end
 
-  COPY_TO_ALLOWED_ARGS = [:tables, :debug]
+  COPY_TO_ALLOWED_ARGS = [:tables, :debug].freeze
   # Copies the content of the current database to another instance of Baza::Db.
   def copy_to(db, args = {})
     debug = args[:debug]
@@ -231,7 +229,9 @@ class Baza::Db
     error.message << " (SQL: #{sql})"
   end
 
-  # Returns the correct SQL-value for the given value. If it is a number, then just the raw number as a string will be returned. nil's will be NULL and strings will have quotes and will be escaped.
+  # Returns the correct SQL-value for the given value.
+  # If it is a number, then just the raw number as a string will be returned.
+  # nil's will be NULL and strings will have quotes and will be escaped.
   def sqlval(val)
     return @conn.sqlval(val) if @conn.respond_to?(:sqlval)
 
@@ -307,9 +307,7 @@ class Baza::Db
     commands.upsert(table, data, terms, args)
   end
 
-  # rubocop:disable Style/TrivialAccessors
   def in_transaction?
-    # rubocop:enable Style/TrivialAccessors
     @in_transaction
   end
 
@@ -317,7 +315,7 @@ class Baza::Db
     commands.upsert_duplicate_key(table_name, data, terms, args)
   end
 
-  SELECT_ARGS_ALLOWED_KEYS = [:limit, :limit_from, :limit_to]
+  SELECT_ARGS_ALLOWED_KEYS = [:limit, :limit_from, :limit_to].freeze
   # Makes a select from the given arguments: table-name, where-terms and other arguments as limits and orders. Also takes a block to avoid raping of memory.
   def select(tablename, arr_terms = nil, args = nil, &block)
     # Set up vars.
@@ -402,10 +400,6 @@ class Baza::Db
   end
 
   def count(tablename, arr_terms = nil)
-    # Set up vars.
-    sql = ""
-    args_q = nil
-
     sql = "SELECT COUNT(*) AS count FROM #{@sep_table}#{tablename}#{@sep_table}"
 
     if !arr_terms.nil? && !arr_terms.empty?
@@ -424,7 +418,7 @@ class Baza::Db
     select(tablename, terms, args.merge(limit: 1)).fetch
   end
 
-  alias_method :selectsingle, :single
+  alias selectsingle single
 
   # Deletes rows from the database.
   #
@@ -512,7 +506,7 @@ class Baza::Db
     ret
   end
 
-  alias_method :q, :query
+  alias q query
 
   # Execute an ubuffered query and returns the result.
   #
@@ -584,7 +578,7 @@ class Baza::Db
     @driver.escape(string)
   end
 
-  alias_method :esc, :escape
+  alias esc escape
 
   # Escapes the given string to be used as a column.
   def escape_column(str)

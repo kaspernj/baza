@@ -25,8 +25,14 @@ class Baza::Driver::Sqlite3Java::UnbufferedResult < Baza::ResultBase
   end
 
   def each
-    while data = fetch
-      yield data
+    loop do
+      data = fetch
+
+      if data
+        yield data
+      else
+        break
+      end
     end
   end
 end

@@ -70,8 +70,14 @@ class Baza::Idquery
   #   print "Name: #{data[:name]}\n"
   # end
   def each
-    while data = fetch
-      yield(data)
+    loop do
+      data = fetch
+
+      if data
+        yield data
+      else
+        break
+      end
     end
   end
 

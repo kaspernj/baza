@@ -27,7 +27,7 @@ group :development, :test do
   gem "pg", "0.18.4", platform: :ruby
   gem "activerecord", "4.2.5"
   gem "best_practice_project", "0.0.7", require: false
-  gem "rubocop", "0.35.1", require: false
+  gem "rubocop", "0.39.0", require: false
 end
 
 gem "codeclimate-test-reporter", group: :test, require: nil

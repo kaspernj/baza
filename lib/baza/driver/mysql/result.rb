@@ -5,18 +5,18 @@ class Baza::Driver::Mysql::Result < Baza::ResultBase
     ::Mysql::Field::TYPE_TINY => true,
     ::Mysql::Field::TYPE_LONG => true,
     ::Mysql::Field::TYPE_YEAR => true
-  }
+  }.freeze
   FLOAT_TYPES = {
     ::Mysql::Field::TYPE_DECIMAL => true,
     ::Mysql::Field::TYPE_FLOAT => true,
     ::Mysql::Field::TYPE_DOUBLE => true
-  }
+  }.freeze
   TIME_TYPES = {
     ::Mysql::Field::TYPE_DATETIME => true
-  }
+  }.freeze
   DATE_TYPES = {
     ::Mysql::Field::TYPE_DATE => true
-  }
+  }.freeze
 
   # Constructor. This should not be called manually.
   def initialize(driver, result)
@@ -49,6 +49,8 @@ class Baza::Driver::Mysql::Result < Baza::ResultBase
       fetched.collect!.with_index do |value, count|
         translate_value_to_type(value, @types[count])
       end
+    elsif @type_translation == :string
+      fetched.collect!(&:to_s)
     end
 
     Hash[*@keys.zip(fetched).flatten]
@@ -56,8 +58,14 @@ class Baza::Driver::Mysql::Result < Baza::ResultBase
 
   # Loops over every result yielding it.
   def each
-    while data = fetch
-      yield data
+    loop do
+      data = fetch
+
+      if data
+        yield data
+      else
+        break
+      end
     end
   end
 
