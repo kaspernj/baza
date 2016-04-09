@@ -34,8 +34,6 @@ class Baza::SqlQueries::GenericInsert
 private
 
   def sql_default_values
-    sql = ""
-
     if @db.opts.fetch(:type).to_s.include?("mysql")
       "VALUES ()" # This is the correct syntax for inserting a blank row in MySQL.
     elsif @db.opts.fetch(:type).to_s.include?("sqlite3")
@@ -43,8 +41,6 @@ private
     else
       raise "Unknown database-type: '#{@db.opts.fetch(:type)}'."
     end
-
-    sql
   end
 
   def sql_columns

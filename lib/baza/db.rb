@@ -14,8 +14,8 @@
 class Baza::Db
   include SimpleDelegate
 
-  delegate :last_id, :upsert, :upsert_duplicate_key, to_method: :commands
-  delegate :current_database, :current_database_name, :with_database, to_method: :databases
+  delegate :last_id, :upsert, :upsert_duplicate_key, to: :commands
+  delegate :current_database, :current_database_name, :with_database, to: :databases
   delegate :close, :count, :delete, :esc, :escape, :escape_column, :escape_table, :escape_database, :escape_index, :insert, :select, :single, :sqlval, :sql_make_where, to: :driver
 
   attr_reader :sep_database, :sep_col, :sep_table, :sep_val, :sep_index, :opts, :driver, :int_types

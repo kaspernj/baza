@@ -7,7 +7,7 @@ gem "datet", "~> 0.0.25"
 gem "array_enumerator", "~> 0.0.10"
 gem "auto_autoloader", "~> 0.0.1"
 gem "event_handler", "~> 0.0.0"
-gem "simple_delegate", "0.0.1"
+gem "simple_delegate", "~> 0.0.2"
 gem "string-cases", "~> 0.0.4"
 gem "wref", "~> 0.0.8"
 
