@@ -95,7 +95,7 @@ class Baza::Driver::Mysql::Table < Baza::Table
     end
   end
 
-  def indexes(args = nil)
+  def indexes(args = nil, &blk)
     @db.indexes
     ret = []
 
@@ -113,19 +113,15 @@ class Baza::Driver::Mysql::Table < Baza::Table
           db: @db,
           data: d_indexes
         )
-        obj.columns << d_indexes.fetch(:Column_name)
         @indexes_list[index_name] = obj
-      end
-
-      if block_given?
-        yield obj
-      else
         ret << obj
       end
+
+      obj.columns << d_indexes.fetch(:Column_name)
     end
 
-    if block_given?
-      return nil
+    if blk
+      ret.each(&blk)
     else
       return ret
     end
