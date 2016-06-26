@@ -11,7 +11,8 @@ shared_examples_for "a baza indexes driver" do
       ],
       indexes: [
         :text,
-        {name: :email, unique: true, columns: [:email]}
+        {name: :email, unique: true, columns: [:email]},
+        {name: :two_columns, columns: [:text, :email]}
       ]
     )
     db.tables[:test]
@@ -45,13 +46,21 @@ shared_examples_for "a baza indexes driver" do
     end.to raise_error(Baza::Errors::IndexNotFound)
   end
 
-  describe "#unique?" do
-    it "returns true when it is unique" do
-      expect(test_table.index("email").unique?).to eq true
+  describe Baza::Index do
+    describe "#unique?" do
+      it "returns true when it is unique" do
+        expect(test_table.index("email").unique?).to eq true
+      end
+
+      it "returns false when it isn't unique" do
+        expect(test_table.index("text").unique?).to eq false
+      end
     end
 
-    it "returns false when it isn't unique" do
-      expect(test_table.index("text").unique?).to eq false
+    describe "#columns" do
+      it "returns the correct columns" do
+        expect(test_table.index("two_columns").columns).to eq ["text", "email"]
+      end
     end
   end
 end
