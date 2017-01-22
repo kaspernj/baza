@@ -49,7 +49,7 @@ class Baza::Driver::Pg::Table < Baza::Table
 
   def column(name)
     column = columns(name: name).first
-    raise Baza::Errors::ColumnNotFound unless column
+    raise Baza::Errors::ColumnNotFound, "Column not found: #{name}" unless column
     column
   end
 
@@ -81,7 +81,9 @@ class Baza::Driver::Pg::Table < Baza::Table
         tc.table_name = '#{@db.escape(name)}'
     "
 
-    sql << " AND gc.constraint_name = '#{@db.escape(args.fetch(:name))}'" if args[:name]
+    sql << " AND tc.constraint_name = '#{@db.escape(args.fetch(:name))}'" if args[:name]
+
+    result = [] unless block_given?
 
     @db.query(sql) do |data|
       foreign_key = Baza::Driver::Pg::ForeignKey.new(
@@ -89,18 +91,22 @@ class Baza::Driver::Pg::Table < Baza::Table
         data: data
       )
 
-      yield foreign_key
+      if block_given?
+        yield foreign_key
+      else
+        result << foreign_key
+      end
     end
 
-    nil
+    result
   end
 
   def foreign_key(name)
-    foreign_keys do |foreign_key|
+    foreign_keys(name: name) do |foreign_key|
       return foreign_key
     end
 
-    raise Baza::Errors::ForeignKeyNotFound unless index
+    raise Baza::Errors::ForeignKeyNotFound, "Foreign key not found: #{name}"
   end
 
   def indexes(args = {})
