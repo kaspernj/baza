@@ -24,7 +24,7 @@ shared_examples_for "a baza tables driver" do
 
   it "creates tables" do
     expect(test_table.name).to eq "test"
-    expect(db.tables[:test]).to_not eq nil
+    expect(db.tables[:test].name).to eq "test"
   end
 
   it "#list" do
