@@ -141,14 +141,14 @@ class Baza::Driver::Mysql::Table < Baza::Table
   end
 
   def indexes(args = nil, &blk)
-    @db.indexes
-    ret = []
+    ret = {}
 
     sql = "SHOW INDEX FROM `#{@db.escape_table(name)}`"
     sql << " WHERE `Key_name` = '#{@db.esc(args.fetch(:name))}'" if args && args.key?(:name)
 
     @db.query(sql) do |d_indexes|
       next if d_indexes[:Key_name] == "PRIMARY"
+
       index_name = d_indexes.fetch(:Key_name)
       obj = @indexes_list.get(index_name)
 
@@ -159,16 +159,16 @@ class Baza::Driver::Mysql::Table < Baza::Table
           data: d_indexes
         )
         @indexes_list[index_name] = obj
-        ret << obj
       end
 
-      obj.columns << d_indexes.fetch(:Column_name)
+      obj.columns << d_indexes.fetch(:Column_name) unless obj.columns.include?(d_indexes.fetch(:Column_name))
+      ret[obj.name] = obj unless ret.key?(obj.name)
     end
 
     if blk
-      ret.each(&blk)
+      ret.values.each(&blk)
     else
-      return ret
+      return ret.values
     end
   end
 
