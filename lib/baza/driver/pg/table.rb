@@ -58,6 +58,51 @@ class Baza::Driver::Pg::Table < Baza::Table
     self
   end
 
+  def foreign_keys(args = {})
+    sql = "
+      SELECT
+        tc.constraint_name,
+        tc.table_name,
+        kcu.column_name,
+        ccu.table_name AS foreign_table_name,
+        ccu.column_name AS foreign_column_name
+
+      FROM
+        information_schema.table_constraints AS tc
+
+      JOIN information_schema.key_column_usage AS kcu ON
+        tc.constraint_name = kcu.constraint_name
+
+      JOIN information_schema.constraint_column_usage AS ccu
+        ON ccu.constraint_name = tc.constraint_name
+
+      WHERE
+        constraint_type = 'FOREIGN KEY' AND
+        tc.table_name = '#{@db.escape(name)}'
+    "
+
+    sql << " AND gc.constraint_name = '#{@db.escape(args.fetch(:name))}'" if args[:name]
+
+    @db.query(sql) do |data|
+      foreign_key = Baza::Driver::Pg::ForeignKey.new(
+        db: @db,
+        data: data
+      )
+
+      yield foreign_key
+    end
+
+    nil
+  end
+
+  def foreign_key(name)
+    foreign_keys do |foreign_key|
+      return foreign_key
+    end
+
+    raise Baza::Errors::ForeignKeyNotFound unless index
+  end
+
   def indexes(args = {})
     where_args = {
       tablename: name
