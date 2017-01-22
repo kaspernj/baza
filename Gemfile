@@ -20,7 +20,7 @@ group :development, :test do
   gem "bundler"
   gem "jdbc-mysql", platform: :jruby
   gem "jdbc-sqlite3", platform: :jruby
-  gem "jeweler"
+  gem "jeweler", "2.3.3"
   gem "mysql", "2.9.1", platform: :ruby
   gem "mysql2", "0.4.2", platform: :ruby
   gem "pg", "0.18.4", platform: :ruby
