@@ -8,7 +8,7 @@ class Baza::SqlQueries::PostgresUpsertDuplicateKey
   end
 
   def execute
-    if @db.commands.version.to_f >= 9.5
+    if @db.commands.version.to_f >= 9.5 && @db.commands.version.to_f <= 9.5
       @db.query(on_conflict_sql)
     elsif @terms.empty?
       return insert_and_register_conflict
@@ -54,7 +54,21 @@ private
   end
 
   def on_conflict_sql
-    "#{insert_sql} ON CONFLICT DO UPDATE #{update_set_sql}"
+    "#{insert_sql} ON CONFLICT (#{conflict_column_sql}) DO UPDATE #{update_set_sql}"
+  end
+
+  def conflict_column_sql
+    sql = ""
+
+    first = true
+    @updates.keys.each do |column_name|
+      sql << ", " if first
+      first = false if first
+
+      sql << "'#{@db.escape_column(column_name)}'"
+    end
+
+    sql
   end
 
   def insert_sql
