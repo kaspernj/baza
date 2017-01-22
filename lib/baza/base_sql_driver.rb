@@ -15,6 +15,10 @@ class Baza::BaseSqlDriver
     @sep_index = "`"
   end
 
+  def foreign_key_support?
+    true
+  end
+
   def escape(string)
     string.to_s.gsub(/([\0\n\r\032\'\"\\])/) do
       case Regexp.last_match(1)

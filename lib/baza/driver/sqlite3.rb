@@ -42,6 +42,18 @@ class Baza::Driver::Sqlite3 < Baza::BaseSqlDriver
     end
   end
 
+  def enable_foreign_key_support
+    return true if @foreign_key_support_enabled
+
+    @db.query("PRAGMA foreign_keys = ON")
+    @foreign_key_support_enabled = true
+    true
+  end
+
+  def foreign_key_support?
+    false
+  end
+
   # Executes a query against the driver.
   def query(sql)
     @mutex_statement_reader.synchronize do
