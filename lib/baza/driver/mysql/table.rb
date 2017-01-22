@@ -95,6 +95,51 @@ class Baza::Driver::Mysql::Table < Baza::Table
     end
   end
 
+  def foreign_keys(args = {})
+    sql = "
+      SELECT
+        TABLE_NAME,
+        COLUMN_NAME,
+        CONSTRAINT_NAME,
+        REFERENCED_TABLE_NAME,
+        REFERENCED_COLUMN_NAME
+
+      FROM
+        INFORMATION_SCHEMA.KEY_COLUMN_USAGE
+
+      WHERE
+        REFERENCED_TABLE_SCHEMA = '#{@db.escape_database(@db.current_database_name)}' AND
+        TABLE_NAME = '#{@db.escape_table(name)}'
+    "
+
+    sql << " AND CONSTRAINT_NAME = '#{@db.escape(args.fetch(:name))}'" if args[:name]
+
+    result = [] unless block_given?
+
+    @db.query(sql) do |data|
+      foreign_key = Baza::Driver::Mysql::ForeignKey.new(
+        db: @db,
+        data: data
+      )
+
+      if block_given?
+        yield foreign_key
+      else
+        result << foreign_key
+      end
+    end
+
+    result
+  end
+
+  def foreign_key(name)
+    foreign_keys(name: name) do |foreign_key|
+      return foreign_key
+    end
+
+    raise Baza::Errors::ForeignKeyNotFound, "Foreign key not found: #{name}"
+  end
+
   def indexes(args = nil, &blk)
     @db.indexes
     ret = []

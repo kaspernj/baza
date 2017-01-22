@@ -15,6 +15,25 @@ class Baza::Driver::Mysql::Column < Baza::Column
     @name
   end
 
+  def create_foreign_key(args)
+    fk_name = args[:name]
+    fk_name ||= "fk_#{table_name}_#{name}"
+
+    other_column = args.fetch(:column)
+    other_table = other_column.table
+
+    sql = "
+      ALTER TABLE #{@db.escape_table(table_name)}
+      ADD CONSTRAINT #{@db.escape_table(fk_name)}
+      FOREIGN KEY (#{@db.escape_table(name)})
+      REFERENCES #{@db.escape_table(other_table.name)} (#{@db.escape_column(other_column.name)})
+    "
+
+    @db.query(sql)
+
+    true
+  end
+
   def table_name
     @args.fetch(:table_name)
   end
