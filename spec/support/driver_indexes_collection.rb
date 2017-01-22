@@ -59,7 +59,7 @@ shared_examples_for "a baza indexes driver" do
 
     describe "#columns" do
       it "returns the correct columns" do
-        expect(test_table.index("two_columns").columns).to eq ["text", "email"]
+        expect(test_table.index("two_columns").columns).to eq %w(text email)
       end
     end
   end
