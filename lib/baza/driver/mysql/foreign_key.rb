@@ -8,4 +8,12 @@ class Baza::Driver::Mysql::ForeignKey < Baza::ForeignKey
     @name = data.fetch(:CONSTRAINT_NAME)
     @table_name = data.fetch(:TABLE_NAME)
   end
+
+  def drop
+    @db.query("
+      ALTER TABLE `#{@db.escape_table(table_name)}`
+      DROP FOREIGN KEY `#{@db.escape_table(name)}`
+    ")
+    true
+  end
 end

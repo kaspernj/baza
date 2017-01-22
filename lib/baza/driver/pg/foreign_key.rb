@@ -8,4 +8,12 @@ class Baza::Driver::Pg::ForeignKey < Baza::ForeignKey
     @name = data.fetch(:constraint_name)
     @table_name = data.fetch(:table_name)
   end
+
+  def drop
+    @db.query("
+      ALTER TABLE #{@db.escape_table(table_name)}
+      DROP CONSTRAINT #{@db.escape_table(name)}
+    ")
+    true
+  end
 end

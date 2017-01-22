@@ -23,6 +23,13 @@ shared_examples_for "a baza foreign keys driver" do
     db.tables[:users]
   end
   let(:users_id_column) { users_table.column("id") }
+  let(:user_id_foreign_key) do
+    posts_table.column("user_id").create_foreign_key(
+      column: users_id_column,
+      name: "test_column_key"
+    )
+    posts_table.foreign_key("test_column_key")
+  end
 
   before do
     driver.before
@@ -33,12 +40,15 @@ shared_examples_for "a baza foreign keys driver" do
   end
 
   it "creates foreign keys" do
-    posts_table.column("user_id").create_foreign_key(
-      column: users_id_column,
-      name: "test_column_key"
-    )
+    user_id_foreign_key
 
     expect(posts_table.foreign_keys.length).to eq 1
     expect(posts_table.foreign_key("test_column_key").name).to eq "test_column_key"
+  end
+
+  it "destroys foreign keys" do
+    user_id_foreign_key.drop
+
+    expect { posts_table.foreign_key("test_column_key") }.to raise_error(Baza::Errors::ForeignKeyNotFound)
   end
 end
