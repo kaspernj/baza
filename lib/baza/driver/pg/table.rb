@@ -49,13 +49,64 @@ class Baza::Driver::Pg::Table < Baza::Table
 
   def column(name)
     column = columns(name: name).first
-    raise Baza::Errors::ColumnNotFound unless column
+    raise Baza::Errors::ColumnNotFound, "Column not found: #{name}" unless column
     column
   end
 
   def truncate
     @db.query("TRUNCATE #{@db.sep_table}#{@db.escape_table(name)}#{@db.sep_table} RESTART IDENTITY")
     self
+  end
+
+  def foreign_keys(args = {})
+    sql = "
+      SELECT
+        tc.constraint_name,
+        tc.table_name,
+        kcu.column_name,
+        ccu.table_name AS foreign_table_name,
+        ccu.column_name AS foreign_column_name
+
+      FROM
+        information_schema.table_constraints AS tc
+
+      JOIN information_schema.key_column_usage AS kcu ON
+        tc.constraint_name = kcu.constraint_name
+
+      JOIN information_schema.constraint_column_usage AS ccu
+        ON ccu.constraint_name = tc.constraint_name
+
+      WHERE
+        constraint_type = 'FOREIGN KEY' AND
+        tc.table_name = '#{@db.escape(name)}'
+    "
+
+    sql << " AND tc.constraint_name = '#{@db.escape(args.fetch(:name))}'" if args[:name]
+
+    result = [] unless block_given?
+
+    @db.query(sql) do |data|
+      foreign_key = Baza::Driver::Pg::ForeignKey.new(
+        db: @db,
+        data: data
+      )
+
+      if block_given?
+        yield foreign_key
+      else
+        result << foreign_key
+      end
+    end
+
+    result
+  end
+
+  def foreign_key(name)
+    foreign_keys(name: name) do |foreign_key|
+      return foreign_key
+    end
+
+    raise Baza::Errors::ForeignKeyNotFound, "Foreign key not found: #{name}"
   end
 
   def indexes(args = {})
