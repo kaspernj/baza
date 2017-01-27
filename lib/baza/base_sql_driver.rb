@@ -105,89 +105,14 @@ class Baza::BaseSqlDriver
 
   SELECT_ARGS_ALLOWED_KEYS = [:limit, :limit_from, :limit_to].freeze
   # Makes a select from the given arguments: table-name, where-terms and other arguments as limits and orders. Also takes a block to avoid raping of memory.
-  def select(tablename, arr_terms = nil, args = nil, &block)
-    # Set up vars.
-    sql = ""
-    args_q = nil
-    select_sql = "*"
-
-    # Give 'cloned_ubuf' argument to 'q'-method.
-    if args
-      args_q = {cloned_ubuf: true} if args[:cloned_ubuf]
-      args_q = {unbuffered: true} if args[:unbuffered]
-    end
-
-    # Set up IDQuery-stuff if that is given in arguments.
-    if args && args[:idquery]
-      if args.fetch(:idquery) == true
-        select_sql = "#{sep_col}id#{sep_col}"
-        col = :id
-      else
-        select_sql = "#{sep_col}#{escape_column(args.fetch(:idquery))}#{sep_col}"
-        col = args.fetch(:idquery)
-      end
-    end
-
-    sql = "SELECT #{select_sql} FROM"
-
-    if tablename.is_a?(Array)
-      sql << " #{@sep_table}#{tablename.first}#{@sep_table}.#{@sep_table}#{tablename.last}#{@sep_table}"
-    else
-      sql << " #{@sep_table}#{tablename}#{@sep_table}"
-    end
-
-    if !arr_terms.nil? && !arr_terms.empty?
-      sql << " WHERE #{sql_make_where(arr_terms)}"
-    end
-
-    unless args.nil?
-      if args[:orderby]
-        sql << " ORDER BY"
-
-        if args.fetch(:orderby).is_a?(Array)
-          first = true
-          args.fetch(:orderby).each do |order_by|
-            sql << "," unless first
-            first = false if first
-            sql << " #{sep_col}#{escape_column(order_by)}#{sep_col}"
-          end
-        else
-          sql << " #{sep_col}#{escape_column(args.fetch(:orderby))}#{sep_col}"
-        end
-      end
-
-      sql << " LIMIT #{args[:limit]}" if args[:limit]
-
-      if args[:limit_from] && args[:limit_to]
-        begin
-          Float(args[:limit_from])
-        rescue
-          raise "'limit_from' was not numeric: '#{args.fetch(:limit_from)}'."
-        end
-
-        begin
-          Float(args[:limit_to])
-        rescue
-          raise "'limit_to' was not numeric: '#{args[:limit_to]}'."
-        end
-
-        sql << " LIMIT #{args.fetch(:limit_from)}, #{args.fetch(:limit_to)}"
-      end
-    end
-
-    # Do IDQuery if given in arguments.
-    if args && args[:idquery]
-      res = Baza::Idquery.new(db: @db, table: tablename, query: sql, col: col, &block)
-    else
-      res = @db.q(sql, args_q, &block)
-    end
-
-    # Return result if a block wasnt given.
-    if block
-      return nil
-    else
-      return res
-    end
+  def select(table_name, terms = nil, args = nil, &block)
+    Baza::Commands::Select.new(
+      args: args,
+      block: block,
+      db: @db,
+      table_name: table_name,
+      terms: terms
+    ).execute
   end
 
   def count(tablename, arr_terms = nil)
