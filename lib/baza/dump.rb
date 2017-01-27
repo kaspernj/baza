@@ -4,8 +4,9 @@ class Baza::Dump
   #===Examples
   # dump = Baza::Dump.new(:db => db)
   def initialize(args)
-    @args = args
-    @debug = @args[:debug]
+    @db = args.fetch(:db)
+    @debug = args[:debug]
+    @tables = args[:tables]
   end
 
   # Method used to update the status.
@@ -20,13 +21,13 @@ class Baza::Dump
 
   # Dumps all tables into the given IO.
   def dump(io)
-    print "Going through tables.\n" if @debug
+    debug "Going through tables."
     @rows_count = 0
 
-    if @args[:tables]
-      tables = @args[:tables]
+    if @tables
+      tables = @tables
     else
-      tables = @args[:db].tables.list
+      tables = @db.tables.list
     end
 
     if @on_status
@@ -39,7 +40,7 @@ class Baza::Dump
     end
 
     tables.each do |table_obj|
-      table_obj = @args[:db].tables[table_obj] if table_obj.is_a?(String) || table_obj.is_a?(Symbol)
+      table_obj = @db.tables[table_obj] if table_obj.is_a?(String) || table_obj.is_a?(Symbol)
       next if table_obj.native?
 
       # Figure out keys.
@@ -50,7 +51,7 @@ class Baza::Dump
 
       @table_obj = table_obj
       update_status
-      puts "Dumping table: '#{table_obj.name}'." if @debug
+      debug "Dumping table: '#{table_obj.name}'."
       dump_table(io, table_obj)
     end
   end
@@ -60,13 +61,17 @@ class Baza::Dump
     @on_status = block
   end
 
+  def debug(message)
+    puts message if @debug
+  end
+
   # Dumps the given table into the given IO.
   def dump_table(io, table_obj)
     create_data = table_obj.data
     create_data.delete(:name)
 
     # Get SQL for creating table and add it to IO.
-    sqls = @args[:db].tables.create(table_obj.name, create_data, return_sql: true)
+    sqls = @db.tables.create(table_obj.name, create_data, return_sql: true)
     sqls.each do |sql|
       io.write("#{sql};\n")
     end
@@ -82,10 +87,14 @@ class Baza::Dump
     end
 
 
+    debug "Dumping data for table: #{table_obj.name}"
+
     # Set up rows and way to fill rows.
     rows = []
-    block_data = proc do |row|
-      rows << row
+
+
+    @db.select(table_obj.name, nil, unbuffered: true) do |row|
+      rows << row.values
       @rows_count += 1
 
       if rows.length >= 1000
@@ -95,24 +104,14 @@ class Baza::Dump
     end
 
 
-    # If a primary column is found then use IDQuery. Otherwise use cloned unbuffered query.
-    args = {idquery: prim_col.name} if prim_col
-
-
-    # Clone the connecting with array-results and execute query.
-    @args[:db].clone_conn(result: "array") do |db|
-      db.select(table_obj.name, nil, args, &block_data)
-    end
-
-
     # Dump the last rows if any.
     dump_insert_multi(io, table_obj, rows) unless rows.empty?
   end
 
   # Dumps the given rows from the given table into the given IO.
   def dump_insert_multi(io, table_obj, rows)
-    print "Inserting #{rows.length} into #{table_obj.name}.\n" if @debug
-    sqls = @args[:db].insert_multi(table_obj.name, rows, return_sql: true, keys: @keys)
+    debug "Inserting #{rows.length} into #{table_obj.name}."
+    sqls = @db.insert_multi(table_obj.name, rows, return_sql: true, keys: @keys)
     sqls.each do |sql|
       io.write("#{sql};\n")
     end
