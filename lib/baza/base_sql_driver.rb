@@ -112,7 +112,10 @@ class Baza::BaseSqlDriver
     select_sql = "*"
 
     # Give 'cloned_ubuf' argument to 'q'-method.
-    args_q = {cloned_ubuf: true} if args && args[:cloned_ubuf]
+    if args
+      args_q = {cloned_ubuf: true} if args[:cloned_ubuf]
+      args_q = {unbuffered: true} if args[:unbuffered]
+    end
 
     # Set up IDQuery-stuff if that is given in arguments.
     if args && args[:idquery]
