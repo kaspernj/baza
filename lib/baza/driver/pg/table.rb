@@ -13,6 +13,24 @@ class Baza::Driver::Pg::Table < Baza::Table
     end
   end
 
+  def data
+    ret = {
+      name: name,
+      columns: [],
+      indexes: []
+    }
+
+    columns do |column|
+      ret[:columns] << column.data
+    end
+
+    indexes do |index|
+      ret[:indexes] << index.data
+    end
+
+    ret
+  end
+
   def database_name
     @data.fetch(:table_catalog)
   end

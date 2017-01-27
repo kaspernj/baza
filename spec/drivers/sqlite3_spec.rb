@@ -12,6 +12,7 @@ describe Baza::Driver::Sqlite3 do
   it_should_behave_like "a baza tables driver"
   it_should_behave_like "a baza columns driver"
   it_should_behave_like "a baza indexes driver"
+  it_should_behave_like "a baza importer driver"
 
   it "should copy database structure and data" do
     require "info_sqlite3"

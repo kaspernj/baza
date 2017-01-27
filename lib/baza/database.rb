@@ -11,6 +11,14 @@ class Baza::Database
     @name_was = @name
   end
 
+  def import_file!(path)
+    File.open(path, "r") do |io|
+      use do
+        Baza::Commands::Importer.new(db: @db, io: io).execute
+      end
+    end
+  end
+
   def tables(args = {})
     list_args = {database: name}
     list_args[:name] = args.fetch(:name) if args[:name]
