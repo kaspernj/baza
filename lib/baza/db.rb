@@ -348,25 +348,6 @@ class Baza::Db
     ret
   end
 
-  # Clones the connection, executes the given block and closes the connection again.
-  #
-  #===Examples
-  # db.cloned_conn do |conn|
-  #   conn.q('SELCET * FROM users') do |data|
-  #     print data[:name]
-  #   end
-  # end
-  def cloned_conn(args = nil, &_block)
-    clone_conn_args = args[:clone_args] || {}
-    dbconn = clone_conn(clone_conn_args)
-
-    begin
-      yield(dbconn)
-    ensure
-      dbconn.close
-    end
-  end
-
   # Yields a query-buffer and flushes at the end of the block given.
   def q_buffer(args = {}, &block)
     Baza::QueryBuffer.new(args.merge(db: self), &block)
