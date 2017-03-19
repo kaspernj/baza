@@ -5,7 +5,18 @@ class Baza::Driver::Pg::Database < Baza::Database
   end
 
   def drop
-    @db.query("DROP DATABASE #{@db.sep_database}#{@db.escape_database(name)}#{@db.sep_database}")
+    other_db = @db.databases.list.find { |database| database.name != @db.current_database }
+
+    # Drop database through a cloned connection, because Postgres might bug up if dropping the current
+    @db.clone_conn(db: other_db.name) do |cloned_conn|
+      # Close existing connections to avoid 'is being accessed by other users' errors
+      cloned_conn.query("REVOKE CONNECT ON DATABASE #{@db.sep_database}#{@db.escape_database(name)}#{@db.sep_database} FROM public")
+      cloned_conn.query("SELECT pid, pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = #{@db.sep_val}#{@db.esc(name)}#{@db.sep_val} AND pid != pg_backend_pid()")
+
+      # Drop the database
+      cloned_conn.query("DROP DATABASE #{@db.sep_database}#{@db.escape_database(name)}#{@db.sep_database}")
+    end
+
     self
   end
 
