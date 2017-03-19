@@ -30,7 +30,6 @@ shared_examples_for "a baza databases driver" do
 
   it "creates tables" do
     if test_database.table_exists?("test")
-      puts "DROPPING TEST TABLE"
       test_database.table("test").drop
     end
 
