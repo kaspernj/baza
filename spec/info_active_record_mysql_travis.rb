@@ -9,7 +9,7 @@ class Baza::InfoActiveRecordMysql
       adapter: "mysql",
       host: "localhost",
       database: "baza",
-      username: "travis"
+      username: "build"
     )
     @conn ||= @conn_pool.connection
 
