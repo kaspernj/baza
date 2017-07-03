@@ -57,9 +57,9 @@ class Baza::Driver::Pg < Baza::BaseSqlDriver
 
   def escape(string)
     if @conn
-      @conn.escape_string(string)
+      @conn.escape_string(string.to_s)
     else
-      PG::Connection.escape_string(string)
+      PG::Connection.escape_string(string.to_s)
     end
   end
 
