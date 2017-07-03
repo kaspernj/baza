@@ -65,11 +65,9 @@ class Baza::Driver::Pg::Tables
     end
 
     if !args || !args[:return_sql]
-      use do
-        db.transaction do
-          sqls.each do |sql|
-            db.query(sql)
-          end
+      db.transaction do
+        sqls.each do |sql|
+          db.query(sql)
         end
       end
     else
