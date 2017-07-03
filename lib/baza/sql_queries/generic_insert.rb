@@ -6,6 +6,7 @@ class Baza::SqlQueries::GenericInsert
     @buffer = args[:buffer]
     @return_sql = args[:return_sql]
     @return_id = args[:return_id]
+    @replace_line_breaks = args[:replace_line_breaks]
   end
 
   def execute
@@ -72,10 +73,23 @@ private
         sql << ", "
       end
 
-      sql << @db.sqlval(value)
+      quoted = @db.sqlval(value)
+      quoted = convert_line_breaks(quoted) if @replace_line_breaks
+
+      sql << quoted
     end
 
     sql << ")"
     sql
+  end
+
+  def convert_line_breaks(quoted)
+    return quoted unless quoted.include?("\n")
+
+    if @db.postgres?
+      quoted.gsub("\n", "' || CHR(10) || '")
+    else
+      "CONCAT(#{quoted.gsub("\n", "', CHR(10), '")}"
+    end
   end
 end

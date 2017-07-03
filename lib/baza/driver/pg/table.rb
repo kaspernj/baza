@@ -160,22 +160,7 @@ class Baza::Driver::Pg::Table < Baza::Table
   end
 
   def create_indexes(index_list, args = {})
-    Baza::Driver::Pg::Table.create_indexes(index_list, args.merge(table_name: name, db: @db))
-  end
-
-  def self.create_indexes(index_list, args = {})
-    db = args.fetch(:db)
-    sqls = Baza::Driver::Pg::CreateIndexSqlCreator.new(db: db, indexes: index_list, create_args: args).sqls
-
-    unless args[:return_sql]
-      db.transaction do
-        sqls.each do |sql|
-          db.query(sql)
-        end
-      end
-    end
-
-    sqls if args[:return_sql]
+    db.indexes.create_index(index_list, args.merge(table_name: name))
   end
 
   def rename(new_name)

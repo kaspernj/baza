@@ -2,8 +2,7 @@ class Baza::BaseSqlDriver
   attr_reader :db, :conn, :sep_database, :sep_table, :sep_col, :sep_val, :sep_index
   attr_accessor :tables, :cols, :indexes
 
-  def self.from_object(_args)
-  end
+  def self.from_object(_args); end
 
   def initialize(db)
     @db = db
@@ -88,10 +87,15 @@ class Baza::BaseSqlDriver
   def insert_multi(tablename, arr_hashes, args = {})
     sql = [] if args && args[:return_sql]
 
-    @db.transaction do
+    if args && args[:return_sql]
       arr_hashes.each do |hash|
-        res = @db.insert(tablename, hash, args)
-        sql << res if args && args[:return_sql]
+        sql << @db.insert(tablename, hash, args)
+      end
+    else
+      @db.transaction do
+        arr_hashes.each do |hash|
+          @db.insert(tablename, hash, args)
+        end
       end
     end
 

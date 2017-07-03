@@ -14,7 +14,7 @@ class Baza::Database
   def import_file!(path)
     File.open(path, "r") do |io|
       use do
-        Baza::Commands::Importer.new(db: @db, io: io).execute
+        Baza::Commands::Importer.new(db: @db, io: io, debug: true).execute
       end
     end
   end

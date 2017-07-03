@@ -9,15 +9,31 @@ class Baza::Driver::Pg::Columns
       raise "Invalid key: '#{key}' (#{key.class.name})." unless DATA_SQL_ALLOWED_KEYS.include?(key)
     end
 
+    maxlength = data[:maxlength]
+
     raise "No type given." unless data[:type]
     type = data[:type].to_sym
-    type = :serial if type == :int && data[:autoincr]
     type = :timestamp if type == :datetime
+
+    if type == :int && data[:autoincr]
+      type = :serial
+      maxlength = nil
+    end
+
+    if type == :int
+      type = :integer
+      maxlength = nil
+    end
+
+    if type == :tinyint
+      type = :smallint
+      maxlength = nil
+    end
 
     data[:maxlength] = 255 if type == :varchar && !data.key?(:maxlength)
 
     sql = "#{@db.sep_col}#{@db.escape_column(data.fetch(:name))}#{@db.sep_col} #{type}"
-    sql << "(#{data[:maxlength]})" if data[:maxlength]
+    sql << "(#{maxlength})" if maxlength
     sql << " PRIMARY KEY" if data[:primarykey]
     sql << " NOT NULL" if data.key?(:null) && !data[:null]
 

@@ -5,8 +5,15 @@ class Baza::Dump
   # dump = Baza::Dump.new(:db => db)
   def initialize(args)
     @db = args.fetch(:db)
+    @db_type = args[:db_type]
     @debug = args[:debug]
     @tables = args[:tables]
+
+    if @db_type
+      @export_db = Baza::Db.new(type: @db_type)
+    else
+      @export_db = @db
+    end
   end
 
   # Method used to update the status.
@@ -71,7 +78,7 @@ class Baza::Dump
     create_data.delete(:name)
 
     # Get SQL for creating table and add it to IO.
-    sqls = @db.tables.create(table_obj.name, create_data, return_sql: true)
+    sqls = @export_db.tables.create(table_obj.name, create_data, return_sql: true)
     sqls.each do |sql|
       io.write("#{sql};\n")
     end
@@ -94,7 +101,7 @@ class Baza::Dump
 
 
     @db.select(table_obj.name, nil, unbuffered: true) do |row|
-      rows << row.values
+      rows << row
       @rows_count += 1
 
       if rows.length >= 1000
@@ -111,7 +118,13 @@ class Baza::Dump
   # Dumps the given rows from the given table into the given IO.
   def dump_insert_multi(io, table_obj, rows)
     debug "Inserting #{rows.length} into #{table_obj.name}."
-    sqls = @db.insert_multi(table_obj.name, rows, return_sql: true, keys: @keys)
+    sqls = @export_db.insert_multi(
+      table_obj.name,
+      rows,
+      replace_line_breaks: true,
+      return_sql: true,
+      keys: @keys
+    )
     sqls.each do |sql|
       io.write("#{sql};\n")
     end
