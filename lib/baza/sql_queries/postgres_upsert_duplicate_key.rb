@@ -8,8 +8,6 @@ class Baza::SqlQueries::PostgresUpsertDuplicateKey
   end
 
   def execute
-    puts "Version: #{@db.commands.version.to_f}"
-
     if @db.commands.version.to_f >= 9.5 && @db.commands.version.to_f <= 9.5
       @db.query(on_conflict_sql)
     elsif @terms.empty?
@@ -64,10 +62,10 @@ private
 
     first = true
     @updates.keys.each do |column_name|
-      sql << ", " if first
+      sql << ", " unless first
       first = false if first
 
-      sql << "'#{@db.escape_column(column_name)}'"
+      sql << "#{@db.sep_col}#{@db.escape_column(column_name)}#{@db.sep_col}"
     end
 
     sql
