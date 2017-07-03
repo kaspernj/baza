@@ -64,7 +64,7 @@ class Baza::Driver::Pg::Database < Baza::Database
   # Creates a new table by the given name and data.
   def create_table(table_name, data, args = nil)
     use do
-      @db.tables.create_table(table_name, data, args)
+      @db.tables.create(table_name, data, args)
     end
   end
 
