@@ -31,12 +31,6 @@ class Baza::Dump
     debug "Going through tables."
     @rows_count = 0
 
-    if @tables
-      tables = @tables
-    else
-      tables = @db.tables.list
-    end
-
     if @on_status
       @on_status.call(text: "Preparing.")
 
@@ -46,10 +40,7 @@ class Baza::Dump
       end
     end
 
-    tables.each do |table_obj|
-      table_obj = @db.tables[table_obj] if table_obj.is_a?(String) || table_obj.is_a?(Symbol)
-      next if table_obj.native?
-
+    each_table do |table_obj|
       # Figure out keys.
       @keys = []
       table_obj.columns do |col|
@@ -61,6 +52,8 @@ class Baza::Dump
       debug "Dumping table: '#{table_obj.name}'."
       dump_table(io, table_obj)
     end
+
+    dump_foreign_keys(io)
   end
 
   # A block can be executed when a new status occurs.
@@ -133,5 +126,27 @@ class Baza::Dump
 
     # Ensure garbage collection or we might start using A LOT of memory.
     GC.start
+  end
+
+  def dump_foreign_keys(_io)
+    each_table do |table|
+      table.foreign_keys.each do |foreign_key|
+        # Dump foreign key
+      end
+    end
+  end
+
+  def each_table
+    if @tables
+      tables = @tables
+    else
+      tables = @db.tables.list
+    end
+
+    tables.each do |table_obj|
+      table_obj = @db.tables[table_obj] if table_obj.is_a?(String) || table_obj.is_a?(Symbol)
+      next if table_obj.native?
+      yield table_obj
+    end
   end
 end
