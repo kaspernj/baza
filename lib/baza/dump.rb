@@ -5,8 +5,15 @@ class Baza::Dump
   # dump = Baza::Dump.new(:db => db)
   def initialize(args)
     @db = args.fetch(:db)
+    @db_type = args[:db_type]
     @debug = args[:debug]
     @tables = args[:tables]
+
+    if @db_type
+      @export_db = Baza::Db.new(type: @db_type)
+    else
+      @export_db = @db
+    end
   end
 
   # Method used to update the status.
@@ -24,12 +31,6 @@ class Baza::Dump
     debug "Going through tables."
     @rows_count = 0
 
-    if @tables
-      tables = @tables
-    else
-      tables = @db.tables.list
-    end
-
     if @on_status
       @on_status.call(text: "Preparing.")
 
@@ -39,10 +40,7 @@ class Baza::Dump
       end
     end
 
-    tables.each do |table_obj|
-      table_obj = @db.tables[table_obj] if table_obj.is_a?(String) || table_obj.is_a?(Symbol)
-      next if table_obj.native?
-
+    each_table do |table_obj|
       # Figure out keys.
       @keys = []
       table_obj.columns do |col|
@@ -54,6 +52,8 @@ class Baza::Dump
       debug "Dumping table: '#{table_obj.name}'."
       dump_table(io, table_obj)
     end
+
+    dump_foreign_keys(io)
   end
 
   # A block can be executed when a new status occurs.
@@ -71,7 +71,7 @@ class Baza::Dump
     create_data.delete(:name)
 
     # Get SQL for creating table and add it to IO.
-    sqls = @db.tables.create(table_obj.name, create_data, return_sql: true)
+    sqls = @export_db.tables.create(table_obj.name, create_data, return_sql: true)
     sqls.each do |sql|
       io.write("#{sql};\n")
     end
@@ -94,7 +94,7 @@ class Baza::Dump
 
 
     @db.select(table_obj.name, nil, unbuffered: true) do |row|
-      rows << row.values
+      rows << row
       @rows_count += 1
 
       if rows.length >= 1000
@@ -111,7 +111,13 @@ class Baza::Dump
   # Dumps the given rows from the given table into the given IO.
   def dump_insert_multi(io, table_obj, rows)
     debug "Inserting #{rows.length} into #{table_obj.name}."
-    sqls = @db.insert_multi(table_obj.name, rows, return_sql: true, keys: @keys)
+    sqls = @export_db.insert_multi(
+      table_obj.name,
+      rows,
+      replace_line_breaks: true,
+      return_sql: true,
+      keys: @keys
+    )
     sqls.each do |sql|
       io.write("#{sql};\n")
     end
@@ -120,5 +126,29 @@ class Baza::Dump
 
     # Ensure garbage collection or we might start using A LOT of memory.
     GC.start
+  end
+
+  def dump_foreign_keys(_io)
+    each_table do |table|
+      next unless table.respond_to?(:foreign_keys)
+
+      table.foreign_keys.each do |foreign_key|
+        # Dump foreign key
+      end
+    end
+  end
+
+  def each_table
+    if @tables
+      tables = @tables
+    else
+      tables = @db.tables.list
+    end
+
+    tables.each do |table_obj|
+      table_obj = @db.tables[table_obj] if table_obj.is_a?(String) || table_obj.is_a?(Symbol)
+      next if table_obj.native?
+      yield table_obj
+    end
   end
 end

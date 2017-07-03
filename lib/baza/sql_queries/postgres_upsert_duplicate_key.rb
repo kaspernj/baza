@@ -62,10 +62,10 @@ private
 
     first = true
     @updates.keys.each do |column_name|
-      sql << ", " if first
+      sql << ", " unless first
       first = false if first
 
-      sql << "'#{@db.escape_column(column_name)}'"
+      sql << "#{@db.sep_col}#{@db.escape_column(column_name)}#{@db.sep_col}"
     end
 
     sql

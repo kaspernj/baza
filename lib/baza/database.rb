@@ -11,10 +11,10 @@ class Baza::Database
     @name_was = @name
   end
 
-  def import_file!(path)
+  def import_file!(path, args = {})
     File.open(path, "r") do |io|
       use do
-        Baza::Commands::Importer.new(db: @db, io: io).execute
+        Baza::Commands::Importer.new({db: @db, io: io}.merge(args)).execute
       end
     end
   end

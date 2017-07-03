@@ -46,8 +46,20 @@ class Baza::Driver::Pg < Baza::BaseSqlDriver
 
     if db.opts[:conn]
       @conn = db.opts.fetch(:conn)
-    else
+    elsif db.opts[:db]
       reconnect
+    end
+  end
+
+  def connected?
+    @conn ? true : false
+  end
+
+  def escape(string)
+    if @conn
+      @conn.escape_string(string.to_s)
+    else
+      PG::Connection.escape_string(string.to_s)
     end
   end
 

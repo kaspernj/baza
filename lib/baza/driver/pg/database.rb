@@ -63,31 +63,9 @@ class Baza::Driver::Pg::Database < Baza::Database
   CREATE_ALLOWED_KEYS = [:columns, :indexes, :temp, :return_sql].freeze
   # Creates a new table by the given name and data.
   def create_table(table_name, data, args = nil)
-    table_name = table_name.to_s
-    raise "No columns was given for '#{name}'." if !data[:columns] || data[:columns].empty?
-
-    sql = "CREATE"
-    sql << " TEMPORARY" if data[:temp]
-    sql << " TABLE #{db.sep_table}#{@db.escape_table(table_name)}#{db.sep_table} ("
-
-    first = true
-    data.fetch(:columns).each do |col_data|
-      sql << ", " unless first
-      first = false if first
-      col_data.delete(:after) if col_data[:after]
-      sql << @db.columns.data_sql(col_data)
+    use do
+      @db.tables.create(table_name, data, args)
     end
-
-    sql << ")"
-
-    use { @db.query(sql) } if !args || !args[:return_sql]
-
-    if data[:indexes] && !data[:indexes].empty?
-      table = @db.tables[table_name]
-      table.create_indexes(data.fetch(:indexes))
-    end
-
-    return [sql] if args && args[:return_sql]
   end
 
   def rename(new_name)
