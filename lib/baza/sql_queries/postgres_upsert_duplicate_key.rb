@@ -8,6 +8,8 @@ class Baza::SqlQueries::PostgresUpsertDuplicateKey
   end
 
   def execute
+    puts "Version: #{@db.commands.version.to_f}"
+
     if @db.commands.version.to_f >= 9.5 && @db.commands.version.to_f <= 9.5
       @db.query(on_conflict_sql)
     elsif @terms.empty?
