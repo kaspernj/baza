@@ -2,23 +2,29 @@ class Baza::BaseSqlDriver
   attr_reader :db, :conn, :sep_database, :sep_table, :sep_col, :sep_val, :sep_index
   attr_accessor :tables, :cols, :indexes
 
+  SEPARATOR_DATABASE = "`".freeze
+  SEPARATOR_TABLE = "`".freeze
+  SEPARATOR_COLUMN = "`".freeze
+  SEPARATOR_VALUE = "'".freeze
+  SEPARATOR_INDEX = "`".freeze
+
   def self.from_object(_args); end
 
   def initialize(db)
     @db = db
 
-    @sep_database = "`"
-    @sep_table = "`"
-    @sep_col = "`"
-    @sep_val = "'"
-    @sep_index = "`"
+    @sep_database = SEPARATOR_DATABASE
+    @sep_table = SEPARATOR_TABLE
+    @sep_col = SEPARATOR_COLUMN
+    @sep_val = SEPARATOR_VALUE
+    @sep_index = SEPARATOR_INDEX
   end
 
   def foreign_key_support?
     true
   end
 
-  def escape(string)
+  def self.escape(string)
     string.to_s.gsub(/([\0\n\r\032\'\"\\])/) do
       case Regexp.last_match(1)
       when "\0" then "\\0"
@@ -30,32 +36,52 @@ class Baza::BaseSqlDriver
     end
   end
 
+  def escape(string)
+    self.class.escape(string)
+  end
+
   alias esc escape
   alias escape_alternative escape
 
   # Escapes a string to be used as a column.
-  def escape_column(string)
+  def self.escape_column(string)
     string = string.to_s
-    raise "Invalid column-string: #{string}" if string.include?(@sep_col)
+    raise "Invalid column-string: #{string}" if string.include?(SEPARATOR_COLUMN)
+    string
+  end
+
+  def escape_column(string)
+    self.class.escape_column(string)
+  end
+
+  def self.escape_table(string)
+    string = string.to_s
+    raise "Invalid table-string: #{string}" if string.include?(SEPARATOR_TABLE)
     string
   end
 
   def escape_table(string)
+    self.class.escape_table(string)
+  end
+
+  def self.escape_database(string)
     string = string.to_s
-    raise "Invalid table-string: #{string}" if string.include?(@sep_table)
+    raise "Invalid database-string: #{string}" if string.include?(SEPARATOR_DATABASE)
     string
   end
 
   def escape_database(string)
+    self.class.escape_database(string)
+  end
+
+  def self.escape_index(string)
     string = string.to_s
-    raise "Invalid database-string: #{string}" if string.include?(@sep_database)
+    raise "Invalid index-string: #{string}" if string.include?(SEPARATOR_INDEX)
     string
   end
 
   def escape_index(string)
-    string = string.to_s
-    raise "Invalid index-string: #{string}" if string.include?(@sep_index)
-    string
+    self.class.escape_index(string)
   end
 
   def transaction
@@ -187,6 +213,20 @@ class Baza::BaseSqlDriver
   # Returns the correct SQL-value for the given value.
   # If it is a number, then just the raw number as a string will be returned.
   # nil's will be NULL and strings will have quotes and will be escaped.
+  def self.sqlval(val)
+    if val.is_a?(Fixnum) || val.is_a?(Integer)
+      val.to_s
+    elsif val == nil
+      "NULL"
+    elsif val.is_a?(Date)
+      "#{SEPARATOR_VALUE}#{Datet.in(val).dbstr(time: false)}#{SEPARATOR_VALUE}"
+    elsif val.is_a?(Time) || val.is_a?(DateTime) || val.is_a?(Datet)
+      "#{SEPARATOR_VALUE}#{Datet.in(val).dbstr}#{SEPARATOR_VALUE}"
+    else
+      "#{SEPARATOR_VALUE}#{escape(val)}#{SEPARATOR_VALUE}"
+    end
+  end
+
   def sqlval(val)
     return @conn.sqlval(val) if @conn.respond_to?(:sqlval)
 

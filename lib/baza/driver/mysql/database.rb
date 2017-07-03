@@ -41,9 +41,22 @@ class Baza::Driver::Mysql::Database < Baza::Database
 
     sql << ")"
 
-    return [sql] if args && args[:return_sql]
+    # return [sql] if args && args[:return_sql]
 
-    use { @db.query(sql) }
+    sql = Baza::Driver::Mysql::Sql::CreateTable.new(
+      columns: data.fetch(:columns),
+      indexes: data[:indexes],
+      name: name,
+      temporary: data[:temp]
+    ).sql
+
+    return sql if args && args[:return_sql]
+
+    use do
+      sql.each do |sql_i|
+        @db.query(sql_i)
+      end
+    end
   end
 
   def rename(new_name)
