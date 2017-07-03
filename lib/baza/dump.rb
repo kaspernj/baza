@@ -130,6 +130,8 @@ class Baza::Dump
 
   def dump_foreign_keys(_io)
     each_table do |table|
+      next unless table.respond_to?(:foreign_keys)
+
       table.foreign_keys.each do |foreign_key|
         # Dump foreign key
       end
