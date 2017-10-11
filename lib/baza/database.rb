@@ -1,10 +1,10 @@
 class Baza::Database
   include Baza::DatabaseModelFunctionality
 
-  attr_reader :db, :driver, :name_was
-  attr_accessor :name
+  attr_reader :db, :driver, :name
 
   def initialize(args)
+    @changes = {}
     @db = args.fetch(:db)
     @driver = args.fetch(:driver)
     @name = args.fetch(:name)
@@ -17,6 +17,19 @@ class Baza::Database
         Baza::Commands::Importer.new({db: @db, io: io}.merge(args)).execute
       end
     end
+  end
+
+  def name=(new_name)
+    @changes[:name] = new_name
+    @name = new_name
+  end
+
+  def name_changed?
+    @changes.key?(:name) && @changes.fetch(:name).to_s != name.to_s
+  end
+
+  def name_was
+    @changes[:name]
   end
 
   def tables(args = {})
