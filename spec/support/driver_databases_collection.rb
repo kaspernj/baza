@@ -9,7 +9,13 @@ shared_examples_for "a baza databases driver" do
   end
 
   it "renames database" do
-    expect { db.databases["renamed-db"].drop }.to raise_error(Baza::Errors::DatabaseNotFound)
+    begin
+      db.databases["renamed-db"].drop
+    # rubocop:disable Lint/HandleExceptions
+    rescue Baza::Errors::DatabaseNotFound
+      # rubocop:enable Lint/HandleExceptions
+      # Ignore - it shouldn't exist
+    end
 
     test_database.name = "renamed-db"
     test_database.save!
