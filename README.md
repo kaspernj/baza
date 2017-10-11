@@ -106,6 +106,12 @@ db.databases.list.each do |database|
 end
 ```
 
+### Dropping a database
+```ruby
+database = db.databases["test-db"]
+database.drop
+```
+
 ### Listing tables on non-used-database
 ```ruby
 database = db.database["test-db"]
