@@ -71,7 +71,7 @@ class Baza::Driver::Pg::Database < Baza::Database
   end
 
   def with_cloned_conn_and_terminated_connections
-    other_db = db.databases.list.find { |database| database.name != @db.current_database }
+    other_db = db.databases.list.find { |database| database.name != @db.current_database && database.name != "template0" }
 
     # Drop database through a cloned connection, because Postgres might bug up if dropping the current
     db.clone_conn(db: other_db.name) do |cloned_conn|
