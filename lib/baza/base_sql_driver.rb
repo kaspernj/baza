@@ -230,7 +230,7 @@ class Baza::BaseSqlDriver
   def sqlval(val)
     return @conn.sqlval(val) if @conn.respond_to?(:sqlval)
 
-    if val.is_a?(Fixnum) || val.is_a?(Integer)
+    if val.class.name == "Fixnum" || val.is_a?(Integer)
       val.to_s
     elsif val == nil
       "NULL"
