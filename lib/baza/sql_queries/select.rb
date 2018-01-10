@@ -9,6 +9,18 @@ class Baza::SqlQueries::Select
     @orders = []
   end
 
+  def count
+    @count = true
+
+    begin
+      result = query.fetch.fetch(:count).to_i
+    ensure
+      @count = false
+    end
+
+    result
+  end
+
   def select(arg)
     @selects << arg
     self
@@ -39,6 +51,11 @@ class Baza::SqlQueries::Select
     self
   end
 
+  def per_page(number)
+    @per_page = number
+    self
+  end
+
   def limit(limit)
     @limit = limit
     self
@@ -55,6 +72,11 @@ class Baza::SqlQueries::Select
 
   def to_a
     each.to_a
+  end
+
+  def total_pages
+    per_page_value = @per_page
+    (count.to_f / per_page_value.to_f).ceil
   end
 
   def each(&blk)
@@ -88,7 +110,9 @@ private
   def select_sql
     sql = "SELECT"
 
-    if @selects.empty?
+    if @count
+      sql << " COUNT(*) AS count"
+    elsif @selects.empty?
       sql << " *"
     else
       first = true
