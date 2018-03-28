@@ -1,6 +1,6 @@
 require "spec_helper"
 
-describe Baza::Driver::ActiveRecord do
+describe Baza::Driver::ActiveRecord, :mysql do
   let(:constant) do
     const_name = "InfoActiveRecordMysql"
     require "#{File.dirname(__FILE__)}/../#{StringCases.camel_to_snake(const_name)}"

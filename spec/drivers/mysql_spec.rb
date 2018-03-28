@@ -1,6 +1,6 @@
 require "spec_helper"
 
-describe Baza.const_get(:Driver).const_get(:Mysql) do
+describe Baza.const_get(:Driver).const_get(:Mysql), :mysql do
   let(:constant) do
     const_name = "InfoMysql"
     require "#{File.dirname(__FILE__)}/../#{StringCases.camel_to_snake(const_name)}"

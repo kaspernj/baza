@@ -72,7 +72,6 @@ GEM
     multi_json (1.13.1)
     multi_xml (0.6.0)
     multipart-post (2.0.0)
-    mysql (2.9.1)
     mysql2 (0.5.0)
     nokogiri (1.8.2)
       mini_portile2 (~> 2.3.0)
@@ -151,7 +150,6 @@ DEPENDENCIES
   jdbc-mysql
   jdbc-sqlite3
   jeweler (= 2.3.9)
-  mysql (= 2.9.1)
   mysql2 (= 0.5.0)
   pg (= 0.21.0)
   pry
