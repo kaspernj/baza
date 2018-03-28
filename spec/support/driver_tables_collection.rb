@@ -98,7 +98,8 @@ shared_examples_for "a baza tables driver" do
 
   describe "Baza::Table#rows_count" do
     it "returns the number of rows in the table" do
-      expect(test_table.rows_count).to eq 500
+      3.times { |n| test_table.insert(text: "Test #{n}") }
+      expect(test_table.rows_count).to eq 3
     end
   end
 end
