@@ -22,7 +22,7 @@ group :development, :test do
   gem "jdbc-sqlite3", platform: :jruby
   gem "jeweler", "2.3.9"
   # gem "mysql", "2.9.1", platform: :ruby
-  gem "mysql2", "0.5.0", platform: :ruby
+  gem "mysql2", "0.4.10", platform: :ruby
   gem "pg", "0.21.0", platform: :ruby
   gem "pry"
   gem "rdoc"
