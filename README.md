@@ -1,7 +1,3 @@
-[![Code Climate](https://codeclimate.com/github/kaspernj/baza/badges/gpa.svg)](https://codeclimate.com/github/kaspernj/baza)
-[![Test Coverage](https://codeclimate.com/github/kaspernj/baza/badges/coverage.svg)](https://codeclimate.com/github/kaspernj/baza)
-[![Build Status](https://travis-ci.org/kaspernj/baza.svg?branch=master)](https://travis-ci.org/kaspernj/baza)
-
 # baza
 
 A database abstraction layer for Ruby. Also supports JRuby.
