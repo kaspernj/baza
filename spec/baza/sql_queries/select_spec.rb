@@ -10,7 +10,7 @@ describe Baza::SqlQueries::Select do
   let(:db) { constant.new.db }
 
   before do
-    db.tables[:test].drop
+    db.tables[:test].drop if db.tables.exists?(:test)
 
     db.tables.create(
       "test",

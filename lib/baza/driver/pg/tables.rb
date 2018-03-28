@@ -1,4 +1,4 @@
-class Baza::Driver::Pg::Tables
+class Baza::Driver::Pg::Tables < Baza::Tables
   attr_reader :db
 
   def initialize(args)

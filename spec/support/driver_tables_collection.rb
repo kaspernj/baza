@@ -27,6 +27,16 @@ shared_examples_for "a baza tables driver" do
     expect(db.tables[:test].name).to eq "test"
   end
 
+  describe "#exists?" do
+    it "returns true for tables that exists" do
+      expect(db.tables.exists?("test")).to eq true
+    end
+
+    it "returns false for tables that doesnt exist" do
+      expect(db.tables.exists?("testtest")).to eq false
+    end
+  end
+
   it "#list" do
     test_table
     expect(db.tables.list).to include test_table
