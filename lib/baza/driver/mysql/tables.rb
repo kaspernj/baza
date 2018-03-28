@@ -1,7 +1,7 @@
 require "monitor"
 
 # This class handels various MySQL-table-specific behaviour.
-class Baza::Driver::Mysql::Tables
+class Baza::Driver::Mysql::Tables < Baza::Tables
   attr_reader :db, :list
 
   # Constructor. This should not be called manually.

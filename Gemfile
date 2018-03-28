@@ -4,7 +4,7 @@ source "http://rubygems.org"
 #   gem "activesupport", ">= 2.3.5"
 
 gem "array_enumerator", "~> 0.0.10"
-gem "auto_autoloader", "~> 0.0.1"
+gem "auto_autoloader", "~> 0.0.5"
 gem "datet", "~> 0.0.25"
 gem "event_handler", "~> 0.0.0"
 gem "simple_delegate", "~> 0.0.2"
@@ -20,15 +20,13 @@ group :development, :test do
   gem "bundler"
   gem "jdbc-mysql", platform: :jruby
   gem "jdbc-sqlite3", platform: :jruby
-  gem "jeweler", "2.3.3"
-  gem "mysql", "2.9.1", platform: :ruby
-  gem "mysql2", "0.4.2", platform: :ruby
-  gem "pg", "0.18.4", platform: :ruby
+  gem "jeweler", "2.3.9"
+  # gem "mysql", "2.9.1", platform: :ruby
+  gem "mysql2", "0.4.10", platform: :ruby
+  gem "pg", "0.21.0", platform: :ruby
   gem "pry"
   gem "rdoc"
   gem "rspec", "3.4.0"
   gem "rubocop", "0.39.0", require: false
   gem "sqlite3", platform: :ruby
 end
-
-gem "codeclimate-test-reporter", group: :test, require: nil

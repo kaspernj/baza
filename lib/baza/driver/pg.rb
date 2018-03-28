@@ -66,6 +66,8 @@ class Baza::Driver::Pg < Baza::BaseSqlDriver
   def reconnect
     require "pg" unless ::Object.const_defined?(:PG)
 
+    close if @conn && !@conn.finished?
+
     args = {dbname: db.opts.fetch(:db)}
     args[:port] = db.opts.fetch(:port) if db.opts[:port]
     args[:hostaddr] = db.opts.fetch(:host) if db.opts[:host]

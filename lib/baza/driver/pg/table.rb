@@ -182,6 +182,13 @@ class Baza::Driver::Pg::Table < Baza::Table
     self
   end
 
+  def rows_count
+    @db.databases.with_database(database_name) do
+      sql = "SELECT COUNT(*) AS count FROM #{@db.sep_table}#{@db.escape_table(name)}#{@db.sep_table}"
+      return @db.query(sql).fetch.fetch(:count).to_i
+    end
+  end
+
   def optimize
     @db.query("VACUUM #{@db.sep_table}#{@db.escape_table(name)}#{@db.sep_table}")
     self

@@ -1,6 +1,6 @@
 require "monitor"
 
-class Baza::Driver::Sqlite3::Tables
+class Baza::Driver::Sqlite3::Tables < Baza::Tables
   attr_reader :db, :driver
 
   def initialize(args)

@@ -27,6 +27,17 @@ shared_examples_for "a baza tables driver" do
     expect(db.tables[:test].name).to eq "test"
   end
 
+  describe "#exists?" do
+    it "returns true for tables that exists" do
+      test_table
+      expect(db.tables.exists?("test")).to eq true
+    end
+
+    it "returns false for tables that doesnt exist" do
+      expect(db.tables.exists?("testtest")).to eq false
+    end
+  end
+
   it "#list" do
     test_table
     expect(db.tables.list).to include test_table
@@ -93,6 +104,13 @@ shared_examples_for "a baza tables driver" do
 
       test_table.drop
       expect { test_table.reload }.to raise_error(Baza::Errors::TableNotFound)
+    end
+  end
+
+  describe "Baza::Table#rows_count" do
+    it "returns the number of rows in the table" do
+      3.times { |n| test_table.insert(text: "Test #{n}") }
+      expect(test_table.rows_count).to eq 3
     end
   end
 end
