@@ -29,6 +29,7 @@ shared_examples_for "a baza tables driver" do
 
   describe "#exists?" do
     it "returns true for tables that exists" do
+      test_table
       expect(db.tables.exists?("test")).to eq true
     end
 
