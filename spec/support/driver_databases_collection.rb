@@ -29,9 +29,7 @@ shared_examples_for "a baza databases driver" do
   end
 
   it "creates tables" do
-    if test_database.table_exists?("test")
-      test_database.table("test").drop
-    end
+    test_database.table("test").drop if test_database.table_exists?("test")
 
     test_database.create_table(
       "test",
