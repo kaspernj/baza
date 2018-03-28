@@ -95,4 +95,10 @@ shared_examples_for "a baza tables driver" do
       expect { test_table.reload }.to raise_error(Baza::Errors::TableNotFound)
     end
   end
+
+  describe "Baza::Table#rows_count" do
+    it "returns the number of rows in the table" do
+      expect(test_table.rows_count).to eq 500
+    end
+  end
 end
