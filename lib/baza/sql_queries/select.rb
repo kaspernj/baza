@@ -10,14 +10,10 @@ class Baza::SqlQueries::Select
   end
 
   def count
-    begin
-      @count = true
-      result = query.fetch.fetch(:count).to_i
-    ensure
-      @count = false
-    end
-
-    result
+    @count = true
+    query.fetch.fetch(:count).to_i
+  ensure
+    @count = false
   end
 
   def current_page
