@@ -10,15 +10,18 @@ class Baza::SqlQueries::Select
   end
 
   def count
-    @count = true
-
     begin
+      @count = true
       result = query.fetch.fetch(:count).to_i
     ensure
       @count = false
     end
 
     result
+  end
+
+  def current_page
+    @page || 1
   end
 
   def select(arg)
@@ -51,6 +54,11 @@ class Baza::SqlQueries::Select
     self
   end
 
+  def page(number)
+    @page = number.try(:to_i) || 1
+    self
+  end
+
   def per_page(number)
     @per_page = number
     self
@@ -67,7 +75,7 @@ class Baza::SqlQueries::Select
   end
 
   def to_sql
-    "#{select_sql} #{from_sql} #{where_sql} #{group_sql} #{limit_sql}"
+    sql = "#{select_sql} #{from_sql} #{where_sql} #{group_sql} #{limit_sql}"
   end
 
   def to_a
@@ -75,6 +83,7 @@ class Baza::SqlQueries::Select
   end
 
   def total_pages
+    @per_page ||= 30
     per_page_value = @per_page
     (count.to_f / per_page_value.to_f).ceil
   end
@@ -184,9 +193,14 @@ private
   end
 
   def limit_sql
-    if @limit
-      sql = "LIMIT #{@db.sqlval(@limit)}"
-      sql << ", #{@db.sqlval(@offset)}" if @offset
+    unless @count
+      if @page
+        @per_page ||= 30
+        sql = "LIMIT #{@db.sqlval(@per_page)} OFFSET #{@per_page * (current_page - 1)}"
+      elsif @limit
+        sql = "LIMIT #{@db.sqlval(@limit)}"
+        sql << ", #{@db.sqlval(@offset)}" if @offset
+      end
     end
 
     sql
