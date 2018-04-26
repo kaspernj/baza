@@ -9,5 +9,5 @@ before_script:
   - psql -c 'DROP DATABASE IF EXISTS "baza";' -U postgres
   - psql -c 'CREATE DATABASE "baza";' -U postgres
 script:
-  - bundle exec rspec
+  - bundle exec rspec --tag ~@mysql
   - bundle exec rake best_practice_project:run
