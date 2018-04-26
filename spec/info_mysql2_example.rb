@@ -1,4 +1,4 @@
-class Baza::InfoMysql
+class Baza::InfoMysql2
   attr_reader :db
 
   def initialize(args = {})
