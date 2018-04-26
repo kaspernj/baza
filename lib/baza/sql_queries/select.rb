@@ -71,7 +71,7 @@ class Baza::SqlQueries::Select
   end
 
   def to_sql
-    sql = "#{select_sql} #{from_sql} #{where_sql} #{group_sql} #{limit_sql}"
+    "#{select_sql} #{from_sql} #{where_sql} #{group_sql} #{limit_sql}"
   end
 
   def to_a
