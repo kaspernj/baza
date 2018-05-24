@@ -54,7 +54,7 @@ class Baza
     loads = %w(databases database tables table columns column indexes index result commands)
     loads.each do |load|
       file_path = "#{File.dirname(__FILE__)}/baza/driver/#{name}/#{load}"
-      require_relative file_path if File.exist?(file_path)
+      require_relative file_path if File.exist?(file_path) || File.exist?("#{file_path}.rb")
     end
   end
 end
