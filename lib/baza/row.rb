@@ -16,13 +16,13 @@ class Baza::Row
     @args[:col_id] ||= :id
     raise "No table given." unless @args[:table]
 
-    if @args[:data] && (@args[:data].is_a?(Integer) || @args[:data].is_a?(Fixnum) || @args[:data].is_a?(String))
+    if @args[:data] && (@args[:data].is_a?(Integer) || @args[:data].class.name == "Fixnum" || @args[:data].is_a?(String))
       @data = {@args[:col_id].to_sym => @args[:data].to_s}
       reload
     elsif @args[:data] && @args.fetch(:data).is_a?(Hash)
       @data = {}
       @args.fetch(:data).each do |key, value|
-        key = key.to_sym unless key.is_a?(Fixnum)
+        key = key.to_sym unless key.class.name == "Fixnum"
         @data[key] = value
       end
     elsif @args[:id]

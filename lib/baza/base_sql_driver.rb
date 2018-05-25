@@ -214,7 +214,7 @@ class Baza::BaseSqlDriver
   # If it is a number, then just the raw number as a string will be returned.
   # nil's will be NULL and strings will have quotes and will be escaped.
   def self.sqlval(val)
-    if val.is_a?(Fixnum) || val.is_a?(Integer)
+    if val.class.name == "Fixnum" || val.is_a?(Integer)
       val.to_s
     elsif val == nil
       "NULL"
