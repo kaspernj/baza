@@ -14,6 +14,8 @@ class Baza::Driver::Tiny < Baza::BaseSqlDriver
     @sep_val = SEPARATOR_VALUE
     @sep_index = SEPARATOR_INDEX
 
+  def initialize(db)
+    super
     @client = TinyTds::Client.new(username: db.opts.fetch(:user), password: db.opts.fetch(:pass), host: db.opts.fetch(:host))
   end
 
