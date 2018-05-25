@@ -300,7 +300,7 @@ class Baza::Db
     if @debug
       print "SQL: #{string}\n"
 
-      if @debug.is_a?(Fixnum) && @debug >= 2
+      if @debug.class.name == "Fixnum" && @debug >= 2
         print caller.join("\n")
         print "\n"
       end
