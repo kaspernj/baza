@@ -4,10 +4,6 @@ class Baza::Driver::Tiny::Commands
   end
 
   def last_id
-    data = @db.query("SELECT SCOPE_IDENTITY() AS id").first
-
-    puts "Data: #{data}"
-
-    data.fetch(:id)
+    @db.query("SELECT SCOPE_IDENTITY() AS id").first.fetch(:id)
   end
 end
