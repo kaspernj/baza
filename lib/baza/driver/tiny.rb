@@ -13,6 +13,7 @@ class Baza::Driver::Tiny < Baza::BaseSqlDriver
     @sep_col = SEPARATOR_COLUMN
     @sep_val = SEPARATOR_VALUE
     @sep_index = SEPARATOR_INDEX
+  end
 
   def initialize(db)
     super
