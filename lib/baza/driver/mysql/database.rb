@@ -59,6 +59,8 @@ class Baza::Driver::Mysql::Database < Baza::Database
     end
   end
 
+private
+
   def rename(new_name)
     new_name = new_name.to_s
     @db.databases.create(name: new_name)
