@@ -18,7 +18,7 @@ class Baza::Commands::Select
     add_select_sql
     add_terms_sql
     add_order_sql
-    add_limit_sql
+    add_limit_sql unless @db.mssql?
 
     result = execute_query
 
@@ -45,7 +45,9 @@ private
     end
 
     select_sql ||= "*"
-    @sql << "SELECT #{select_sql} FROM"
+    @sql << "SELECT"
+    @sql << top_sql if @db.mssql?
+    @sql << " #{select_sql} FROM"
 
     if @table_name.is_a?(Array)
       @sql << " #{@sep_table}#{@table_name.first}#{@sep_table}.#{@sep_table}#{@table_name.last}#{@sep_table}"
@@ -97,6 +99,11 @@ private
 
       @sql << " LIMIT #{@args.fetch(:limit_from)}, #{@args.fetch(:limit_to)}"
     end
+  end
+
+  def top_sql
+    return unless @args[:limit]
+    " TOP #{@args[:limit].to_i}"
   end
 
   def execute_query

@@ -6,17 +6,14 @@ class Baza::Driver::Tiny < Baza::BaseSqlDriver
   SEPARATOR_INDEX = "`".freeze
 
   def initialize(db)
-    super
-
     @sep_database = SEPARATOR_DATABASE
     @sep_table = SEPARATOR_TABLE
     @sep_col = SEPARATOR_COLUMN
     @sep_val = SEPARATOR_VALUE
     @sep_index = SEPARATOR_INDEX
-  end
-
-  def initialize(db)
+    
     super
+    
     @client = TinyTds::Client.new(username: db.opts.fetch(:user), password: db.opts.fetch(:pass), host: db.opts.fetch(:host))
   end
 

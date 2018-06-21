@@ -444,14 +444,18 @@ class Baza::Db
   end
 
   def sqlite?
-    @sqlite ||= @driver.class.name.downcase.include?("sqlite")
+    @driver.class.name.downcase.include?("sqlite")
   end
 
   def mysql?
-    @mysql ||= @driver.class.name.downcase.include?("mysql")
+    @driver.class.name.downcase.include?("mysql")
+  end
+
+  def mssql?
+    @driver.class.name.downcase.include?("tiny")
   end
 
   def postgres?
-    @postgres ||= @driver.class.name.downcase.include?("pg")
+    @driver.class.name.downcase.include?("pg")
   end
 end
