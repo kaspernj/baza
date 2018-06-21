@@ -3,7 +3,23 @@ class Baza::Driver::Tiny::Result < Baza::ResultBase
     @result = result.to_a
   end
 
-  def each(*args, &blk)
-    @result.each(*args, &blk)
+  def each(&blk)
+    enum.each(&blk)
+  end
+
+  def fetch
+    enum.next
+  rescue StopIteration
+    nil
+  end
+
+private
+
+  def enum
+    @enum ||= Enumerator.new do |yielder|
+      @result.each do |result|
+        yielder << result
+      end
+    end
   end
 end
