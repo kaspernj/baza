@@ -1,23 +1,5 @@
 # This class controls the results for the normal MySQL-driver.
 class Baza::Driver::Mysql::Result < Baza::ResultBase
-  INT_TYPES = {
-    ::Mysql::Field::TYPE_DECIMAL => true,
-    ::Mysql::Field::TYPE_TINY => true,
-    ::Mysql::Field::TYPE_LONG => true,
-    ::Mysql::Field::TYPE_YEAR => true
-  }.freeze
-  FLOAT_TYPES = {
-    ::Mysql::Field::TYPE_DECIMAL => true,
-    ::Mysql::Field::TYPE_FLOAT => true,
-    ::Mysql::Field::TYPE_DOUBLE => true
-  }.freeze
-  TIME_TYPES = {
-    ::Mysql::Field::TYPE_DATETIME => true
-  }.freeze
-  DATE_TYPES = {
-    ::Mysql::Field::TYPE_DATE => true
-  }.freeze
-
   # Constructor. This should not be called manually.
   def initialize(driver, result)
     @driver = driver
@@ -74,16 +56,17 @@ private
   def translate_value_to_type(value, type_no)
     return if value == nil
 
-    if INT_TYPES[type_no]
-      return value.to_i
-    elsif FLOAT_TYPES[type_no]
-      return value.to_f
-    elsif TIME_TYPES[type_no]
-      return Time.parse(value)
-    elsif DATE_TYPES[type_no]
-      return Date.parse(value)
+    case type_no
+    when ::Mysql::Field::TYPE_DECIMAL, ::Mysql::Field::TYPE_TINY, ::Mysql::Field::TYPE_LONG, ::Mysql::Field::TYPE_YEAR
+      value.to_i
+    when ::Mysql::Field::TYPE_DECIMAL, ::Mysql::Field::TYPE_FLOAT, ::Mysql::Field::TYPE_DOUBLE
+      value.to_f
+    when ::Mysql::Field::TYPE_DATETIME
+      Time.parse(value)
+    when ::Mysql::Field::TYPE_DATE
+      Date.parse(value)
     else
-      return value.to_s
+      value.to_s
     end
   end
 end

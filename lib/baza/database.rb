@@ -20,6 +20,7 @@ class Baza::Database
   end
 
   def name=(new_name)
+    @name_was = @name
     @changes[:name] = new_name
     @name = new_name
   end
@@ -29,7 +30,7 @@ class Baza::Database
   end
 
   def name_was
-    @changes[:name]
+    @name_was
   end
 
   def tables(args = {})

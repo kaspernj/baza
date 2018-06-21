@@ -1,2 +1,2 @@
-class Baza::Driver::Sqlite3java::Database < Baza::Database
+class Baza::Driver::Sqlite3Java::Database < Baza::Database
 end
