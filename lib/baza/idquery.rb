@@ -85,8 +85,8 @@ private
 
   # Spawns a new database-result to read from.
   def new_res
-    table_esc = "#{@db.sep_table}#{@db.escape_table(@args[:table])}#{@db.sep_table}"
-    col_esc = "#{@db.sep_col}#{@db.escape_column(@args[:col])}#{@db.sep_col}"
+    table_esc = @db.quote_table(@args.fetch(:table))
+    col_esc = @db.quote_column(@args.fetch(:col))
     ids = @ids.shift(@args[:size])
 
     if ids.empty?
@@ -94,7 +94,7 @@ private
       return nil
     end
 
-    ids_sql = ids.map { |id| "#{@db.sep_val}#{@db.esc(id)}#{@db.sep_val}" }.join(",")
+    ids_sql = ids.map { |id| @db.quote_value(id) }.join(",")
     query_str = "SELECT * FROM #{table_esc} WHERE #{table_esc}.#{col_esc} IN (#{ids_sql})"
     puts "Query: #{query_str}" if @debug
 

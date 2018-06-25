@@ -43,12 +43,12 @@ class Baza::Table
   end
 
   def rows_count
-    sql = "SELECT COUNT(*) AS count FROM #{@db.sep_table}#{@db.escape_table(name)}#{@db.sep_table}"
+    sql = "SELECT COUNT(*) AS count FROM #{db.quote_table(name)}"
     @db.query(sql).fetch.fetch(:count).to_i
   end
 
   def truncate
-    @db.query("TRUNCATE #{@db.sep_table}#{@db.escape_table(name)}#{@db.sep_table}")
+    @db.query("TRUNCATE #{@db.quote_table(name)}")
     self
   end
 
@@ -60,7 +60,7 @@ class Baza::Table
 
   def create_columns(col_arr)
     col_arr.each do |col_data|
-      sql = "ALTER TABLE #{db.sep_col}#{name}#{db.sep_col} ADD COLUMN #{@db.columns.data_sql(col_data)};"
+      sql = "ALTER TABLE #{db.quote_column(name)} ADD COLUMN #{@db.columns.data_sql(col_data)};"
       @db.query(sql)
     end
   end

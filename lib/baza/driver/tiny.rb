@@ -36,4 +36,12 @@ class Baza::Driver::Tiny < Baza::BaseSqlDriver
     result = @client.execute(sql)
     Baza::Driver::Tiny::Result.new(result)
   end
+
+  def quote_column(column_name)
+    "[#{escape_table(column_name)}]"
+  end
+
+  def quote_table(table_name)
+    "[#{escape_table(table_name)}]"
+  end
 end
