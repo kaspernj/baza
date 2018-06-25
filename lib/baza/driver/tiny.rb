@@ -11,9 +11,9 @@ class Baza::Driver::Tiny < Baza::BaseSqlDriver
     @sep_col = SEPARATOR_COLUMN
     @sep_val = SEPARATOR_VALUE
     @sep_index = SEPARATOR_INDEX
-    
+
     super
-    
+
     @client = TinyTds::Client.new(username: db.opts.fetch(:user), password: db.opts.fetch(:pass), host: db.opts.fetch(:host))
   end
 
@@ -35,5 +35,13 @@ class Baza::Driver::Tiny < Baza::BaseSqlDriver
   def query(sql)
     result = @client.execute(sql)
     Baza::Driver::Tiny::Result.new(result)
+  end
+
+  def quote_column(column_name)
+    "[#{escape_table(column_name)}]"
+  end
+
+  def quote_table(table_name)
+    "[#{escape_table(table_name)}]"
   end
 end

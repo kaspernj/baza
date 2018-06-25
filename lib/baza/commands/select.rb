@@ -36,10 +36,10 @@ private
     # Set up IDQuery-stuff if that is given in arguments.
     if @args && @args[:idquery]
       if @args.fetch(:idquery) == true
-        select_sql = "#{@db.sep_col}id#{@db.sep_col}"
+        select_sql = "#{@db.quote_column(:id)}"
         @col = :id
       else
-        select_sql = "#{@db.sep_col}#{@db.escape_column(@args.fetch(:idquery))}#{@db.sep_col}"
+        select_sql = "#{@db.quote_column(@args.fetch(:idquery))}"
         @col = @args.fetch(:idquery)
       end
     end
@@ -50,9 +50,9 @@ private
     @sql << " #{select_sql} FROM"
 
     if @table_name.is_a?(Array)
-      @sql << " #{@sep_table}#{@table_name.first}#{@sep_table}.#{@sep_table}#{@table_name.last}#{@sep_table}"
+      @sql << " #{@db.quote_table(@table_name.first)}.#{@db.quote_table(@table_name.last)}"
     else
-      @sql << " #{@sep_table}#{@table_name}#{@sep_table}"
+      @sql << " #{@db.quote_table(@table_name)}"
     end
   end
 
@@ -71,10 +71,10 @@ private
         @args.fetch(:orderby).each do |order_by|
           @sql << "," unless first
           first = false if first
-          @sql << " #{@db.sep_col}#{@db.escape_column(order_by)}#{@db.sep_col}"
+          @sql << " #{@db.quote_column(order_by)}"
         end
       else
-        @sql << " #{@db.sep_col}#{@db.escape_column(@args.fetch(:orderby))}#{@db.sep_col}"
+        @sql << " #{@db.quote_column(@args.fetch(:orderby))}"
       end
     end
   end

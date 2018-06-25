@@ -54,6 +54,10 @@ class Baza::BaseSqlDriver
     self.class.escape_column(string)
   end
 
+  def quote_column(column_name)
+    "#{sep_col}#{escape_column(column_name)}#{sep_col}"
+  end
+
   def self.escape_table(string)
     string = string.to_s
     raise "Invalid table-string: #{string}" if string.include?(SEPARATOR_TABLE)
@@ -62,6 +66,10 @@ class Baza::BaseSqlDriver
 
   def escape_table(string)
     self.class.escape_table(string)
+  end
+
+  def quote_table(table_name)
+    "#{sep_table}#{escape_table(table_name)}#{sep_table}"
   end
 
   def self.escape_database(string)
@@ -82,6 +90,10 @@ class Baza::BaseSqlDriver
 
   def escape_index(string)
     self.class.escape_index(string)
+  end
+
+  def quote_index(index_name)
+    "#{sep_index}#{escape_index(index_name)}#{sep_index}"
   end
 
   def transaction
@@ -199,11 +211,11 @@ class Baza::BaseSqlDriver
       if value.is_a?(Array)
         raise "Array for column '#{key}' was empty." if value.empty?
         values = value.map { |v| "'#{escape(v)}'" }.join(",")
-        sql << "#{@sep_col}#{key}#{@sep_col} IN (#{values})"
+        sql << "#{quote_column(key)} IN (#{values})"
       elsif value.is_a?(Hash)
         raise "Dont know how to handle hash."
       else
-        sql << "#{@sep_col}#{key}#{@sep_col} = #{sqlval(value)}"
+        sql << "#{quote_column(key)} = #{sqlval(value)}"
       end
     end
 
