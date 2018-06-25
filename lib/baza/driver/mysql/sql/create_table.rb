@@ -9,7 +9,7 @@ class Baza::Driver::Mysql::Sql::CreateTable
   def sql
     sql = "CREATE"
     sql << " TEMPORARY" if @temporary
-    sql << " TABLE #{Baza::Driver::Mysql::SEPARATOR_TABLE}#{Baza::Driver::Mysql.escape_table(@name)}#{Baza::Driver::Mysql::SEPARATOR_TABLE} ("
+    sql << " TABLE #{Baza::Driver::Mysql.quote_table(@name)} ("
 
     first = true
     @columns.each do |col_data|

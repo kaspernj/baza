@@ -11,8 +11,8 @@ class Baza::Driver::Pg::ForeignKey < Baza::ForeignKey
 
   def drop
     @db.query("
-      ALTER TABLE #{@db.escape_table(table_name)}
-      DROP CONSTRAINT #{@db.escape_table(name)}
+      ALTER TABLE #{@db.quote_table(table_name)}
+      DROP CONSTRAINT #{@db.quote_table(name)}
     ")
     true
   end

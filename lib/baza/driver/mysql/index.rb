@@ -70,7 +70,7 @@ class Baza::Driver::Mysql::Index < Baza::Index
   end
 
   def reload
-    data = @db.query("SHOW INDEX FROM `#{@db.escape_table(@table_name)}` WHERE `Key_name` = '#{@db.esc(name)}'").fetch
+    data = @db.query("SHOW INDEX FROM #{@db.quote_table(@table_name)} WHERE #{@db.quote_column("Key_name")} = #{@db.quote_value(name)}").fetch
     raise Baza::Errors::IndexNotFound unless data
     @data = data
     self

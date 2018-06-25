@@ -11,8 +11,8 @@ class Baza::Driver::Mysql::ForeignKey < Baza::ForeignKey
 
   def drop
     @db.query("
-      ALTER TABLE `#{@db.escape_table(table_name)}`
-      DROP FOREIGN KEY `#{@db.escape_table(name)}`
+      ALTER TABLE #{@db.quote_table(table_name)}
+      DROP FOREIGN KEY #{@db.quote_table(name)}
     ")
     true
   end

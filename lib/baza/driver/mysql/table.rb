@@ -30,7 +30,7 @@ class Baza::Driver::Mysql::Table < Baza::Table
     raise "Cant drop native table: '#{name}'" if native?
 
     @db.with_database(database_name) do
-      @db.query("DROP TABLE `#{@db.escape_table(name)}`")
+      @db.query("DROP TABLE #{@db.quote_table(name)}")
     end
 
     @tables.__send__(:remove_from_list, self)
@@ -45,7 +45,7 @@ class Baza::Driver::Mysql::Table < Baza::Table
   end
 
   def optimize
-    @db.query("OPTIMIZE TABLE `#{@db.escape_table(name)}`")
+    @db.query("OPTIMIZE TABLE #{@db.quote_table(name)}")
     self
   end
 
@@ -65,7 +65,7 @@ class Baza::Driver::Mysql::Table < Baza::Table
   def columns(args = nil)
     @db.columns
     ret = []
-    sql = "SHOW FULL COLUMNS FROM `#{@db.escape_table(name)}`"
+    sql = "SHOW FULL COLUMNS FROM #{@db.quote_table(name)}"
     sql << " WHERE `Field` = '#{@db.esc(args.fetch(:name))}'" if args && args.key?(:name)
 
     @db.q(sql) do |d_cols|
@@ -108,11 +108,11 @@ class Baza::Driver::Mysql::Table < Baza::Table
         INFORMATION_SCHEMA.KEY_COLUMN_USAGE
 
       WHERE
-        REFERENCED_TABLE_SCHEMA = '#{@db.escape_database(@db.current_database_name)}' AND
-        TABLE_NAME = '#{@db.escape_table(name)}'
+        REFERENCED_TABLE_SCHEMA = #{@db.quote_value(@db.current_database_name)} AND
+        TABLE_NAME = #{@db.quote_value(name)}
     "
 
-    sql << " AND CONSTRAINT_NAME = '#{@db.escape(args.fetch(:name))}'" if args[:name]
+    sql << " AND CONSTRAINT_NAME = #{@db.quote_value(args.fetch(:name))}" if args[:name]
 
     result = [] unless block_given?
 
@@ -143,8 +143,8 @@ class Baza::Driver::Mysql::Table < Baza::Table
   def indexes(args = nil, &blk)
     ret = {}
 
-    sql = "SHOW INDEX FROM `#{@db.escape_table(name)}`"
-    sql << " WHERE `Key_name` = '#{@db.esc(args.fetch(:name))}'" if args && args.key?(:name)
+    sql = "SHOW INDEX FROM #{@db.quote_table(name)}"
+    sql << " WHERE #{@db.quote_column("Key_name")} = #{@db.quote_value(args.fetch(:name))}" if args && args.key?(:name)
 
     @db.query(sql) do |d_indexes|
       next if d_indexes[:Key_name] == "PRIMARY"
@@ -221,7 +221,7 @@ class Baza::Driver::Mysql::Table < Baza::Table
       sql << " INDEX #{db.sep_index}#{db.escape_index(index_data.fetch(:name))}#{db.sep_index}"
 
       if args[:on_table] || !args.key?(:on_table)
-        sql << " ON #{db.sep_table}#{db.escape_table(args.fetch(:table_name))}#{db.sep_table}"
+        sql << " ON #{db.quote_table(args.fetch(:table_name))}"
       end
 
       sql << " ("
@@ -231,7 +231,7 @@ class Baza::Driver::Mysql::Table < Baza::Table
         sql << ", " unless first
         first = false if first
 
-        sql << "#{db.sep_col}#{db.escape_column(col_name)}#{db.sep_col}"
+        sql << db.quote_column(col_name)
       end
 
       sql << ")"
@@ -247,7 +247,7 @@ class Baza::Driver::Mysql::Table < Baza::Table
     oldname = name
 
     @tables.__send__(:remove_from_list, self)
-    @db.query("ALTER TABLE `#{@db.escape_table(oldname)}` RENAME TO `#{@db.escape_table(newname)}`")
+    @db.query("ALTER TABLE #{@db.quote_table(oldname)} RENAME TO #{@db.quote_table(newname)}")
 
     @data[:name] = newname
     @name = newname
@@ -283,7 +283,7 @@ class Baza::Driver::Mysql::Table < Baza::Table
   def clone(newname, args = {})
     raise "Invalid name." if newname.to_s.strip.empty?
 
-    sql = "CREATE TABLE #{@db.sep_table}#{@db.escape_table(newname)}#{@db.sep_table} ("
+    sql = "CREATE TABLE #{@db.quote_table(newname)} ("
     first = true
     pkey_found = false
     pkeys = []
@@ -316,7 +316,7 @@ class Baza::Driver::Mysql::Table < Baza::Table
       pkeys.each do |pkey|
         sql << ", " unless first
         first = false if first
-        sql << "#{@db.sep_col}#{@db.escape_column(pkey)}#{@db.sep_col}"
+        sql << @db.quotecolumn(pkey)
       end
 
       sql << ")"
@@ -332,7 +332,7 @@ class Baza::Driver::Mysql::Table < Baza::Table
 
 
     # Insert data of previous data in a single query.
-    @db.query("INSERT INTO #{@db.sep_table}#{@db.escape_table(newname)}#{@db.sep_table} SELECT * FROM #{@db.sep_table}#{@db.escape_table(name)}#{@db.sep_table}")
+    @db.query("INSERT INTO #{@db.quote_table(newname)} SELECT * FROM #{@db.quote_table(name)}")
 
 
     # Create indexes.
@@ -357,7 +357,7 @@ class Baza::Driver::Mysql::Table < Baza::Table
   # Changes the engine for a table.
   def engine=(newengine)
     raise "Invalid engine: '#{newengine}'." unless newengine.to_s =~ /^[A-z]+$/
-    @db.query("ALTER TABLE `#{@db.escape_table(name)}` ENGINE = #{newengine}") if engine.to_s != newengine.to_s
+    @db.query("ALTER TABLE #{@db.quote_table(name)} ENGINE = #{newengine}") if engine.to_s != newengine.to_s
     @data[:ENGINE] = newengine
   end
 

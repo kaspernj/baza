@@ -23,7 +23,7 @@ class Baza::Driver::Mysql::Column < Baza::Column
     other_table = other_column.table
 
     sql = "
-      ALTER TABLE #{@db.escape_table(table_name)}
+      ALTER TABLE #{@db.quote_table(table_name)}
       ADD CONSTRAINT #{@db.escape_table(fk_name)}
       FOREIGN KEY (#{@db.escape_table(name)})
       REFERENCES #{@db.escape_table(other_table.name)} (#{@db.escape_column(other_column.name)})
@@ -39,7 +39,7 @@ class Baza::Driver::Mysql::Column < Baza::Column
   end
 
   def reload
-    data = @db.query("SHOW FULL COLUMNS FROM `#{@db.escape_table(table_name)}` WHERE `Field` = '#{@db.esc(name)}'").fetch
+    data = @db.query("SHOW FULL COLUMNS FROM #{@db.quote_table(table_name)} WHERE #{@db.quote_column("Field")} = #{@db.quote_value(name)}").fetch
     raise Baza::Errors::ColumnNotFound unless data
     @data = data
     @type = nil
@@ -105,15 +105,13 @@ class Baza::Driver::Mysql::Column < Baza::Column
 
   # Drops the column from the table.
   def drop
-    @db.query("ALTER TABLE `#{@db.escape_table(table_name)}` DROP COLUMN `#{@db.escape_column(name)}`")
+    @db.query("ALTER TABLE #{@db.quote_table(table_name)} DROP COLUMN #{@db.quote_column(name)}")
     table.__send__(:remove_column_from_list, self)
     nil
   end
 
   # Changes the column properties by the given hash.
   def change(data)
-    col_escaped = "#{@db.sep_col}#{@db.escape_column(name)}#{@db.sep_col}"
-    table_escape = "#{@db.sep_table}#{@db.escape_table(table_name)}#{@db.sep_table}"
     newdata = data.clone
 
     newdata[:name] = name unless newdata.key?(:name)
@@ -126,7 +124,7 @@ class Baza::Driver::Mysql::Column < Baza::Column
     drop_add = true if name.to_s != newdata[:name].to_s
 
     table.__send__(:remove_column_from_list, self) if drop_add
-    @db.query("ALTER TABLE #{table_escape} CHANGE #{col_escaped} #{@db.columns.data_sql(newdata)}")
+    @db.query("ALTER TABLE #{@db.quote_table(table_name)} CHANGE #{@db.quote_column(name)} #{@db.columns.data_sql(newdata)}")
     @name = newdata[:name].to_s
     reload
     table.__send__(:add_column_to_list, self) if drop_add

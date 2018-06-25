@@ -22,7 +22,7 @@ class Baza::Driver::Pg::Databases
       end
     end
 
-    @db.query("CREATE DATABASE #{@db.sep_database}#{@db.escape_table(args.fetch(:name))}#{@db.sep_database}")
+    @db.query("CREATE DATABASE #{@db.quote_table(args.fetch(:name))}")
     true
   end
 

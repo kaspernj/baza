@@ -65,14 +65,14 @@ private
       sql << ", " unless first
       first = false if first
 
-      sql << "#{@db.sep_col}#{@db.escape_column(column_name)}#{@db.sep_col}"
+      sql << @db.quote_column(column_name)
     end
 
     sql
   end
 
   def insert_sql
-    sql = "INSERT INTO #{@db.sep_table}#{@db.escape_table(@table_name)}#{@db.sep_table} ("
+    sql = "INSERT INTO #{@db.quote_table(@table_name)} ("
 
     combined_data = @updates.merge(@terms)
 
@@ -80,7 +80,7 @@ private
     combined_data.each_key do |column_name|
       sql << ", " unless first
       first = false if first
-      sql << "#{@db.sep_col}#{@db.escape_column(column_name)}#{@db.sep_col}"
+      sql << @db.quote_column(column_name)
     end
 
     sql << ") VALUES ("
@@ -89,7 +89,7 @@ private
     combined_data.each_value do |value|
       sql << ", " unless first
       first = false if first
-      sql << @db.sqlval(value).to_s
+      sql << @db.quote_value(value).to_s
     end
 
     sql << ")"
@@ -97,7 +97,7 @@ private
   end
 
   def update_sql
-    "UPDATE #{@db.sep_table}#{@db.escape_table(@table_name)}#{@db.sep_table} #{update_set_sql} #{update_where_sql}"
+    "UPDATE #{@db.quote_table(@table_name)} #{update_set_sql} #{update_where_sql}"
   end
 
   def update_set_sql
@@ -107,7 +107,7 @@ private
     @updates.each do |key, value|
       sql << ", " unless first
       first = false if first
-      sql << "#{@db.sep_col}#{@db.escape_column(key)}#{@db.sep_col} = #{@db.sqlval(value)}"
+      sql << "#{@db.quote_column(key)} = #{@db.quote_value(value)}"
     end
 
     sql
@@ -120,7 +120,7 @@ private
     @terms.each do |key, value|
       sql << " AND " unless first
       first = false if first
-      sql << "#{@db.sep_col}#{@db.escape_column(key)}#{@db.sep_col} = #{@db.sqlval(value)}"
+      sql << "#{@db.quote_column(key)} = #{@db.quote_value(value)}"
     end
 
     sql

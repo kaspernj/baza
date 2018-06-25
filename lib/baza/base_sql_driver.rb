@@ -215,7 +215,7 @@ class Baza::BaseSqlDriver
       elsif value.is_a?(Hash)
         raise "Dont know how to handle hash."
       else
-        sql << "#{quote_column(key)} = #{sqlval(value)}"
+        sql << "#{quote_column(key)} = #{quote_value(value)}"
       end
     end
 
@@ -225,7 +225,7 @@ class Baza::BaseSqlDriver
   # Returns the correct SQL-value for the given value.
   # If it is a number, then just the raw number as a string will be returned.
   # nil's will be NULL and strings will have quotes and will be escaped.
-  def self.sqlval(val)
+  def self.quote_value(val)
     if val.class.name == "Fixnum" || val.is_a?(Integer)
       val.to_s
     elsif val == nil
@@ -239,8 +239,8 @@ class Baza::BaseSqlDriver
     end
   end
 
-  def sqlval(val)
-    return @conn.sqlval(val) if @conn.respond_to?(:sqlval)
+  def quote_value(val)
+    return @conn.quote_value(val) if @conn.respond_to?(:quote_value)
 
     if val.class.name == "Fixnum" || val.is_a?(Integer)
       val.to_s

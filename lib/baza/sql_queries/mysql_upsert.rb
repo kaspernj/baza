@@ -9,7 +9,7 @@ class Baza::SqlQueries::MysqlUpsert
   def execute
     procedure_name = "baza_upsert_#{SecureRandom.hex(5)}"
 
-    sql = "CREATE PROCEDURE `#{@db.escape_table(procedure_name)}` () BEGIN\n"
+    sql = "CREATE PROCEDURE #{@db.quote_table(procedure_name)} () BEGIN\n"
     sql << "\tIF EXISTS(#{select_query}) THEN\n"
     sql << "\t\t#{update_sql};\n"
     sql << "\tELSE\n"
@@ -20,9 +20,9 @@ class Baza::SqlQueries::MysqlUpsert
     @db.query(sql)
 
     begin
-      @db.query("CALL `#{@db.escape_table(procedure_name)}`")
+      @db.query("CALL #{@db.quote_table(procedure_name)}")
     ensure
-      @db.query("DROP PROCEDURE `#{@db.escape_table(procedure_name)}`")
+      @db.query("DROP PROCEDURE #{@db.quote_table(procedure_name)}")
     end
   end
 
@@ -30,13 +30,13 @@ private
 
   def select_query
     sql = ""
-    sql << "SELECT * FROM #{@db.sep_table}#{@db.escape_table(@table_name)}#{@db.sep_table} WHERE"
+    sql << "SELECT * FROM #{@db.quote_table(@table_name)} WHERE"
 
     first = true
     @terms.each do |column, value|
       sql << " AND" unless first
       first = false if first
-      sql << " #{@db.sep_col}#{@db.escape_column(column)}#{@db.sep_col} = #{@db.sqlval(value)}"
+      sql << " #{@db.quote_column(column)} = #{@db.quote_value(value)}"
     end
 
     sql

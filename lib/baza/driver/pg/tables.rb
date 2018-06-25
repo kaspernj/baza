@@ -46,7 +46,7 @@ class Baza::Driver::Pg::Tables < Baza::Tables
 
     create_table_sql = "CREATE"
     create_table_sql << " TEMPORARY" if data[:temp]
-    create_table_sql << " TABLE #{db.sep_table}#{db.escape_table(table_name)}#{db.sep_table} ("
+    create_table_sql << " TABLE #{db.quote_table(table_name)} ("
 
     first = true
     data.fetch(:columns).each do |col_data|

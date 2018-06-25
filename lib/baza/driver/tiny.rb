@@ -21,6 +21,10 @@ class Baza::Driver::Tiny < Baza::BaseSqlDriver
     @client.close
   end
 
+  def escape(value)
+    @client.escape(value)
+  end
+
   def insert(table_name, data, args = {})
     sql = Baza::SqlQueries::GenericInsert.new({
       db: @db,

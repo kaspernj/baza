@@ -16,13 +16,13 @@ class Baza::SqlQueries::GenericUpdate
   end
 
   def to_sql
-    sql = "UPDATE #{@db.sep_col}#{@db.escape_table(@table_name)}#{@db.sep_col} SET "
+    sql = "UPDATE #{@db.quote_table(@table_name)} SET "
 
     first = true
     @data.each do |key, value|
       sql << ", " unless first
       first = false if first
-      sql << "#{@db.sep_col}#{@db.escape_column(key)}#{@db.sep_col} = #{@db.sqlval(value)}"
+      sql << "#{@db.quote_column(key)} = #{@db.quote_value(value)}"
     end
 
     sql << " WHERE #{@db.sql_make_where(@terms)}" if @terms && !@terms.empty?
