@@ -218,7 +218,7 @@ class Baza::Driver::Mysql::Table < Baza::Table
       end
 
       sql << " UNIQUE" if index_data[:unique]
-      sql << " INDEX #{db.sep_index}#{db.escape_index(index_data.fetch(:name))}#{db.sep_index}"
+      sql << " INDEX #{db.quote_index(index_data.fetch(:name))}"
 
       if args[:on_table] || !args.key?(:on_table)
         sql << " ON #{db.quote_table(args.fetch(:table_name))}"

@@ -82,6 +82,10 @@ class Baza::BaseSqlDriver
     self.class.escape_database(string)
   end
 
+  def quote_database(string)
+    "#{@sep_database}#{escape_database(string)}#{@sep_database}"
+  end
+
   def self.escape_index(string)
     string = string.to_s
     raise "Invalid index-string: #{string}" if string.include?(SEPARATOR_INDEX)

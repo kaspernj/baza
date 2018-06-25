@@ -5,7 +5,7 @@ class Baza::Driver::Mysql::Database < Baza::Database
   end
 
   def drop
-    sql = "DROP DATABASE `#{@db.escape_database(name)}`"
+    sql = "DROP DATABASE #{@db.quote_database(name)}"
     @db.query(sql)
     self
   end

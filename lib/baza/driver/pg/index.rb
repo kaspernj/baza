@@ -24,7 +24,7 @@ class Baza::Driver::Pg::Index < Baza::Index
   end
 
   def rename(new_name)
-    @db.query("ALTER INDEX #{@db.sep_index}#{@db.escape_index(name)}#{@db.sep_index} RENAME TO #{@db.sep_index}#{@db.escape_index(new_name)}#{@db.sep_index}")
+    @db.query("ALTER INDEX #{@db.quote_index(name)} RENAME TO #{@db.quote_index(new_name)}")
     @name = new_name.to_s
     self
   end
