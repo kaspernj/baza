@@ -80,6 +80,7 @@ class Baza::Driver::ActiveRecord < Baza::BaseSqlDriver
     if conn_name.include?("mysql")
       @db.opts[:db] ||= query("SELECT DATABASE()").fetch.fetch(:"DATABASE()")
     elsif @driver_type == :pg
+      @conn.reconnect! unless @conn.active?
       @db.opts[:db] ||= query("SELECT current_database()").fetch.values.first
     end
   end
