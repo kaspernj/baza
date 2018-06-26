@@ -25,6 +25,44 @@ class Baza::Driver::Tiny < Baza::BaseSqlDriver
     @client.escape(value)
   end
 
+  def self.escape_identifier(string)
+    string = string.to_s
+    raise "Invalid column-string: #{string}" if string.include?("[") || string.include?("]")
+    string
+  end
+
+  def self.escape_database(name)
+    escape_identifier(name)
+  end
+
+  def self.escape_column(name)
+    escape_identifier(name)
+  end
+
+  def self.escape_index(name)
+    escape_identifier(name)
+  end
+
+  def self.escape_table(name)
+    escape_identifier(name)
+  end
+
+  def escape_database(name)
+    self.class.escape_identifier(name)
+  end
+
+  def escape_column(name)
+    self.class.escape_identifier(name)
+  end
+
+  def escape_index(name)
+    self.class.escape_identifier(name)
+  end
+
+  def escape_table(name)
+    self.class.escape_identifier(name)
+  end
+
   def insert(table_name, data, args = {})
     sql = Baza::SqlQueries::GenericInsert.new({
       db: @db,
@@ -41,11 +79,39 @@ class Baza::Driver::Tiny < Baza::BaseSqlDriver
     Baza::Driver::Tiny::Result.new(result)
   end
 
+  def self.quote_identifier(name)
+    "[#{escape_database(name)}]"
+  end
+
+  def self.quote_database(database_name)
+    quote_identifier(database_name)
+  end
+
+  def self.quote_column(column_name)
+    quote_identifier(column_name)
+  end
+
+  def self.quote_index(index_name)
+    quote_identifier(index_name)
+  end
+
+  def self.quote_table(table_name)
+    quote_identifier(table_name)
+  end
+
+  def quote_database(database_name)
+    self.class.quote_identifier(database_name)
+  end
+
   def quote_column(column_name)
-    "[#{escape_table(column_name)}]"
+    self.class.quote_identifier(column_name)
+  end
+
+  def quote_index(index_name)
+    self.class.quote_identifier(index_name)
   end
 
   def quote_table(table_name)
-    "[#{escape_table(table_name)}]"
+    self.class.quote_identifier(table_name)
   end
 end
