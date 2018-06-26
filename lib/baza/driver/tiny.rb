@@ -1,9 +1,9 @@
 class Baza::Driver::Tiny < Baza::BaseSqlDriver
-  SEPARATOR_DATABASE = "`".freeze
-  SEPARATOR_TABLE = "".freeze
-  SEPARATOR_COLUMN = "".freeze
+  SEPARATOR_DATABASE = "[".freeze
+  SEPARATOR_TABLE = "[".freeze
+  SEPARATOR_COLUMN = "[".freeze
+  SEPARATOR_INDEX = "[".freeze
   SEPARATOR_VALUE = "'".freeze
-  SEPARATOR_INDEX = "`".freeze
 
   def initialize(db)
     @sep_database = SEPARATOR_DATABASE
