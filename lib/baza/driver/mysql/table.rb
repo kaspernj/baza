@@ -316,7 +316,7 @@ class Baza::Driver::Mysql::Table < Baza::Table
       pkeys.each do |pkey|
         sql << ", " unless first
         first = false if first
-        sql << @db.quotecolumn(pkey)
+        sql << @db.quote_column(pkey)
       end
 
       sql << ")"
