@@ -14,7 +14,7 @@ gem "wref", "~> 0.0.8"
 # Add dependencies to develop your gem here.
 # Include everything needed to run rake, tests, features, etc.
 group :development, :test do
-  gem "activerecord", "4.2.5"
+  gem "activerecord"
   gem "activerecord-jdbc-adapter", platform: :jruby
   gem "best_practice_project", "0.0.9", require: false
   gem "bundler"
