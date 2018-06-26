@@ -10,7 +10,7 @@ class Baza::InfoActiveRecordPg
       database: "baza",
       username: "postgres"
     )
-    @conn ||= @conn_pool.connection
+    @conn = @conn_pool.connection
 
     {pool: @conn_pool, conn: @conn}
   end
