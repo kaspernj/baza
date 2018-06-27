@@ -7,7 +7,7 @@ class Baza::Driver::Pg::Database < Baza::Database
   def drop
     with_cloned_conn_and_terminated_connections do |cloned_conn|
       # Drop the database
-      cloned_conn.query("DROP DATABASE #{db.sep_database}#{db.escape_database(name)}#{db.sep_database}")
+      cloned_conn.query("DROP DATABASE #{db.quote_database(name)}")
     end
 
     self
@@ -65,7 +65,7 @@ private
 
   def rename(new_name)
     with_cloned_conn_and_terminated_connections do |cloned_conn|
-      cloned_conn.query("ALTER DATABASE #{db.sep_database}#{db.escape_database(name_was)}#{db.sep_database} RENAME TO #{db.sep_database}#{db.escape_database(name)}#{db.sep_database}")
+      cloned_conn.query("ALTER DATABASE #{db.quote_database(name_was)} RENAME TO #{db.quote_database(name)}")
     end
 
     @name = new_name.to_s
@@ -78,8 +78,8 @@ private
     # Drop database through a cloned connection, because Postgres might bug up if dropping the current
     db.clone_conn(db: other_db.name) do |cloned_conn|
       # Close existing connections to avoid 'is being accessed by other users' errors
-      cloned_conn.query("REVOKE CONNECT ON DATABASE #{db.sep_database}#{db.escape_database(name_was)}#{db.sep_database} FROM public") unless name_changed?
-      cloned_conn.query("SELECT pid, pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = #{db.sep_val}#{@db.esc(name_was)}#{db.sep_val} AND pid != pg_backend_pid()")
+      cloned_conn.query("REVOKE CONNECT ON DATABASE #{db.quote_database(name_was)} FROM public") unless name_changed?
+      cloned_conn.query("SELECT pid, pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = #{@db.quote_value(name_was)} AND pid != pg_backend_pid()")
 
       yield cloned_conn
     end

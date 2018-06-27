@@ -5,12 +5,12 @@ class Baza::InfoActiveRecordPg
     require "active_record"
     require "pg"
 
-    @conn_pool ||= ::ActiveRecord::Base.establish_connection(
+    @conn_pool = ::ActiveRecord::Base.establish_connection(
       adapter: "postgresql",
       database: "baza",
       username: "postgres"
     )
-    @conn ||= @conn_pool.connection
+    @conn = @conn_pool.connection
 
     {pool: @conn_pool, conn: @conn}
   end

@@ -21,7 +21,7 @@ class Baza::SqlQueries::GenericInsert
   end
 
   def to_sql
-    sql = "INSERT INTO #{@db.sep_table}#{@db.escape_table(@table_name)}#{@db.sep_table}"
+    sql = "INSERT INTO #{@db.quote_table(@table_name)}"
 
     if !@data || @data.empty?
       sql << " #{sql_default_values}"
