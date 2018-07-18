@@ -9,7 +9,7 @@ class Baza::Driver::Pg::Table < Baza::Table
 
   def drop
     @db.with_database(database_name) do
-      @db.query("DROP TABLE \"#{@db.escape_table(name)}\"")
+      @db.query("DROP TABLE #{@db.quote_table(name)}")
     end
   end
 
@@ -72,7 +72,7 @@ class Baza::Driver::Pg::Table < Baza::Table
   end
 
   def truncate
-    @db.query("TRUNCATE #{@db.sep_table}#{@db.escape_table(name)}#{@db.sep_table} RESTART IDENTITY")
+    @db.query("TRUNCATE #{@db.quote_table(name)} RESTART IDENTITY")
     self
   end
 
@@ -164,7 +164,7 @@ class Baza::Driver::Pg::Table < Baza::Table
   end
 
   def rename(new_name)
-    @db.query("ALTER TABLE #{@db.sep_table}#{@db.escape_table(name)}#{@db.sep_table} RENAME TO #{@db.sep_table}#{@db.escape_table(new_name)}#{@db.sep_table}")
+    @db.query("ALTER TABLE #{@db.quote_table(name)} RENAME TO #{@db.quote_table(new_name)}")
     @name = new_name.to_s
     self
   end
@@ -184,13 +184,13 @@ class Baza::Driver::Pg::Table < Baza::Table
 
   def rows_count
     @db.databases.with_database(database_name) do
-      sql = "SELECT COUNT(*) AS count FROM #{@db.sep_table}#{@db.escape_table(name)}#{@db.sep_table}"
+      sql = "SELECT COUNT(*) AS count FROM #{@db.quote_table(name)}"
       return @db.query(sql).fetch.fetch(:count).to_i
     end
   end
 
   def optimize
-    @db.query("VACUUM #{@db.sep_table}#{@db.escape_table(name)}#{@db.sep_table}")
+    @db.query("VACUUM #{@db.quote_table(name)}")
     self
   end
 
@@ -220,13 +220,13 @@ class Baza::Driver::Pg::Table < Baza::Table
 private
 
   def clone_insert_from_original_table(newname, columns_list)
-    sql_clone = "INSERT INTO #{@db.sep_table}#{@db.escape_table(newname)}#{@db.sep_table} ("
+    sql_clone = "INSERT INTO #{@db.quote_table(newname)} ("
 
     first = true
     columns_list.each do |column_data|
       sql_clone << "," unless first
       first = false if first
-      sql_clone << "#{@db.sep_col}#{@db.escape_column(column_data.fetch(:name))}#{@db.sep_col}"
+      sql_clone << @db.quote_column(column_data.fetch(:name))
     end
 
     sql_clone << ") SELECT "
@@ -235,10 +235,10 @@ private
     columns_list.each do |column_data|
       sql_clone << "," unless first
       first = false if first
-      sql_clone << "#{@db.sep_col}#{@db.escape_column(column_data.fetch(:name))}#{@db.sep_col}"
+      sql_clone << @db.quote_column(column_data.fetch(:name))
     end
 
-    sql_clone << " FROM #{@db.sep_table}#{@db.escape_table(name)}#{@db.sep_table}"
+    sql_clone << " FROM #{@db.quote_table(name)}"
 
     @db.query(sql_clone)
   end

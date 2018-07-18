@@ -5,7 +5,7 @@ class Baza::Driver::Mysql::Database < Baza::Database
   end
 
   def drop
-    sql = "DROP DATABASE `#{@db.escape_database(name)}`"
+    sql = "DROP DATABASE #{@db.quote_database(name)}"
     @db.query(sql)
     self
   end
@@ -17,7 +17,7 @@ class Baza::Driver::Mysql::Database < Baza::Database
 
     sql = "CREATE"
     sql << " TEMPORARY" if data[:temp]
-    sql << " TABLE #{db.sep_table}#{@db.escape_table(name)}#{db.sep_table} ("
+    sql << " TABLE #{@db.quote_table(name)} ("
 
     first = true
     data[:columns].each do |col_data|
@@ -66,10 +66,10 @@ private
     @db.databases.create(name: new_name)
 
     tables.each do |table|
-      @db.query("ALTER TABLE `#{@db.escape_database(name_was)}`.`#{@db.escape_table(table.name)}` RENAME `#{@db.escape_database(name)}`.`#{@db.escape_table(table.name)}`")
+      @db.query("ALTER TABLE #{@db.quote_database(name_was)}.#{@db.quote_table(table.name)} RENAME #{@db.quote_database(name)}.#{@db.quote_table(table.name)}")
     end
 
-    @db.query("DROP DATABASE `#{@db.escape_database(name_was)}`")
+    @db.query("DROP DATABASE #{@db.quote_database(name_was)}")
 
     @name = new_name
     @name_was = new_name

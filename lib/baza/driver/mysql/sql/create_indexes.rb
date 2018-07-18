@@ -27,10 +27,10 @@ class Baza::Driver::Mysql::Sql::CreateIndexes
       end
 
       sql << " UNIQUE" if index_data[:unique]
-      sql << " INDEX #{Baza::Driver::Mysql::SEPARATOR_INDEX}#{Baza::Driver::Mysql.escape_index(index_data.fetch(:name))}#{Baza::Driver::Mysql::SEPARATOR_INDEX}"
+      sql << " INDEX #{Baza::Driver::Mysql.quote_index(index_data.fetch(:name))}"
 
       if @on_table || @on_table.nil?
-        sql << " ON #{Baza::Driver::Mysql::SEPARATOR_TABLE}#{Baza::Driver::Mysql.escape_table(@table_name)}#{Baza::Driver::Mysql::SEPARATOR_TABLE}"
+        sql << " ON #{Baza::Driver::Mysql.quote_table(@table_name)}"
       end
 
       sql << " ("
@@ -40,7 +40,7 @@ class Baza::Driver::Mysql::Sql::CreateIndexes
         sql << ", " unless first
         first = false if first
 
-        sql << "#{Baza::Driver::Mysql::SEPARATOR_COLUMN}#{Baza::Driver::Mysql.escape_column(col_name)}#{Baza::Driver::Mysql::SEPARATOR_COLUMN}"
+        sql << Baza::Driver::Mysql.quote_column(col_name)
       end
 
       sql << ")"

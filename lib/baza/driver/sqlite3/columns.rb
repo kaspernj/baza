@@ -39,7 +39,7 @@ class Baza::Driver::Sqlite3::Columns
     if data.key?(:default_func)
       sql << " DEFAULT #{data[:default_func]}"
     elsif data.key?(:default) && data[:default] != false
-      sql << " DEFAULT #{@db.sqlval(data.fetch(:default))}"
+      sql << " DEFAULT #{@db.quote_value(data.fetch(:default))}"
     end
 
     sql

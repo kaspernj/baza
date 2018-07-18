@@ -53,7 +53,7 @@ class Baza::Driver::Sqlite3::Index < Baza::Index
 
   def reload
     data = nil
-    @db.query("PRAGMA index_list(`#{@db.escape_table(name)}`)") do |d_indexes|
+    @db.query("PRAGMA index_list(#{@db.quote_table(name)})") do |d_indexes|
       next unless d_indexes.fetch(:name) == name
       data = d_indexes
       break

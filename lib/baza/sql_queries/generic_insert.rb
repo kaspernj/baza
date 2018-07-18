@@ -21,7 +21,7 @@ class Baza::SqlQueries::GenericInsert
   end
 
   def to_sql
-    sql = "INSERT INTO #{@db.sep_table}#{@db.escape_table(@table_name)}#{@db.sep_table}"
+    sql = "INSERT INTO #{@db.quote_table(@table_name)}"
 
     if !@data || @data.empty?
       sql << " #{sql_default_values}"
@@ -55,7 +55,7 @@ private
         sql << ", "
       end
 
-      sql << "#{@db.sep_col}#{@db.escape_column(key)}#{@db.sep_col}"
+      sql << @db.quote_column(key)
     end
 
     sql << ")"
@@ -73,7 +73,7 @@ private
         sql << ", "
       end
 
-      quoted = @db.sqlval(value)
+      quoted = @db.quote_value(value)
       quoted = convert_line_breaks(quoted) if @replace_line_breaks
 
       sql << quoted

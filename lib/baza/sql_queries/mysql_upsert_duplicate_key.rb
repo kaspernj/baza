@@ -15,14 +15,14 @@ class Baza::SqlQueries::MysqlUpsertDuplicateKey
     first = true
 
     if @return_id
-      sql << " #{@db.sep_col}#{@db.escape_column(primary_key_column_name)}#{@db.sep_col} = LAST_INSERT_ID(#{@db.sep_col}#{@db.escape_column(primary_key_column_name)}#{@db.sep_col})"
+      sql << " #{@db.quote_column(primary_key_column_name)} = LAST_INSERT_ID(#{@db.quote_column(primary_key_column_name)})"
       first = false
     end
 
     @updates.each do |key, value|
       sql << "," unless first
       first = false if first
-      sql << " #{@db.sep_col}#{@db.escape_column(key)}#{@db.sep_col} = #{@db.sqlval(value)}"
+      sql << " #{@db.quote_column(key)} = #{@db.quote_value(value)}"
     end
 
     sql
@@ -52,6 +52,6 @@ private
   end
 
   def last_insert_sql
-    "SELECT LAST_INSERT_ID() AS `id` FROM #{@db.sep_table}#{@db.escape_table(@table_name)}#{@db.sep_table}"
+    "SELECT LAST_INSERT_ID() AS #{@db.quote_column("id")} FROM #{@db.quote_table(@table_name)}"
   end
 end

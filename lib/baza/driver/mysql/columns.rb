@@ -14,7 +14,7 @@ class Baza::Driver::Mysql::Columns
 
     data[:maxlength] = 255 if type == :varchar && data[:maxlength].to_s.strip.empty?
 
-    sql = "#{@db.sep_col}#{@db.escape_column(data.fetch(:name))}#{@db.sep_col} #{type}"
+    sql = "#{@db.quote_column(data.fetch(:name))} #{type}"
     sql << "(#{data[:maxlength]})" if data[:maxlength]
     sql << " PRIMARY KEY" if data[:primarykey]
     sql << " AUTO_INCREMENT" if data[:autoincr]
@@ -23,11 +23,11 @@ class Baza::Driver::Mysql::Columns
     if data.key?(:default_func)
       sql << " DEFAULT #{data[:default_func]}"
     elsif data.key?(:default) && !data[:default].nil?
-      sql << " DEFAULT #{@db.sqlval(data.fetch(:default))}"
+      sql << " DEFAULT #{@db.quote_value(data.fetch(:default))}"
     end
 
-    sql << " COMMENT '#{@db.escape(data.fetch(:comment))}'" if data.key?(:comment)
-    sql << " AFTER #{@db.sep_col}#{@db.escape_column(data.fetch(:after))}#{@db.sep_col}" if data[:after] && !data[:first]
+    sql << " COMMENT #{@db.quote_value(data.fetch(:comment))}" if data.key?(:comment)
+    sql << " AFTER #{@db.quote_column(data.fetch(:after))}" if data[:after] && !data[:first]
     sql << " FIRST" if data[:first]
     sql << " STORAGE #{data[:storage].to_s.upcase}" if data[:storage]
 

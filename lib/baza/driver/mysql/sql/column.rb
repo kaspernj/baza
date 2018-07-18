@@ -17,7 +17,7 @@ class Baza::Driver::Mysql::Sql::Column
 
     data[:maxlength] = 255 if type == :varchar && data[:maxlength].to_s.strip.empty?
 
-    sql = "#{Baza::Driver::Mysql::SEPARATOR_COLUMN}#{Baza::Driver::Mysql.escape_column(data.fetch(:name))}#{Baza::Driver::Mysql::SEPARATOR_COLUMN} #{type}"
+    sql = "#{Baza::Driver::Mysql.quote_column(data.fetch(:name))} #{type}"
     sql << "(#{data[:maxlength]})" if data[:maxlength]
     sql << " PRIMARY KEY" if data[:primarykey]
     sql << " AUTO_INCREMENT" if data[:autoincr]
@@ -26,11 +26,11 @@ class Baza::Driver::Mysql::Sql::Column
     if data.key?(:default_func)
       sql << " DEFAULT #{data[:default_func]}"
     elsif data.key?(:default) && !data[:default].nil?
-      sql << " DEFAULT #{Baza::Driver::Mysql.sqlval(data.fetch(:default))}"
+      sql << " DEFAULT #{Baza::Driver::Mysql.quote_value(data.fetch(:default))}"
     end
 
-    sql << " COMMENT '#{Baza::Driver::Mysql.escape(data.fetch(:comment))}'" if data.key?(:comment)
-    sql << " AFTER #{Baza::Driver::Mysql::SEPARATOR_COLUMN}#{Baza::Driver::Mysql.escape_column(data.fetch(:after))}#{Baza::Driver::Mysql::SEPARATOR_COLUMN}" if data[:after] && !data[:first]
+    sql << " COMMENT #{Baza::Driver::Mysql.quote_value(data.fetch(:comment))}" if data.key?(:comment)
+    sql << " AFTER #{Baza::Driver::Mysql.quote_column(data.fetch(:after))}" if data[:after] && !data[:first]
     sql << " FIRST" if data[:first]
     sql << " STORAGE #{data[:storage].to_s.upcase}" if data[:storage]
 

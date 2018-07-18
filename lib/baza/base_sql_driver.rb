@@ -54,6 +54,14 @@ class Baza::BaseSqlDriver
     self.class.escape_column(string)
   end
 
+  def self.quote_column(column_name)
+    "#{SEPARATOR_COLUMN}#{escape_column(column_name)}#{SEPARATOR_COLUMN}"
+  end
+
+  def quote_column(column_name)
+    "#{sep_col}#{escape_column(column_name)}#{sep_col}"
+  end
+
   def self.escape_table(string)
     string = string.to_s
     raise "Invalid table-string: #{string}" if string.include?(SEPARATOR_TABLE)
@@ -62,6 +70,14 @@ class Baza::BaseSqlDriver
 
   def escape_table(string)
     self.class.escape_table(string)
+  end
+
+  def self.quote_table(table_name)
+    "#{SEPARATOR_TABLE}#{escape_table(table_name)}#{SEPARATOR_TABLE}"
+  end
+
+  def quote_table(table_name)
+    "#{sep_table}#{escape_table(table_name)}#{sep_table}"
   end
 
   def self.escape_database(string)
@@ -74,6 +90,14 @@ class Baza::BaseSqlDriver
     self.class.escape_database(string)
   end
 
+  def self.quote_database(database_name)
+    "#{SEPARATOR_DATABASE}#{escape_database(database_name)}#{SEPARATOR_DATABASE}"
+  end
+
+  def quote_database(database_name)
+    "#{sep_database}#{escape_database(database_name)}#{sep_database}"
+  end
+
   def self.escape_index(string)
     string = string.to_s
     raise "Invalid index-string: #{string}" if string.include?(SEPARATOR_INDEX)
@@ -82,6 +106,14 @@ class Baza::BaseSqlDriver
 
   def escape_index(string)
     self.class.escape_index(string)
+  end
+
+  def self.quote_index(index_name)
+    "#{SEPARATOR_INDEX}#{escape_index(index_name)}#{SEPARATOR_INDEX}"
+  end
+
+  def quote_index(index_name)
+    "#{sep_index}#{escape_index(index_name)}#{sep_index}"
   end
 
   def transaction
@@ -146,7 +178,7 @@ class Baza::BaseSqlDriver
   end
 
   def count(tablename, arr_terms = nil)
-    sql = "SELECT COUNT(*) AS count FROM #{@sep_table}#{tablename}#{@sep_table}"
+    sql = "SELECT COUNT(*) AS count FROM #{quote_table(tablename)}"
 
     if !arr_terms.nil? && !arr_terms.empty?
       sql << " WHERE #{sql_make_where(arr_terms)}"
@@ -169,7 +201,7 @@ class Baza::BaseSqlDriver
   #===Examples
   # db.delete(:users, {lastname: "Doe"})
   def delete(tablename, arr_terms, args = nil)
-    sql = "DELETE FROM #{@sep_table}#{tablename}#{@sep_table}"
+    sql = "DELETE FROM #{quote_table(tablename)}"
 
     if !arr_terms.nil? && !arr_terms.empty?
       sql << " WHERE #{sql_make_where(arr_terms)}"
@@ -199,11 +231,11 @@ class Baza::BaseSqlDriver
       if value.is_a?(Array)
         raise "Array for column '#{key}' was empty." if value.empty?
         values = value.map { |v| "'#{escape(v)}'" }.join(",")
-        sql << "#{@sep_col}#{key}#{@sep_col} IN (#{values})"
+        sql << "#{quote_column(key)} IN (#{values})"
       elsif value.is_a?(Hash)
         raise "Dont know how to handle hash."
       else
-        sql << "#{@sep_col}#{key}#{@sep_col} = #{sqlval(value)}"
+        sql << "#{quote_column(key)} = #{quote_value(value)}"
       end
     end
 
@@ -213,7 +245,7 @@ class Baza::BaseSqlDriver
   # Returns the correct SQL-value for the given value.
   # If it is a number, then just the raw number as a string will be returned.
   # nil's will be NULL and strings will have quotes and will be escaped.
-  def self.sqlval(val)
+  def self.quote_value(val)
     if val.class.name == "Fixnum" || val.is_a?(Integer)
       val.to_s
     elsif val == nil
@@ -227,9 +259,7 @@ class Baza::BaseSqlDriver
     end
   end
 
-  def sqlval(val)
-    return @conn.sqlval(val) if @conn.respond_to?(:sqlval)
-
+  def quote_value(val)
     if val.class.name == "Fixnum" || val.is_a?(Integer)
       val.to_s
     elsif val == nil

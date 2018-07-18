@@ -16,7 +16,7 @@ class Baza::Db
 
   delegate :last_id, :upsert, :upsert_duplicate_key, to: :commands
   delegate :current_database, :current_database_name, :with_database, to: :databases
-  delegate :close, :count, :delete, :esc, :escape, :escape_column, :escape_table, :escape_database, :escape_index, :insert, :select, :single, :sqlval, :sql_make_where, to: :driver
+  delegate *%i[close count delete esc escape escape_column escape_table escape_database escape_index quote_database quote_column quote_table quote_value quote_database quote_index insert select single quote_value sql_make_where], to: :driver
 
   attr_reader :sep_database, :sep_col, :sep_table, :sep_val, :sep_index, :opts, :driver, :int_types
 

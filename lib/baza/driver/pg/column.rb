@@ -19,7 +19,7 @@ class Baza::Driver::Pg::Column < Baza::Column
     other_table = other_column.table
 
     sql = "
-      ALTER TABLE #{@db.escape_table(table_name)}
+      ALTER TABLE #{@db.quote_table(table_name)}
       ADD CONSTRAINT #{@db.escape_table(fk_name)}
       FOREIGN KEY (#{@db.escape_table(name)})
       REFERENCES #{@db.escape_table(other_table.name)} (#{@db.escape_column(other_column.name)})
@@ -66,7 +66,7 @@ class Baza::Driver::Pg::Column < Baza::Column
   end
 
   def drop
-    @db.query("ALTER TABLE #{@db.sep_table}#{@db.escape_table(table_name)}#{@db.sep_table} DROP COLUMN #{@db.sep_col}#{@db.escape_column(name)}#{@db.sep_col}")
+    @db.query("ALTER TABLE #{@db.quote_table(table_name)} DROP COLUMN #{@db.quote_column(name)}")
     nil
   end
 
@@ -78,7 +78,7 @@ class Baza::Driver::Pg::Column < Baza::Column
 
   def change(data)
     if data.key?(:name) && data.fetch(:name).to_s != name
-      @db.query("#{alter_table_sql} RENAME #{col_escaped} TO #{@db.sep_col}#{@db.escape_column(data.fetch(:name))}#{@db.sep_col}")
+      @db.query("#{alter_table_sql} RENAME #{@db.quote_column(name)} TO #{@db.quote_column(data.fetch(:name))}")
       @name = data.fetch(:name).to_s
     end
 
@@ -126,19 +126,11 @@ class Baza::Driver::Pg::Column < Baza::Column
 
 private
 
-  def col_escaped
-    "#{@db.sep_col}#{@db.escape_column(name)}#{@db.sep_col}"
-  end
-
-  def table_escaped
-    "#{@db.sep_table}#{@db.escape_table(table_name)}#{@db.sep_table}"
-  end
-
   def alter_table_sql
-    "ALTER TABLE #{table_escaped}"
+    "ALTER TABLE #{@db.quote_table(table_name)}"
   end
 
   def alter_column_sql
-    "#{alter_table_sql} ALTER COLUMN #{col_escaped}"
+    "#{alter_table_sql} ALTER COLUMN #{@db.quote_column(name)}"
   end
 end

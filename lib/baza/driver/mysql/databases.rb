@@ -6,7 +6,7 @@ class Baza::Driver::Mysql::Databases
   def create(args)
     sql = "CREATE DATABASE"
     sql << " IF NOT EXISTS" if args[:if_not_exists]
-    sql << " #{@db.sep_database}#{@db.escape_table(args.fetch(:name))}#{@db.sep_database}"
+    sql << " #{@db.quote_table(args.fetch(:name))}"
 
     @db.query(sql)
     true
@@ -40,13 +40,13 @@ class Baza::Driver::Mysql::Databases
     end
 
     previous_db_name = @db.current_database_name
-    @db.query("USE #{@db.sep_database}#{@db.escape_database(name)}#{@db.sep_database}")
+    @db.query("USE #{@db.quote_database(name)}")
 
     if block_given?
       begin
         yield
       ensure
-        @db.query("USE #{@db.sep_database}#{@db.escape_database(previous_db_name)}#{@db.sep_database}")
+        @db.query("USE #{@db.quote_database(previous_db_name)}")
       end
     end
 

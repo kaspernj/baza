@@ -105,7 +105,7 @@ class Baza::Driver::MysqlJava < Baza::JdbcDriver
     keys.each do |col_name|
       sql << "," unless first
       first = false if first
-      sql << "`#{escape_column(col_name)}`"
+      sql << quote_column(col_name)
     end
 
     sql << ") VALUES ("
@@ -127,7 +127,7 @@ class Baza::Driver::MysqlJava < Baza::JdbcDriver
             sql << ","
           end
 
-          sql << @db.sqlval(val)
+          sql << @db.quote_value(val)
         end
       else
         hash.each do |_key, val|
@@ -137,7 +137,7 @@ class Baza::Driver::MysqlJava < Baza::JdbcDriver
             sql << ","
           end
 
-          sql << @db.sqlval(val)
+          sql << @db.quote_value(val)
         end
       end
     end

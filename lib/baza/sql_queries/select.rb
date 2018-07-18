@@ -126,9 +126,9 @@ private
         first = false if first
 
         if select.is_a?(Symbol)
-          select << " #{@db.sep_col}#{@db.escape_column(select)}#{@db.sep_col}"
+          select << " #{@db.quote_column(select)}"
         else
-          select << @db.sqlval(select)
+          select << @db.quote_value(select)
         end
       end
     end
@@ -143,7 +143,7 @@ private
     @froms.each do |from|
       sql << "," unless first
       first = false if first
-      sql << " #{@db.sep_table}#{@db.escape_table(from)}#{@db.sep_table}"
+      sql << " #{@db.quote_table(from)}"
     end
 
     sql
@@ -167,12 +167,12 @@ private
 
       if where.is_a?(Hash)
         where.each do |key, value|
-          sql << "#{@db.sep_col}#{@db.escape_column(key)}#{@db.sep_col} = #{@db.sqlval(value)}"
+          sql << "#{@db.quote_column(key)} = #{@db.quote_value(value)}"
         end
       elsif where.is_a?(String)
         sql_arg = where.clone
         args.each do |arg|
-          sql_arg.sub!("?", @db.sqlval(arg))
+          sql_arg.sub!("?", @db.quote_value(arg))
         end
 
         sql << sql_arg
@@ -192,10 +192,10 @@ private
     unless @count
       if @page
         @per_page ||= 30
-        sql = "LIMIT #{@db.sqlval(@per_page)} OFFSET #{@per_page * (current_page - 1)}"
+        sql = "LIMIT #{@db.quote_value(@per_page)} OFFSET #{@per_page * (current_page - 1)}"
       elsif @limit
-        sql = "LIMIT #{@db.sqlval(@limit)}"
-        sql << ", #{@db.sqlval(@offset)}" if @offset
+        sql = "LIMIT #{@db.quote_value(@limit)}"
+        sql << ", #{@db.quote_value(@offset)}" if @offset
       end
     end
 

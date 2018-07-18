@@ -31,10 +31,10 @@ class Baza::Driver::Pg::CreateIndexSqlCreator
     raise "No columns was given on index: '#{index_data.fetch(:name)}'." if !index_data[:columns] || index_data[:columns].empty?
 
     sql << " UNIQUE" if index_data[:unique]
-    sql << " INDEX #{@db.sep_index}#{@db.escape_index(index_data.fetch(:name))}#{@db.sep_index}"
+    sql << " INDEX #{@db.quote_index(index_data.fetch(:name))}"
 
     if args[:on_table] || !args.key?(:on_table)
-      sql << " ON #{@db.sep_table}#{@db.escape_table(args.fetch(:table_name))}#{@db.sep_table}"
+      sql << " ON #{@db.quote_table(args.fetch(:table_name))}"
     end
 
     sql << " ("
@@ -43,7 +43,7 @@ class Baza::Driver::Pg::CreateIndexSqlCreator
     index_data.fetch(:columns).each do |col_name|
       sql << ", " unless first
       first = false if first
-      sql << "#{@db.sep_col}#{@db.escape_column(col_name)}#{@db.sep_col}"
+      sql << @db.quote_column(col_name)
     end
 
     sql << ")"

@@ -90,7 +90,7 @@ class Baza::Driver::Sqlite3::Table < Baza::Table
     @db.columns
     ret = []
 
-    @db.query("PRAGMA table_info(`#{@db.escape_table(name)}`)") do |d_cols|
+    @db.query("PRAGMA table_info(#{@db.quote_table(name)})") do |d_cols|
       column_name = d_cols.fetch(:name)
       obj = @list.get(column_name)
 
@@ -283,7 +283,7 @@ class Baza::Driver::Sqlite3::Table < Baza::Table
     @db.indexes
     ret = [] unless block_given?
 
-    @db.query("PRAGMA index_list(`#{@db.escape_table(name)}`)") do |d_indexes|
+    @db.query("PRAGMA index_list(#{@db.quote_table(name)})") do |d_indexes|
       next if d_indexes[:Key_name] == "PRIMARY"
       obj = @indexes_list.get(d_indexes[:name])
 
@@ -333,13 +333,13 @@ class Baza::Driver::Sqlite3::Table < Baza::Table
 
       sql = "CREATE"
       sql << " UNIQUE" if index_data[:unique]
-      sql << " INDEX #{@db.sep_index}#{@db.escape_column(index_name)}#{@db.sep_index} ON #{@db.sep_table}#{@db.escape_table(name)}#{@db.sep_table} ("
+      sql << " INDEX #{@db.quote_index(index_name)} ON #{@db.quote_table(name)} ("
 
       first = true
       index_data.fetch(:columns).each do |col_name|
         sql << ", " unless first
         first = false if first
-        sql << "#{@db.sep_col}#{@db.escape_column(col_name)}#{@db.sep_col}"
+        sql << @db.quote_column(col_name)
       end
 
       sql << ")"

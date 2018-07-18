@@ -25,6 +25,16 @@ class Baza::Cloner
       }
 
       Baza::Db.new(db_args)
+    elsif connection.class.name.include?("PostgreSQLAdapter")
+      connection = connection.instance_variable_get(:@connection)
+      connection = connection.instance_variable_get(:@connection) if RUBY_PLATFORM == "java"
+
+      db_args = {
+        type: :pg,
+        conn: connection
+      }
+
+      Baza::Db.new(db_args)
     else
       raise "Unsupported adapter: #{connection.class.name}"
     end
