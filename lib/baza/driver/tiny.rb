@@ -1,8 +1,8 @@
 class Baza::Driver::Tiny < Baza::BaseSqlDriver
-  SEPARATOR_DATABASE = "[".freeze
-  SEPARATOR_TABLE = "[".freeze
-  SEPARATOR_COLUMN = "[".freeze
-  SEPARATOR_INDEX = "[".freeze
+  SEPARATOR_DATABASE = "]".freeze
+  SEPARATOR_TABLE = "]".freeze
+  SEPARATOR_COLUMN = "]".freeze
+  SEPARATOR_INDEX = "]".freeze
   SEPARATOR_VALUE = "'".freeze
 
   def initialize(db)
@@ -75,8 +75,7 @@ class Baza::Driver::Tiny < Baza::BaseSqlDriver
   end
 
   def query(sql)
-    result = @client.execute(sql)
-    Baza::Driver::Tiny::Result.new(result)
+    Baza::Driver::Tiny::Result.new(@client.execute(sql))
   end
 
   def self.quote_identifier(name)

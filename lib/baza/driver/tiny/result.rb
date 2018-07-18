@@ -1,6 +1,7 @@
 class Baza::Driver::Tiny::Result < Baza::ResultBase
   def initialize(result)
     @result = result.to_a
+    result.cancel
   end
 
   def each(&blk)
