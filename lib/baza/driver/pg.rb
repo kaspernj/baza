@@ -70,7 +70,7 @@ class Baza::Driver::Pg < Baza::BaseSqlDriver
 
     args = {dbname: db.opts.fetch(:db)}
     args[:port] = db.opts.fetch(:port) if db.opts[:port]
-    args[:hostaddr] = db.opts.fetch(:host) if db.opts[:host]
+    args[:host] = db.opts.fetch(:host) if db.opts[:host]
     args[:user] = db.opts.fetch(:user) if db.opts[:user]
     args[:password] = db.opts.fetch(:pass) if db.opts[:pass]
 
