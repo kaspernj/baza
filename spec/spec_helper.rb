@@ -1,4 +1,5 @@
 require "baza"
+require "pry"
 
 if RUBY_PLATFORM == "java"
   require "jdbc/mysql"

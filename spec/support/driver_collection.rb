@@ -340,7 +340,7 @@ shared_examples_for "a baza driver" do
     row = db_with_type_translation.select(:test, text: "Kasper").fetch
 
     expect(row.fetch(:text).class).to eq String
-    expect(row.fetch(:number).class.name).to eq "Fixnum"
+    expect(row.fetch(:number).class.name).to eq "Integer"
     expect(row.fetch(:float).class).to eq Float
 
     if db.driver.conn.class.name == "ActiveRecord::ConnectionAdapters::SQLite3Adapter"

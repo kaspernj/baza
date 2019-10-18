@@ -103,7 +103,7 @@ private
       begin
         flush_real(@db_flush_async)
       rescue => e
-        $stderr.puts e.inspect
+        $stderr.puts "Baza QueryBuffer: #{e.inspect}"
         $stderr.puts e.backtrace
       end
     end
