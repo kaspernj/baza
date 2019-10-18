@@ -6,7 +6,7 @@ class Baza::InfoSqlite3
 
     @db = Baza::Db.new({
       type: :sqlite3,
-      path: ":memory:",
+      path: "#{Dir.tmpdir}/#{SecureRandom.hex(8)}.sqlite3",
       index_append_table_name: true,
       sql_to_error: true,
       debug: false
