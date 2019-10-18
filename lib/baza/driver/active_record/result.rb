@@ -14,7 +14,9 @@ class Baza::Driver::ActiveRecord::Result < Baza::ResultBase
     return unless @result
 
     @result.each do |result|
-      result = result.delete_if { |k, _v| k.class.name == "Fixnum" } # Seems like this happens depending on the version installed? - kaspernj
+      # Seems like this happens depending on the version installed? - kaspernj
+      result = result.delete_if { |k, _v| k.class.name == "Integer" || k.class.name == "Fixnum" }
+
       result = Hash[result.map { |k, v| [k, v.to_s] }] if @type_translation == :string
 
       yield result.symbolize_keys
