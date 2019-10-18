@@ -153,7 +153,7 @@ DEPENDENCIES
   rspec (= 3.4.0)
   rubocop (= 0.39.0)
   simple_delegate (~> 0.0.2)
-  sqlite3
+  sqlite3 (< 1.4)
   string-cases (~> 0.0.4)
   wref (~> 0.0.8)
 
