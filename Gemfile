@@ -28,5 +28,5 @@ group :development, :test do
   gem "rdoc"
   gem "rspec", "3.4.0"
   gem "rubocop", "0.39.0", require: false
-  gem "sqlite3", "< 1.4", platform: :ruby
+  gem "sqlite3", "< 1.5", platform: :ruby
 end
