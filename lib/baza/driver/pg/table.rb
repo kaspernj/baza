@@ -1,9 +1,9 @@
 class Baza::Driver::Pg::Table < Baza::Table
   attr_reader :name
 
-  def initialize(args)
-    @db = args.fetch(:driver).db
-    @data = args.fetch(:data)
+  def initialize(driver:, data:)
+    @db = driver.db
+    @data = data
     @name = @data.fetch(:table_name)
   end
 
@@ -36,7 +36,7 @@ class Baza::Driver::Pg::Table < Baza::Table
   end
 
   def native?
-    false
+    name == "pg_stat_statements"
   end
 
   def columns(args = {})
