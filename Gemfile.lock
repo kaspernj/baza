@@ -119,7 +119,7 @@ GEM
     simple_delegate (0.0.2)
     spoon (0.0.6)
       ffi
-    sqlite3 (1.4.1)
+    sqlite3 (1.4.2)
     string-cases (0.0.4)
     thread_safe (0.3.6)
     thread_safe (0.3.6-java)
