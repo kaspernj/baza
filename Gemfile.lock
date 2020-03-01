@@ -45,7 +45,7 @@ GEM
     i18n (1.7.0)
       concurrent-ruby (~> 1.0)
     jar-dependencies (0.3.12)
-    jdbc-mysql (5.1.47)
+    jdbc-mysql (8.0.17)
     jdbc-sqlite3 (3.28.0)
     jeweler (2.3.9)
       builder
