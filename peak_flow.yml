@@ -1,3 +1,5 @@
+before_install:
+  - sudo apt-get install -y libmysqlclient-dev
 before_script:
   - cp spec/info_mysql_peak_flow.rb spec/info_mysql.rb
   - cp spec/info_mysql2_peak_flow.rb spec/info_mysql2.rb
