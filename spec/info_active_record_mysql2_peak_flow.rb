@@ -7,9 +7,10 @@ class Baza::InfoActiveRecordMysql2
 
     @conn_pool ||= ::ActiveRecord::Base.establish_connection(
       adapter: "mysql2",
-      host: "localhost",
+      host: "mysql",
       database: "baza",
-      username: "build"
+      username: "build",
+      password: "password"
     )
     @conn = @conn_pool.connection
 
