@@ -4,7 +4,7 @@ class Baza::InfoMysql
   def initialize(args = {})
     @db = Baza::Db.new({
       type: :mysql,
-      host: "myqsl",
+      host: "mysql",
       user: "build",
       pass: "password",
       db: "baza"
