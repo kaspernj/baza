@@ -7,9 +7,24 @@ before_script:
   - cp spec/info_active_record_mysql_peak_flow.rb spec/info_active_record_mysql.rb
   - cp spec/info_active_record_mysql2_peak_flow.rb spec/info_active_record_mysql2.rb
   - cp spec/info_active_record_pg_peak_flow.rb spec/info_active_record_pg.rb
-  - mysql -e 'CREATE DATABASE IF NOT EXISTS baza;'
-  - psql -c 'DROP DATABASE IF EXISTS "baza";' -U postgres
-  - psql -c 'CREATE DATABASE "baza";' -U postgres
+services:
+  postgres:
+    environment:
+      POSTGRES_USER: "build"
+      POSTGRES_PASSWORD: "password"
+      POSTGRES_DB: "baza"
+    expose:
+      - 5432
+    image: postgres:11.4
+  mysql:
+    environment:
+      - MYSQL_USER=build
+      - MYSQL_PASSWORD=password
+      - MYSQL_ROOT_PASSWORD=password
+      - MYSQL_DATABASE=baza
+    image: mysql:5.7.29
+    expose:
+      - 3306
 script:
   - bundle exec rspec --tag ~@mysql
   - bundle exec rake best_practice_project:run
