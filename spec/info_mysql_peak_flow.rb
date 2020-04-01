@@ -4,8 +4,9 @@ class Baza::InfoMysql
   def initialize(args = {})
     @db = Baza::Db.new({
       type: :mysql,
-      host: "localhost",
+      host: "myqsl",
       user: "build",
+      pass: "password",
       db: "baza"
     }.merge(args))
   end
