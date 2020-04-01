@@ -4,7 +4,9 @@ class Baza::InfoPg
   def initialize(args = {})
     @db = Baza::Db.new({
       type: :pg,
-      user: "postgres",
+      host: "postgres",
+      user: "build",
+      pass: "password",
       db: "baza",
       debug: false
     }.merge(args))
