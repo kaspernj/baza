@@ -8,7 +8,9 @@ class Baza::InfoActiveRecordPg
     @conn_pool = ::ActiveRecord::Base.establish_connection(
       adapter: "postgresql",
       database: "baza",
-      username: "postgres"
+      host: "postgres",
+      username: "build",
+      password: "password"
     )
     @conn = @conn_pool.connection
 
