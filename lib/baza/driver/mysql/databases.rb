@@ -3,10 +3,10 @@ class Baza::Driver::Mysql::Databases
     @db = args.fetch(:db)
   end
 
-  def create(args)
+  def create(if_not_exists: false, name:)
     sql = "CREATE DATABASE"
-    sql << " IF NOT EXISTS" if args[:if_not_exists]
-    sql << " #{@db.quote_table(args.fetch(:name))}"
+    sql << " IF NOT EXISTS" if if_not_exists
+    sql << " #{@db.quote_table(name)}"
 
     @db.query(sql)
     true
