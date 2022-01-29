@@ -115,6 +115,8 @@ class Baza::Driver::ActiveRecord < Baza::BaseSqlDriver
 
   def close
     @conn.close
+  rescue ActiveRecord::ActiveRecordError => e
+    raise e unless e.message == "Cannot expire connection, it is not currently leased."
   end
 
   def transaction

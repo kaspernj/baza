@@ -5,9 +5,9 @@ class Baza::Driver::Mysql::Tables < Baza::Tables
   attr_reader :db, :list
 
   # Constructor. This should not be called manually.
-  def initialize(args)
+  def initialize(db:, **args)
     @args = args
-    @db = @args.fetch(:db)
+    @db = db
     @list_mutex = Monitor.new
     @list = Wref::Map.new
     @list_should_be_reloaded = true
@@ -18,11 +18,24 @@ class Baza::Driver::Mysql::Tables < Baza::Tables
     @list.clean
   end
 
+  def exists?(table_name)
+    table_name = table_name.to_s
+    table = @list[table_name]
+
+    return true if table
+
+    list(name: table_name) do
+      return true
+    end
+
+    false
+  end
+
   # Returns a table by the given table-name.
   def [](table_name)
     table_name = table_name.to_s
-
     table = @list[table_name]
+
     return table if table
 
     list(name: table_name) do |table_i|
@@ -33,14 +46,14 @@ class Baza::Driver::Mysql::Tables < Baza::Tables
   end
 
   # Yields the tables of the current database.
-  def list(args = {})
+  def list(database: nil, name: nil)
     ret = [] unless block_given?
 
     where_args = {}
-    where_args["TABLE_NAME"] = args.fetch(:name) if args[:name]
+    where_args["TABLE_NAME"] = name if name
 
-    if args[:database]
-      where_args["TABLE_SCHEMA"] = args.fetch(:database)
+    if database
+      where_args["TABLE_SCHEMA"] = database
     else
       where_args["TABLE_SCHEMA"] = @db.opts.fetch(:db)
     end
@@ -74,8 +87,8 @@ class Baza::Driver::Mysql::Tables < Baza::Tables
     end
   end
 
-  def create(name, data, args = nil)
-    @db.current_database.create_table(name, data, args)
+  def create(name, data, **opts)
+    @db.current_database.create_table(name, data, **opts)
   end
 
 private
