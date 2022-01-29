@@ -122,7 +122,11 @@ private
       elsif type_sym == :float
         value.to_f
       elsif type_sym == :time
-        Time.parse(value)
+        if value.is_a?(Time) # ActiveRecord might already have parsed it for us
+          value
+        else
+          Time.parse(value)
+        end
       elsif type_sym == :date
         Date.parse(value)
       elsif type_sym == :string
