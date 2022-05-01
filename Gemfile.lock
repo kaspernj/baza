@@ -6,7 +6,7 @@ GEM
     activerecord (6.1.5)
       activemodel (= 6.1.5)
       activesupport (= 6.1.5)
-    activerecord-jdbc-adapter (61.1-java)
+    activerecord-jdbc-adapter (61.2-java)
       activerecord (~> 6.1.0)
     activesupport (6.1.5)
       concurrent-ruby (~> 1.0, >= 1.0.2)
