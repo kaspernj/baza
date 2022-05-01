@@ -1,14 +1,14 @@
 GEM
   remote: http://rubygems.org/
   specs:
-    activemodel (6.1.5)
-      activesupport (= 6.1.5)
-    activerecord (6.1.5)
-      activemodel (= 6.1.5)
-      activesupport (= 6.1.5)
+    activemodel (6.1.5.1)
+      activesupport (= 6.1.5.1)
+    activerecord (6.1.5.1)
+      activemodel (= 6.1.5.1)
+      activesupport (= 6.1.5.1)
     activerecord-jdbc-adapter (61.2-java)
       activerecord (~> 6.1.0)
-    activesupport (6.1.5)
+    activesupport (6.1.5.1)
       concurrent-ruby (~> 1.0, >= 1.0.2)
       i18n (>= 1.6, < 2)
       minitest (>= 5.1)
