@@ -2,7 +2,7 @@
 class Baza::QueryBuffer
   attr_reader :thread_async
 
-  QUERIES_FLUSH_SIZE = 14 * 1024 * 1024
+  QUERIES_FLUSH_SIZE = 12 * 1024 * 1024
 
   INITIALIZE_ARGS_ALLOWED = [:db, :debug, :flush_async].freeze
   # Constructor. Takes arguments to be used and a block.
