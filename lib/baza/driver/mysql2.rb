@@ -3,7 +3,7 @@ Baza.load_driver("mysql")
 class Baza::Driver::Mysql2 < Baza::MysqlBaseDriver
   AutoAutoloader.autoload_sub_classes(self, __FILE__)
 
-  attr_reader :conn, :conns
+  attr_reader :conn, :conns, :encoding
 
   # Helper to enable automatic registering of database using Baza::Db.from_object
   def self.from_object(args)
@@ -63,7 +63,8 @@ class Baza::Driver::Mysql2 < Baza::MysqlBaseDriver
         database: @db.opts[:db],
         port: @port,
         symbolize_keys: true,
-        cache_rows: false
+        cache_rows: false,
+        encoding: encoding
       }
 
       # Symbolize keys should also be given here, else table-data wont be symbolized for some reason - knj.
@@ -84,14 +85,14 @@ class Baza::Driver::Mysql2 < Baza::MysqlBaseDriver
         @conn = ::Mysql2::Client.new(args)
       end
 
-      query("SET NAMES '#{esc(@encoding)}'") if @encoding
+      query("SET NAMES '#{esc(encoding)}'") if encoding
     end
   end
 
   # Executes a query and returns the result.
   def query(str)
     str = str.to_s
-    str = str.force_encoding("UTF-8") if @encoding == "utf8" && str.respond_to?(:force_encoding)
+    str = str.force_encoding("UTF-8") if encoding == "utf8" && str.respond_to?(:force_encoding)
     tries = 0
 
     begin

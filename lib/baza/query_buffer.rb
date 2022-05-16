@@ -2,6 +2,8 @@
 class Baza::QueryBuffer
   attr_reader :thread_async
 
+  QUERIES_FLUSH_SIZE = 14 * 1024 * 1024
+
   INITIALIZE_ARGS_ALLOWED = [:db, :debug, :flush_async].freeze
   # Constructor. Takes arguments to be used and a block.
   def initialize(args)
@@ -10,6 +12,7 @@ class Baza::QueryBuffer
     @queries = []
     @inserts = {}
     @queries_count = 0
+    @queries_size = 0
     @debug = @args[:debug]
     @lock = Mutex.new
 
@@ -44,9 +47,10 @@ class Baza::QueryBuffer
       STDOUT.print "Adding to buffer: #{str}\n" if @debug
       @queries << str
       @queries_count += 1
+      @queries_size += str.bytesize
     end
 
-    flush if @queries_count >= 1000
+    flush if @queries_count >= 1000 || @queries_size >= QUERIES_FLUSH_SIZE
     nil
   end
 
@@ -82,6 +86,27 @@ class Baza::QueryBuffer
   def insert(table, data)
     query(@db.insert(table, data, return_sql: true))
     nil
+  end
+
+  def insert_with_multi(table, data, sort: false)
+    data_key = ""
+
+    if sort
+      data = data.sort_by { |element| element[0].to_s }
+      data = Hash[data]
+    end
+
+    data.each do |key, value|
+      data_key << "#{key}---"
+      @queries_size += value.is_a?(String) ? value.bytesize : 8
+    end
+
+    @inserts[table] ||= {}
+    @inserts[table][data_key] ||= []
+    @inserts[table][data_key] << data
+
+    @queries_count += 1
+    flush if @queries_count >= 1000 || @queries_size >= QUERIES_FLUSH_SIZE
   end
 
   # Flushes all queries out in a transaction. This will automatically be called for every 1000 queries.
@@ -127,20 +152,25 @@ private
             @queries.shift(1000).each do |str|
               STDOUT.print "Executing via buffer: #{str}\n" if @debug
               db.q(str)
+
+              @queries_count -= 1
             end
           end
         end
       end
 
-      @inserts.each do |table, datas_arr|
-        until datas_arr.empty?
-          datas_chunk_arr = datas_arr.shift(1000)
-          @db.insert_multi(table, datas_chunk_arr)
+      @inserts.each do |table, datas|
+        datas.each do |data_key, datas_arr|
+          until datas_arr.empty?
+            datas_chunk_arr = datas_arr.shift(1000)
+            @db.insert_multi(table, datas_chunk_arr)
+            @queries_count -= datas_chunk_arr.length
+          end
         end
       end
 
       @inserts.clear
-      @queries_count = 0
+      @queries_size = 0
     end
 
     nil
