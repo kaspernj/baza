@@ -98,7 +98,7 @@ class Baza::QueryBuffer
 
     data.each do |key, value|
       data_key << "#{key}---"
-      @queries_size += value.is_a?(String) ? value.bytesize * 1.2 : 8
+      @queries_size += value.is_a?(String) ? value.bytesize * 1.5 : 8
     end
 
     @inserts[table] ||= {}
