@@ -39,17 +39,17 @@ class Baza::Driver::Pg::Tables < Baza::Tables
     tables_list
   end
 
-  def create(table_name, data, args = nil)
+  def create(table_name, columns:, indexes: nil, return_sql: false, temp: false)
     table_name = table_name.to_s
     raise "Invalid table name: #{table_name}" if table_name.strip.empty?
-    raise "No columns was given for '#{table_name}'." if !data[:columns] || data[:columns].empty?
+    raise "No columns was given for '#{table_name}'." if !columns || columns.empty?
 
     create_table_sql = "CREATE"
-    create_table_sql << " TEMPORARY" if data[:temp]
+    create_table_sql << " TEMPORARY" if temp
     create_table_sql << " TABLE #{db.quote_table(table_name)} ("
 
     first = true
-    data.fetch(:columns).each do |col_data|
+    columns.each do |col_data|
       create_table_sql << ", " unless first
       first = false if first
       col_data.delete(:after) if col_data[:after]
@@ -60,18 +60,16 @@ class Baza::Driver::Pg::Tables < Baza::Tables
 
     sqls = [create_table_sql]
 
-    if data[:indexes] && !data[:indexes].empty?
-      sqls += db.indexes.create_index(data.fetch(:indexes), table_name: table_name, return_sql: true)
+    if indexes && !indexes.empty?
+      sqls += db.indexes.create_index(indexes, table_name: table_name, return_sql: true)
     end
 
-    if !args || !args[:return_sql]
-      db.transaction do
-        sqls.each do |sql|
-          db.query(sql)
-        end
+    return sqls if return_sql
+
+    db.transaction do
+      sqls.each do |sql|
+        db.query(sql)
       end
-    else
-      sqls
     end
   end
 end

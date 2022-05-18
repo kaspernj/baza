@@ -1,6 +1,8 @@
-before_install:
-  - sudo apt-get install -y libmysqlclient-dev
 before_script:
+  - sudo apt-get install -y mysql-client
+  - wait-for-it mysql:3306
+  - wait-for-it postgres:5432
+  - mysql -hmysql -uroot -ppassword -e "GRANT ALL PRIVILEGES ON *.* TO 'build'@'%'"
   - cp spec/info_mysql_peak_flow.rb spec/info_mysql.rb
   - cp spec/info_mysql2_peak_flow.rb spec/info_mysql2.rb
   - cp spec/info_pg_peak_flow.rb spec/info_pg.rb
@@ -17,6 +19,7 @@ services:
     expose:
       - 5432
     image: postgres:11.4
+    restart_policy: on-failure
   mysql:
     environment:
       - MYSQL_USER=build
@@ -26,6 +29,27 @@ services:
     image: mysql:5.7.29
     expose:
       - 3306
-script:
-  - bundle exec rspec --tag ~@mysql
-  - bundle exec rake best_practice_project:run
+    restart_policy: on-failure
+builds:
+  build_1:
+    environment:
+      RUBY_VERSION: 2.7.6
+    name: Ruby 2.7.6
+    script:
+      - bundle exec rspec --tag ~@mysql
+  build_2:
+    environment:
+      RUBY_VERSION: 3.0.3
+    name: Ruby 3.0.3
+    script:
+      - bundle exec rspec --tag ~@mysql
+  build_3:
+    environment:
+      RUBY_VERSION: 3.1.2
+    name: Ruby 3.1.2
+    script:
+      - bundle exec rspec --tag ~@mysql
+  build_4:
+    name: Linters
+    script:
+      - bundle exec rake best_practice_project:run
