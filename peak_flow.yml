@@ -1,6 +1,6 @@
-before_install:
-  - sudo apt-get install -y libmysqlclient-dev
 before_script:
+  - sudo apt-get install -y mysql-client
+  - mysql -hmysql -uroot -ppassword -e "GRANT ALL PRIVILEGES ON *.* TO 'dev'@'%'"
   - cp spec/info_mysql_peak_flow.rb spec/info_mysql.rb
   - cp spec/info_mysql2_peak_flow.rb spec/info_mysql2.rb
   - cp spec/info_pg_peak_flow.rb spec/info_pg.rb
