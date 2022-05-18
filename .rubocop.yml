@@ -3,11 +3,25 @@ inherit_from: .rubocop_todo.yml
 AllCops:
   DisplayCopNames: true
   DisplayStyleGuide: true
-  Exclude:
-    - baza.gemspec
+  NewCops: enable
+
+Layout/AccessModifierIndentation:
+  EnforcedStyle: outdent
+
+Layout/EmptyLines:
+  Enabled: false
+
+Layout/MultilineMethodCallIndentation:
+  EnforcedStyle: indented
+
+Layout/MultilineOperationIndentation:
+  EnforcedStyle: indented
+
+Layout/SpaceInsideHashLiteralBraces:
+  EnforcedStyle: no_space
 
 # https://github.com/AtomLinter/linter-rubocop/issues/2
-Style/FileName:
+Naming/FileName:
   Enabled: false
 
 # Metrics/CyclomaticComplexity:
@@ -25,15 +39,8 @@ Style/FileName:
 # Metrics/ClassLength:
 #   Max: 250
 
-# .find_each is not the same as .each
-Rails/FindEach:
+Metrics/BlockLength:
   Enabled: false
-
-Style/AccessModifierIndentation:
-  EnforcedStyle: outdent
-
-Style/AlignParameters:
-  EnforcedStyle: with_fixed_indentation
 
 Style/ClassAndModuleChildren:
   EnforcedStyle: compact
@@ -44,18 +51,12 @@ Style/ConditionalAssignment:
 Style/Documentation:
   Enabled: false
 
-Style/EmptyLines:
+Style/FrozenStringLiteralComment:
   Enabled: false
 
 # Will report offences for many places that are much more readable without using a guard clause
 Style/GuardClause:
   Enabled: false
-
-Style/MultilineMethodCallIndentation:
-  EnforcedStyle: indented
-
-Style/MultilineOperationIndentation:
-  EnforcedStyle: indented
 
 Style/StringLiterals:
   EnforcedStyle: double_quotes
@@ -69,16 +70,6 @@ Style/NilComparison:
 Style/SignalException:
   EnforcedStyle: only_raise
 
-Style/MultilineOperationIndentation:
-  EnforcedStyle: indented
-
-Style/SpaceInsideHashLiteralBraces:
-  EnforcedStyle: no_space
-
 Style/TrivialAccessors:
   ExactNameMatch: true
   Enabled: true
-
-# Disabled on purpose: https://github.com/bbatsov/rubocop/issues/1758
-Style/ClosingParenthesisIndentation:
-  Enabled: false
