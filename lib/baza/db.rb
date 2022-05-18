@@ -184,7 +184,7 @@ class Baza::Db
 
       table_name = table.delete(:name)
       puts "Creating table: '#{table_name}'." if debug
-      db.tables.create(table_name, table)
+      db.tables.create(table_name, **table)
 
       limit_from = 0
       limit_incr = 1000

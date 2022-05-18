@@ -75,18 +75,13 @@ class Baza::Driver::Sqlite3::Tables < Baza::Tables
     @list[table.name] = table
   end
 
-  CREATE_ALLOWED_KEYS = [:indexes, :columns].freeze
-  def create(name, data, args = nil)
-    data.each_key do |key|
-      raise "Invalid key: '#{key}' (#{key.class.name})." unless CREATE_ALLOWED_KEYS.include?(key)
-    end
-
-    raise "No columns given" if data.fetch(:columns).empty?
+  def create(name, columns:, indexes: nil, return_sql: false)
+    raise "No columns given" if !columns || columns.empty?
 
     sql = "CREATE TABLE `#{name}` ("
 
     first = true
-    data.fetch(:columns).each do |col_data|
+    columns.each do |col_data|
       sql << ", " unless first
       first = false if first
       sql << @db.columns.data_sql(col_data)
@@ -94,23 +89,23 @@ class Baza::Driver::Sqlite3::Tables < Baza::Tables
 
     sql << ")"
 
-    if args && args[:return_sql]
+    if return_sql
       ret = [sql]
     else
       @db.query(sql)
     end
 
-    if data[:indexes]
+    if indexes
       table_obj = self[name]
 
-      if args && args[:return_sql]
-        ret += table_obj.create_indexes(data.fetch(:indexes), return_sql: true)
+      if return_sql
+        ret += table_obj.create_indexes(indexes, return_sql: true)
       else
-        table_obj.create_indexes(data.fetch(:indexes))
+        table_obj.create_indexes(indexes)
       end
     end
 
-    if args && args[:return_sql]
+    if return_sql
       return ret
     else
       return nil

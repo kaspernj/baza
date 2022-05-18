@@ -26,6 +26,26 @@ services:
     image: mysql:5.7.29
     expose:
       - 3306
-script:
-  - bundle exec rspec --tag ~@mysql
-  - bundle exec rake best_practice_project:run
+builds:
+  build_1:
+    environment:
+      RUBY_VERSION: 2.7.6
+    name: Ruby 2.7.6
+    script:
+      - bundle exec rspec --tag ~@mysql
+  build_2:
+    environment:
+      RUBY_VERSION: 3.0.3
+    name: Ruby 3.0.3
+    script:
+      - bundle exec rspec --tag ~@mysql
+  build_3:
+    environment:
+      RUBY_VERSION: 3.1.2
+    name: Ruby 3.1.2
+    script:
+      - bundle exec rspec --tag ~@mysql
+  build_4:
+    name: Linters
+    script:
+      - bundle exec rake best_practice_project:run

@@ -68,9 +68,9 @@ class Baza::Driver::Sqlite3::Table < Baza::Table
 
   # Drops the table and creates it again
   def truncate
-    table_data = data
+    table_data = data.clone
     drop
-    @db.tables.create(table_data.delete(:name), table_data)
+    @db.tables.create(table_data.delete(:name), **table_data)
     self
   end
 

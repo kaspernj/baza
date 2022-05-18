@@ -87,8 +87,8 @@ class Baza::Driver::Mysql::Tables < Baza::Tables
     end
   end
 
-  def create(name, data, **opts)
-    @db.current_database.create_table(name, data, **opts)
+  def create(name, **opts)
+    @db.current_database.create_table(name, **opts)
   end
 
 private

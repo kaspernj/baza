@@ -38,7 +38,7 @@ class Baza::Database
     list_args[:name] = args.fetch(:name) if args[:name]
 
     ArrayEnumerator.new do |yielder|
-      @db.tables.list(list_args) do |table|
+      @db.tables.list(**list_args) do |table|
         yielder << table
       end
     end

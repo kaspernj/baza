@@ -10,27 +10,26 @@ class Baza::Driver::Mysql::Database < Baza::Database
     self
   end
 
-  CREATE_ALLOWED_KEYS = [:columns, :indexes, :temp, :return_sql].freeze
   # Creates a new table by the given name and data.
-  def create_table(name, data, args = nil)
-    raise "No columns was given for '#{name}'." if !data[:columns] || data[:columns].empty?
+  def create_table(name, columns:, indexes: nil, return_sql: false, temp: false)
+    raise "No columns was given for '#{name}'." if !columns || columns.empty?
 
     sql = "CREATE"
-    sql << " TEMPORARY" if data[:temp]
+    sql << " TEMPORARY" if temp
     sql << " TABLE #{@db.quote_table(name)} ("
 
     first = true
-    data[:columns].each do |col_data|
+    columns.each do |col_data|
       sql << ", " unless first
       first = false if first
       col_data.delete(:after) if col_data[:after]
       sql << @db.columns.data_sql(col_data)
     end
 
-    if data[:indexes] && !data[:indexes].empty?
+    if indexes && !indexes.empty?
       sql << ", "
       sql << Baza::Driver::Mysql::Table.create_indexes(
-        data[:indexes],
+        indexes,
         db: @db,
         return_sql: true,
         create: false,
@@ -41,16 +40,14 @@ class Baza::Driver::Mysql::Database < Baza::Database
 
     sql << ")"
 
-    # return [sql] if args && args[:return_sql]
-
     sql = Baza::Driver::Mysql::Sql::CreateTable.new(
-      columns: data.fetch(:columns),
-      indexes: data[:indexes],
+      columns: columns,
+      indexes: indexes,
       name: name,
-      temporary: data[:temp]
+      temporary: temp
     ).sql
 
-    return sql if args && args[:return_sql]
+    return sql if return_sql
 
     use do
       sql.each do |sql_i|

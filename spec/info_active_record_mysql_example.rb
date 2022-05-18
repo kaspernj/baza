@@ -28,7 +28,9 @@ class Baza::InfoActiveRecordMysql
   end
 
   def before
+    @db.query("SET FOREIGN_KEY_CHECKS=0")
     @db.tables.list(&:drop)
+    @db.query("SET FOREIGN_KEY_CHECKS=1")
   end
 
   def after

@@ -67,11 +67,12 @@ class Baza::Dump
 
   # Dumps the given table into the given IO.
   def dump_table(io, table_obj)
-    create_data = table_obj.data
+    create_data = table_obj.data.clone
     create_data.delete(:name)
+    create_data[:return_sql] = true
 
     # Get SQL for creating table and add it to IO.
-    sqls = @export_db.tables.create(table_obj.name, create_data, return_sql: true)
+    sqls = @export_db.tables.create(table_obj.name, **create_data)
     sqls.each do |sql|
       io.write("#{sql};\n")
     end
