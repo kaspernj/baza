@@ -33,7 +33,8 @@ Gem::Specification.new do |s|
   s.add_development_dependency("pry", ">= 0")
   s.add_development_dependency("rdoc", ">= 0")
   s.add_development_dependency("rspec", ">= 3.4.0")
-  s.add_development_dependency("rubocop", ">= 0.39.0")
+  s.add_development_dependency("rubocop")
+  s.add_development_dependency("rubocop-rspec")
 
   if RUBY_PLATFORM == "java"
     s.add_development_dependency("activerecord-jdbc-adapter")
