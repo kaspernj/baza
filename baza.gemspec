@@ -31,6 +31,7 @@ Gem::Specification.new do |s|
   s.add_development_dependency("best_practice_project", ">= 0.0.9")
   s.add_development_dependency("bundler", ">= 0")
   s.add_development_dependency("pry", ">= 0")
+  s.add_development_dependency("rake")
   s.add_development_dependency("rdoc", ">= 0")
   s.add_development_dependency("rspec", ">= 3.4.0")
   s.add_development_dependency("rubocop")
