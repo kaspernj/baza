@@ -11,20 +11,6 @@ rescue Bundler::BundlerError => e
 end
 require "rake"
 
-require "jeweler"
-Jeweler::Tasks.new do |gem|
-  # gem is a Gem::Specification... see http://docs.rubygems.org/read/chapter/20 for more options
-  gem.name = "baza"
-  gem.homepage = "http://github.com/kaspernj/baza"
-  gem.license = "MIT"
-  gem.summary = %(A database abstraction layer, model framework and database framework.)
-  gem.description = %(A database abstraction layer, model framework and database framework.)
-  gem.email = "kj@gfish.com"
-  gem.authors = ["Kasper Johansen"]
-  # dependencies defined in Gemfile
-end
-Jeweler::RubygemsDotOrgTasks.new
-
 require "rspec/core"
 require "rspec/core/rake_task"
 RSpec::Core::RakeTask.new(:spec) do |spec|

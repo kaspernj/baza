@@ -1,3 +1,5 @@
+before_install:
+  - sudo apt-get install -y libmysqlclient-dev mysql-client
 before_script:
   - sudo apt-get install -y mysql-client
   - wait-for-it mysql:3306
@@ -50,6 +52,12 @@ builds:
     script:
       - bundle exec rspec --tag ~@mysql
   build_4:
+    environment:
+      RUBY_VERSION: jruby-9.3.1.0
+    name: JRuby 9.3.1.0
+    script:
+      - bundle exec rspec --tag ~@mysql
+  build_5:
     name: Linters
     script:
       - bundle exec rake best_practice_project:run
