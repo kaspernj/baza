@@ -89,7 +89,7 @@ GEM
     rubocop-rspec (2.11.1)
       rubocop (~> 1.19)
     ruby-progressbar (1.11.0)
-    simple_delegate (0.0.2)
+    simple_delegate (0.0.4)
     spoon (0.0.6)
       ffi
     sqlite3 (1.4.2)
