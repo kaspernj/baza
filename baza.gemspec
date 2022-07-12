@@ -27,7 +27,7 @@ Gem::Specification.new do |s|
   s.add_dependency("string-cases", ">= 0.0.4")
   s.add_dependency("wref", ">= 0.0.8")
 
-  s.add_development_dependency("activerecord", "7.0.3")
+  s.add_development_dependency("activerecord", "7.0.3.1")
   s.add_development_dependency("best_practice_project", ">= 0.0.9")
   s.add_development_dependency("bundler", ">= 0")
   s.add_development_dependency("pry", ">= 0")
