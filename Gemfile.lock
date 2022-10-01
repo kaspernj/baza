@@ -13,12 +13,12 @@ PATH
 GEM
   remote: http://rubygems.org/
   specs:
-    activemodel (7.0.3.1)
-      activesupport (= 7.0.3.1)
-    activerecord (7.0.3.1)
-      activemodel (= 7.0.3.1)
-      activesupport (= 7.0.3.1)
-    activesupport (7.0.3.1)
+    activemodel (7.0.4)
+      activesupport (= 7.0.4)
+    activerecord (7.0.4)
+      activemodel (= 7.0.4)
+      activesupport (= 7.0.4)
+    activesupport (7.0.4)
       concurrent-ruby (~> 1.0, >= 1.0.2)
       i18n (>= 1.6, < 2)
       minitest (>= 5.1)
@@ -35,12 +35,12 @@ GEM
     diff-lcs (1.5.0)
     event_handler (0.0.0)
     ffi (1.15.5-java)
-    i18n (1.11.0)
+    i18n (1.12.0)
       concurrent-ruby (~> 1.0)
     jar-dependencies (0.4.1)
     method_source (1.0.0)
     mini_portile2 (2.8.0)
-    minitest (5.16.2)
+    minitest (5.16.3)
     mysql2 (0.5.4)
     parallel (1.22.1)
     parser (3.1.2.0)
@@ -97,7 +97,7 @@ GEM
       mini_portile2 (~> 2.8.0)
     string-cases (0.0.4)
     stringio (3.0.2)
-    tzinfo (2.0.4)
+    tzinfo (2.0.5)
       concurrent-ruby (~> 1.0)
     unicode-display_width (2.1.0)
     wref (0.0.8)
@@ -108,7 +108,7 @@ PLATFORMS
   universal-java-17
 
 DEPENDENCIES
-  activerecord (= 7.0.3.1)
+  activerecord (= 7.0.4)
   baza!
   best_practice_project (>= 0.0.9)
   bundler
