@@ -1,7 +1,7 @@
 before_install:
-  - sudo apt-get install -y libmysqlclient-dev mysql-client
+  - sudo apt-get update && sudo apt-get install -y libmysqlclient-dev mysql-client
 before_script:
-  - sudo apt-get install -y mysql-client
+  - sudo apt-get update && sudo apt-get install -y mysql-client
   - wait-for-it mysql:3306
   - wait-for-it postgres:5432
   - mysql -hmysql -uroot -ppassword -e "GRANT ALL PRIVILEGES ON *.* TO 'build'@'%'"

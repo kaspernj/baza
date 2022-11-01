@@ -4,8 +4,7 @@ Gem::Specification.new do |s|
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0".freeze) if s.respond_to? :required_rubygems_version=
   s.require_paths = ["lib".freeze]
-  s.authors = ["Kasper Johansen".freeze]
-  s.date = "2021-10-04"
+  s.authors = ["Kasper Stöckel".freeze]
   s.description = "A database abstraction layer, model framework and database framework.".freeze
   s.email = "kj@gfish.com".freeze
   s.extra_rdoc_files = [
@@ -13,10 +12,8 @@ Gem::Specification.new do |s|
     "README.md"
   ]
   s.files = Dir["{include,lib}/**/*"] + ["Rakefile"]
-  s.test_files = Dir["spec/**/*"]
   s.homepage = "http://github.com/kaspernj/baza".freeze
   s.licenses = ["MIT".freeze]
-  s.rubygems_version = "3.1.6".freeze
   s.summary = "A database abstraction layer, model framework and database framework.".freeze
 
   s.add_dependency("array_enumerator", ">= 0.0.10")
@@ -35,6 +32,8 @@ Gem::Specification.new do |s|
   s.add_development_dependency("rdoc", ">= 0")
   s.add_development_dependency("rspec", ">= 3.4.0")
   s.add_development_dependency("rubocop")
+  s.add_development_dependency("rubocop-performance")
+  s.add_development_dependency("rubocop-rake")
   s.add_development_dependency("rubocop-rspec")
 
   if RUBY_PLATFORM == "java"

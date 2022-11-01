@@ -3,18 +3,18 @@ require "spec_helper"
 describe Baza::Driver::Sqlite3 do
   let(:constant) do
     const_name = "InfoSqlite3"
-    require "#{File.dirname(__FILE__)}/../#{StringCases.camel_to_snake(const_name)}"
+    require "#{__dir__}/../../#{StringCases.camel_to_snake(const_name)}"
     raise "Constant was not defined: '#{const_name}'." unless Baza.const_defined?(const_name)
     Baza.const_get(const_name)
   end
 
   it_behaves_like "a baza driver"
-  it_should_behave_like "a baza tables driver"
-  it_should_behave_like "a baza columns driver"
-  it_should_behave_like "a baza indexes driver"
-  it_should_behave_like "a baza importer driver"
+  it_behaves_like "a baza tables driver"
+  it_behaves_like "a baza columns driver"
+  it_behaves_like "a baza indexes driver"
+  it_behaves_like "a baza importer driver"
 
-  it "should copy database structure and data" do
+  it "copies database structure and data" do
     require "info_sqlite3"
     db = Baza::InfoSqlite3.new.db
     db2 = Baza::InfoSqlite3.new.db
