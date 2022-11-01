@@ -34,15 +34,15 @@ shared_examples_for "a baza columns driver" do
   it "creates columns right" do
     col_id = test_table.column(:id)
     expect(col_id.type).to eq :int
-    expect(col_id.primarykey?).to eq true
-    expect(col_id.autoincr?).to eq true
-    expect(col_id.default).to eq nil
+    expect(col_id.primarykey?).to be true
+    expect(col_id.autoincr?).to be true
+    expect(col_id.default).to be_nil
 
     col_text = test_table.column(:text)
     expect(col_text.type).to eq :varchar
-    expect(col_text.primarykey?).to eq false
-    expect(col_text.autoincr?).to eq false
-    expect(col_text.default).to eq nil
+    expect(col_text.primarykey?).to be false
+    expect(col_text.autoincr?).to be false
+    expect(col_text.default).to be_nil
   end
 
   it "is able to change columns" do

@@ -54,7 +54,7 @@ class Baza::Driver::Mysql2 < Baza::MysqlBaseDriver
   # Respawns the connection to the MySQL-database.
   def reconnect
     @mutex.synchronize do
-      require "mysql2" unless ::Object.const_defined?("Mysql2")
+      require "mysql2" unless ::Object.const_defined?(:Mysql2)
 
       args = {
         host: @db.opts[:host],

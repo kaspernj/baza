@@ -14,7 +14,7 @@ describe Baza::Driver::Pg::Table do
     it "returns true if the table is 'pg_stat_statements'-table" do
       test_table = Baza::Driver::Pg::Table.new(driver: driver, data: {table_name: "pg_stat_statements"})
 
-      expect(test_table.native?).to eq true
+      expect(test_table.native?).to be true
     end
   end
 end

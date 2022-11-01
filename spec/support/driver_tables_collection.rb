@@ -30,11 +30,11 @@ shared_examples_for "a baza tables driver" do
   describe "#exists?" do
     it "returns true for tables that exists" do
       test_table
-      expect(db.tables.exists?("test")).to eq true
+      expect(db.tables.exists?("test")).to be true
     end
 
     it "returns false for tables that doesnt exist" do
-      expect(db.tables.exists?("testtest")).to eq false
+      expect(db.tables.exists?("testtest")).to be false
     end
   end
 
@@ -55,7 +55,7 @@ shared_examples_for "a baza tables driver" do
   end
 
   it "#native?" do
-    expect(test_table.native?).to eq false
+    expect(test_table.native?).to be false
   end
 
   it "#row" do

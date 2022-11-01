@@ -1,23 +1,23 @@
 require "spec_helper"
 
-describe Baza.const_get(:Driver).const_get(:Mysql), :mysql do
+describe Baza::Driver::Mysql, :mysql do
   let(:constant) do
     const_name = "InfoMysql"
-    require "#{File.dirname(__FILE__)}/../#{StringCases.camel_to_snake(const_name)}"
+    require "#{__dir__}/../../#{StringCases.camel_to_snake(const_name)}"
     raise "Constant was not defined: '#{const_name}'." unless Baza.const_defined?(const_name)
     Baza.const_get(const_name)
   end
 
-  it_should_behave_like "a baza driver"
-  it_should_behave_like "a baza databases driver"
-  it_should_behave_like "a baza tables driver"
-  it_should_behave_like "a baza columns driver"
-  it_should_behave_like "a baza foreign keys driver"
-  it_should_behave_like "a baza indexes driver"
-  it_should_behave_like "a baza users driver"
-  it_should_behave_like "a baza importer driver"
+  it_behaves_like "a baza driver"
+  it_behaves_like "a baza databases driver"
+  it_behaves_like "a baza tables driver"
+  it_behaves_like "a baza columns driver"
+  it_behaves_like "a baza foreign keys driver"
+  it_behaves_like "a baza indexes driver"
+  it_behaves_like "a baza users driver"
+  it_behaves_like "a baza importer driver"
 
-  it "should dump to sqlite3" do
+  it "dumps to sqlite3" do
     require "info_sqlite3"
     require "info_mysql"
 
@@ -44,8 +44,8 @@ describe Baza.const_get(:Driver).const_get(:Mysql), :mysql do
 
       col_id_sqlite = table_sqlite.column(:id)
       expect(col_id_sqlite.type).to eq :int
-      expect(col_id_sqlite.autoincr?).to eq true
-      expect(col_id_sqlite.primarykey?).to eq true
+      expect(col_id_sqlite.autoincr?).to be true
+      expect(col_id_sqlite.primarykey?).to be true
 
       col_name_sqlite = table_sqlite.column(:name)
       expect(col_name_sqlite.type).to eq :varchar

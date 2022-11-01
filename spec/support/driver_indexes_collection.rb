@@ -49,11 +49,11 @@ shared_examples_for "a baza indexes driver" do
   describe Baza::Index do
     describe "#unique?" do
       it "returns true when it is unique" do
-        expect(test_table.index("email").unique?).to eq true
+        expect(test_table.index("email").unique?).to be true
       end
 
       it "returns false when it isn't unique" do
-        expect(test_table.index("text").unique?).to eq false
+        expect(test_table.index("text").unique?).to be false
       end
     end
 

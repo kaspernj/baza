@@ -356,7 +356,7 @@ class Baza::Driver::Mysql::Table < Baza::Table
 
   # Changes the engine for a table.
   def engine=(newengine)
-    raise "Invalid engine: '#{newengine}'." unless newengine.to_s =~ /^[A-z]+$/
+    raise "Invalid engine: '#{newengine}'." unless newengine.to_s.match?(/^[A-z]+$/)
     @db.query("ALTER TABLE #{@db.quote_table(name)} ENGINE = #{newengine}") if engine.to_s != newengine.to_s
     @data[:ENGINE] = newengine
   end
