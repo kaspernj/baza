@@ -59,6 +59,9 @@ RSpec/MultipleMemoizedHelpers:
 RSpec/MultipleExpectations:
   Enabled: false
 
+RSpec/NoExpectationExample:
+  Enabled: false
+
 Style/ClassAndModuleChildren:
   EnforcedStyle: compact
 
