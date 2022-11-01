@@ -43,9 +43,9 @@ shared_examples_for "an active record driver" do
 
   it "saves models through baza" do
     user = User.new(email: "test@example.com")
-    expect(user.valid?).to eq true
+    expect(user.valid?).to be true
     db.driver.save_model!(user, update_on_duplicate_key: true)
-    expect(user.persisted?).to eq true
+    expect(user.persisted?).to be true
     expect(user.id).to eq 1
     expect(user.email).to eq "test@example.com"
   end

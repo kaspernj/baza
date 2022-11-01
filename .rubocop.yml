@@ -5,6 +5,11 @@ AllCops:
   DisplayStyleGuide: true
   NewCops: enable
 
+require:
+  - rubocop-performance
+  - rubocop-rake
+  - rubocop-rspec
+
 Layout/AccessModifierIndentation:
   EnforcedStyle: outdent
 
@@ -40,6 +45,18 @@ Naming/FileName:
 #   Max: 250
 
 Metrics/BlockLength:
+  Enabled: false
+
+RSpec/DescribedClass:
+  Enabled: false
+
+RSpec/ExampleLength:
+  Enabled: false
+
+RSpec/MultipleMemoizedHelpers:
+  Enabled: false
+
+RSpec/MultipleExpectations:
   Enabled: false
 
 Style/ClassAndModuleChildren:

@@ -23,7 +23,7 @@ shared_examples_for "a baza users driver" do
       end
     end
 
-    expect(root_found).to eq true
+    expect(root_found).to be true
   end
 
   it "Users#find_by_name" do
