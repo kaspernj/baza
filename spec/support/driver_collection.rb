@@ -358,7 +358,7 @@ shared_examples_for "a baza driver" do
   end
 
   it "returns arguments used to connect" do
-    require_relative "../../lib/baza/driver/active_record"
+    require_relative "../../../lib/baza/driver/active_record"
 
     unless db.driver.is_a?(Baza::Driver::ActiveRecord)
       args = db.driver.class.args

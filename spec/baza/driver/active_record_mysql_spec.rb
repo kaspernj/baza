@@ -3,7 +3,7 @@ require "spec_helper"
 describe Baza::Driver::ActiveRecord, :mysql do
   let(:constant) do
     const_name = "InfoActiveRecordMysql"
-    require "#{File.dirname(__FILE__)}/../#{StringCases.camel_to_snake(const_name)}"
+    require "#{__dir__}/../../#{StringCases.camel_to_snake(const_name)}"
     raise "Constant was not defined: '#{const_name}'." unless Baza.const_defined?(const_name)
     Baza.const_get(const_name)
   end
