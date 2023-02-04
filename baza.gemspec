@@ -23,26 +23,4 @@ Gem::Specification.new do |s|
   s.add_dependency("simple_delegate", ">= 0.0.2")
   s.add_dependency("string-cases", ">= 0.0.4")
   s.add_dependency("wref", ">= 0.0.8")
-
-  s.add_development_dependency("activerecord", "7.0.4.1")
-  s.add_development_dependency("best_practice_project", ">= 0.0.9")
-  s.add_development_dependency("bundler", ">= 0")
-  s.add_development_dependency("pry", ">= 0")
-  s.add_development_dependency("rake")
-  s.add_development_dependency("rdoc", ">= 0")
-  s.add_development_dependency("rspec", ">= 3.4.0")
-  s.add_development_dependency("rubocop")
-  s.add_development_dependency("rubocop-performance")
-  s.add_development_dependency("rubocop-rake")
-  s.add_development_dependency("rubocop-rspec")
-
-  if RUBY_PLATFORM == "java"
-    s.add_development_dependency("activerecord-jdbc-adapter")
-    s.add_development_dependency("jdbc-mysql", ">= 0")
-    s.add_development_dependency("jdbc-sqlite3", ">= 0")
-  else
-    s.add_development_dependency("mysql2", ">= 0.4.10")
-    s.add_development_dependency("pg", ">= 1.3.5")
-    s.add_development_dependency("sqlite3", ">= 1.4.2")
-  end
 end

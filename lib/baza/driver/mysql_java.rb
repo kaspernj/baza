@@ -65,7 +65,7 @@ class Baza::Driver::MysqlJava < Baza::JdbcDriver
         @jdbc_loaded = true
         @conn = @db.opts.fetch(:conn)
       else
-        com.mysql.jdbc.Driver
+        com.mysql.cj.jdbc.Driver
         @conn = java.sql::DriverManager.getConnection(jdbc_connect_command)
       end
 

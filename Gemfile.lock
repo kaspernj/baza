@@ -18,6 +18,8 @@ GEM
     activerecord (7.0.4.1)
       activemodel (= 7.0.4.1)
       activesupport (= 7.0.4.1)
+    activerecord-jdbc-adapter (70.0-java)
+      activerecord (~> 7.0)
     activesupport (7.0.4.1)
       concurrent-ruby (~> 1.0, >= 1.0.2)
       i18n (>= 1.6, < 2)
@@ -38,6 +40,8 @@ GEM
     i18n (1.12.0)
       concurrent-ruby (~> 1.0)
     jar-dependencies (0.4.1)
+    jdbc-mysql (8.0.27)
+    jdbc-sqlite3 (3.32.3.3)
     json (2.6.3)
     json (2.6.3-java)
     method_source (1.0.0)
@@ -78,16 +82,16 @@ GEM
       diff-lcs (>= 1.2.0, < 2.0)
       rspec-support (~> 3.12.0)
     rspec-support (3.12.0)
-    rubocop (1.41.1)
+    rubocop (1.44.1)
       json (~> 2.3)
       parallel (~> 1.10)
-      parser (>= 3.1.2.1)
+      parser (>= 3.2.0.0)
       rainbow (>= 2.2.2, < 4.0)
       regexp_parser (>= 1.8, < 3.0)
       rexml (>= 3.2.5, < 4.0)
-      rubocop-ast (>= 1.23.0, < 2.0)
+      rubocop-ast (>= 1.24.1, < 2.0)
       ruby-progressbar (~> 1.7)
-      unicode-display_width (>= 1.4.0, < 3.0)
+      unicode-display_width (>= 2.4.0, < 3.0)
     rubocop-ast (1.24.1)
       parser (>= 3.1.1.0)
     rubocop-capybara (2.17.0)
@@ -120,9 +124,12 @@ PLATFORMS
 
 DEPENDENCIES
   activerecord (= 7.0.4.1)
+  activerecord-jdbc-adapter
   baza!
   best_practice_project (>= 0.0.9)
   bundler
+  jdbc-mysql
+  jdbc-sqlite3
   mysql2 (>= 0.4.10)
   pg (>= 1.3.5)
   pry

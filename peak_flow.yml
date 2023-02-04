@@ -53,8 +53,8 @@ builds:
       - bundle exec rspec --tag ~@mysql
   build_4:
     environment:
-      RUBY_VERSION: jruby-9.3.1.0
-    name: JRuby 9.3.1.0
+      RUBY_VERSION: jruby-head
+    name: JRuby head
     script:
       - bundle exec rspec --tag ~@mysql
   build_5:
