@@ -45,7 +45,7 @@ GEM
     json (2.6.3)
     json (2.6.3-java)
     method_source (1.0.0)
-    mini_portile2 (2.8.0)
+    mini_portile2 (2.8.1)
     minitest (5.17.0)
     mysql2 (0.5.5)
     parallel (1.22.1)
@@ -108,7 +108,7 @@ GEM
     simple_delegate (0.0.4)
     spoon (0.0.6)
       ffi
-    sqlite3 (1.5.4)
+    sqlite3 (1.6.0)
       mini_portile2 (~> 2.8.0)
     string-cases (0.0.4)
     stringio (3.0.4)
