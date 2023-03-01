@@ -108,7 +108,7 @@ GEM
     simple_delegate (0.0.4)
     spoon (0.0.6)
       ffi
-    sqlite3 (1.6.0)
+    sqlite3 (1.6.1)
       mini_portile2 (~> 2.8.0)
     string-cases (0.0.4)
     stringio (3.0.4)
