@@ -2,7 +2,7 @@ source "http://rubygems.org"
 gemspec
 
 group :development do
-  gem "activerecord", "7.0.4.3"
+  gem "activerecord", "7.0.5"
   gem "best_practice_project", ">= 0.0.9"
   gem "bundler", ">= 0"
   gem "pry", ">= 0"
