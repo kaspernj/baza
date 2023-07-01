@@ -149,7 +149,7 @@ class Baza::Driver::ActiveRecord < Baza::BaseSqlDriver
       attributes[column_name.to_s] = value_array.last
     end
 
-    attributes = attributes.delete_if { |_key, value| value.nil? } if model.new_record?
+    attributes = attributes.compact if model.new_record?
 
     table_name = model.class.table_name
 
