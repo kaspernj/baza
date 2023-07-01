@@ -69,7 +69,7 @@ class Baza::Driver::Sqlite3 < Baza::BaseSqlDriver
   def escape(string)
     # This code is taken directly from the documentation so we dont have to rely on the SQLite3::Database class. This way it can also be used with JRuby and IronRuby...
     # http://sqlite-ruby.rubyforge.org/classes/SQLite/Database.html
-    string.to_s.gsub(/'/, "''")
+    string.to_s.gsub("'", "''")
   end
 
   # Closes the connection to the database.

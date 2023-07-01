@@ -35,23 +35,29 @@ services:
 builds:
   build_1:
     environment:
-      RUBY_VERSION: 2.7.6
-    name: Ruby 2.7.6
+      RUBY_VERSION: 2.7.8
+    name: Ruby 2.7.8
     script:
       - bundle exec rspec --tag ~@mysql
   build_2:
     environment:
-      RUBY_VERSION: 3.0.3
-    name: Ruby 3.0.3
+      RUBY_VERSION: 3.0.5
+    name: Ruby 3.0.5
     script:
       - bundle exec rspec --tag ~@mysql
   build_3:
     environment:
-      RUBY_VERSION: 3.1.2
-    name: Ruby 3.1.2
+      RUBY_VERSION: 3.1.4
+    name: Ruby 3.1.4
     script:
       - bundle exec rspec --tag ~@mysql
   build_4:
+    environment:
+      RUBY_VERSION: 3.2.2
+    name: Ruby 3.2.2
+    script:
+      - bundle exec rspec --tag ~@mysql
+  build_5:
     environment:
       RUBY_VERSION: jruby-head
     name: JRuby head
