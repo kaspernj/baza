@@ -444,7 +444,8 @@ class Baza::Db
   end
 
   def sqlite?
-    @driver.class.name.downcase.include?("sqlite")
+    @driver.class.name.downcase.include?("sqlite") ||
+      (@driver.class.name == "Baza::Driver::ActiveRecord" && @driver.driver_type == :sqlite3)
   end
 
   def mysql?
