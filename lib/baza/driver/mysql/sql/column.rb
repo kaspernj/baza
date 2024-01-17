@@ -7,7 +7,7 @@ class Baza::Driver::Mysql::Sql::Column
     @data = data
   end
 
-  def sql
+  def sql # rubocop:disable Metrics/AbcSize
     data.each_key do |key|
       raise "Invalid key: '#{key}' (#{key.class.name})." unless DATA_SQL_ALLOWED_KEYS.include?(key)
     end
