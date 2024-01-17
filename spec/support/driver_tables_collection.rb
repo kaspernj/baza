@@ -120,9 +120,22 @@ shared_examples_for "a baza tables driver" do
       foreign_keys = db.tables[:comments].foreign_keys
       foreign_key = foreign_keys.first
 
+      referenced_foreign_keys = db.tables[:users].referenced_foreign_keys
+      referenced_foreign_key = referenced_foreign_keys.first
+
       expect(foreign_keys).to have_attributes(length: 1)
       expect(foreign_key).to have_attributes(
         column_name: "user_id",
+        referenced_column_name: "id",
+        referenced_table_name: "users",
+        table_name: "comments"
+      )
+
+      expect(referenced_foreign_keys).to have_attributes(length: 1)
+      expect(referenced_foreign_key).to have_attributes(
+        column_name: "user_id",
+        referenced_column_name: "id",
+        referenced_table_name: "users",
         table_name: "comments"
       )
     end
@@ -152,8 +165,17 @@ shared_examples_for "a baza tables driver" do
         foreign_keys = db.tables[:comments].foreign_keys
         foreign_key = foreign_keys.first
 
+        referenced_foreign_keys = db.tables[:users].referenced_foreign_keys
+        referenced_foreign_key = referenced_foreign_keys.first
+
         expect(foreign_keys).to have_attributes(length: 1)
         expect(foreign_key).to have_attributes(
+          column_name: "user_id",
+          table_name: "comments"
+        )
+
+        expect(referenced_foreign_keys).to have_attributes(length: 1)
+        expect(referenced_foreign_key).to have_attributes(
           column_name: "user_id",
           table_name: "comments"
         )

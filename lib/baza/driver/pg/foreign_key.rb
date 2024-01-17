@@ -7,6 +7,8 @@ class Baza::Driver::Pg::ForeignKey < Baza::ForeignKey
     @column_name = data.fetch(:column_name)
     @name = data.fetch(:constraint_name)
     @table_name = data.fetch(:table_name)
+    @referenced_column_name = data.fetch(:foreign_column_name)
+    @referenced_table_name = data.fetch(:foreign_table_name)
   end
 
   def drop
