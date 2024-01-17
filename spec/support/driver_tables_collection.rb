@@ -149,9 +149,7 @@ shared_examples_for "a baza tables driver" do
           to: [:users, :id]
         )
 
-        users_table = db.tables[:users]
-
-        foreign_keys = users_table.foreign_keys
+        foreign_keys = db.tables[:comments].foreign_keys
         foreign_key = foreign_keys.first
 
         expect(foreign_keys).to have_attributes(length: 1)
