@@ -108,11 +108,16 @@ class Baza::Driver::Mysql::Table < Baza::Table
         INFORMATION_SCHEMA.KEY_COLUMN_USAGE
 
       WHERE
-        REFERENCED_TABLE_SCHEMA = #{@db.quote_value(@db.current_database_name)} AND
-        REFERENCED_TABLE_NAME = #{@db.quote_value(name)}
+        CONSTRAINT_NAME != 'PRIMARY'
     "
 
+    #  WHERE
+    #    REFERENCED_TABLE_SCHEMA = #{@db.quote_value(@db.current_database_name)} AND
+    #    REFERENCED_TABLE_NAME = #{@db.quote_value(name)}
+
     sql << " AND CONSTRAINT_NAME = #{@db.quote_value(args.fetch(:name))}" if args[:name]
+
+    puts "SQL: #{sql}"
 
     result = [] unless block_given?
 
@@ -128,6 +133,8 @@ class Baza::Driver::Mysql::Table < Baza::Table
         result << foreign_key
       end
     end
+
+    pp result
 
     result
   end

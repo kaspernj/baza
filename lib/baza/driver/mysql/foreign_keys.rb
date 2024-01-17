@@ -1,9 +1,7 @@
-class Baza::Driver::Mysql::ForeignKeys < Baza::Tables
+class Baza::Driver::Mysql::ForeignKeys
   attr_reader :db
 
-  # Constructor. This should not be called manually.
-  def initialize(db:, **args)
-    @args = args
+  def initialize(db:)
     @db = db
   end
 

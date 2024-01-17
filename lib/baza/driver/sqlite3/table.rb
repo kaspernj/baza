@@ -12,6 +12,12 @@ class Baza::Driver::Sqlite3::Table < Baza::Table
     @indexes_list = Wref::Map.new
   end
 
+  def foreign_keys
+    db.query("PRAGMA foreign_key_list('#{name}')").map do |foreign_key_data|
+      Baza::Driver::Sqlite3::ForeignKey.new(db: db, data: foreign_key_data)
+    end
+  end
+
   def maxlength
     @data.fetch(:maxlength)
   end

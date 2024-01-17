@@ -1,5 +1,5 @@
 class Baza::Driver::Mysql::Sql::Column
-  DATA_SQL_ALLOWED_KEYS = [:type, :maxlength, :name, :primarykey, :autoincr, :default, :comment, :after, :first, :storage, :null, :renames].freeze
+  DATA_SQL_ALLOWED_KEYS = [:foreign_key, :type, :maxlength, :name, :primarykey, :autoincr, :default, :comment, :after, :first, :storage, :null, :renames].freeze
 
   attr_reader :data
 
