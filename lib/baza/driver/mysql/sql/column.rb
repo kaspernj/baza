@@ -1,5 +1,5 @@
 class Baza::Driver::Mysql::Sql::Column
-  DATA_SQL_ALLOWED_KEYS = [:type, :maxlength, :name, :primarykey, :autoincr, :default, :comment, :after, :first, :storage, :null, :renames].freeze
+  DATA_SQL_ALLOWED_KEYS = %i[foreign_key type maxlength name primarykey autoincr default comment after first storage null renames].freeze
 
   attr_reader :data
 
@@ -7,7 +7,7 @@ class Baza::Driver::Mysql::Sql::Column
     @data = data
   end
 
-  def sql
+  def sql # rubocop:disable Metrics/AbcSize
     data.each_key do |key|
       raise "Invalid key: '#{key}' (#{key.class.name})." unless DATA_SQL_ALLOWED_KEYS.include?(key)
     end
@@ -22,6 +22,7 @@ class Baza::Driver::Mysql::Sql::Column
     sql << " PRIMARY KEY" if data[:primarykey]
     sql << " AUTO_INCREMENT" if data[:autoincr]
     sql << " NOT NULL" if data.key?(:null) && !data[:null]
+    sql << " REFERENCES #{data.fetch(:foreign_key).fetch(:to).fetch(0)}(#{data.fetch(:foreign_key).fetch(:to).fetch(1)})" if data[:foreign_key]
 
     if data.key?(:default_func)
       sql << " DEFAULT #{data[:default_func]}"

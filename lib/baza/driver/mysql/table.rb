@@ -108,7 +108,8 @@ class Baza::Driver::Mysql::Table < Baza::Table
         INFORMATION_SCHEMA.KEY_COLUMN_USAGE
 
       WHERE
-        REFERENCED_TABLE_SCHEMA = #{@db.quote_value(@db.current_database_name)} AND
+        TABLE_SCHEMA = (SELECT DATABASE()) AND
+        CONSTRAINT_NAME != 'PRIMARY' AND
         TABLE_NAME = #{@db.quote_value(name)}
     "
 

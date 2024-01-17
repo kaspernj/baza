@@ -97,6 +97,70 @@ shared_examples_for "a baza tables driver" do
     expect(test_table2.rows_count).to eq 2
   end
 
+  describe "#foreign_keys" do
+    it "adds a foreign key on table creation" do
+      db.query("PRAGMA foreign_keys = ON") if db.sqlite?
+
+      db.tables.create(
+        :users,
+        columns: [
+          {name: :id, type: :int, autoincr: true, primarykey: true},
+          {name: :name, type: :varchar}
+        ]
+      )
+      db.tables.create(
+        :comments,
+        columns: [
+          {name: :id, type: :int, autoincr: true, primarykey: true},
+          {name: :comment, type: :text},
+          {name: :user_id, type: :int, foreign_key: {to: [:users, :id]}}
+        ]
+      )
+
+      foreign_keys = db.tables[:comments].foreign_keys
+      foreign_key = foreign_keys.first
+
+      expect(foreign_keys).to have_attributes(length: 1)
+      expect(foreign_key).to have_attributes(
+        column_name: "user_id",
+        table_name: "comments"
+      )
+    end
+
+    it "adds a foreign key after table is created" do
+      unless db.sqlite?
+        db.tables.create(
+          :users,
+          columns: [
+            {name: :id, type: :int, autoincr: true, primarykey: true},
+            {name: :name, type: :varchar}
+          ]
+        )
+        db.tables.create(
+          :comments,
+          columns: [
+            {name: :id, type: :int, autoincr: true, primarykey: true},
+            {name: :comment, type: :text},
+            {name: :user_id, type: :int}
+          ]
+        )
+        db.foreign_keys.create(
+          from: [:comments, :user_id],
+          to: [:users, :id]
+        )
+
+        foreign_keys = db.tables[:comments].foreign_keys
+        foreign_key = foreign_keys.first
+
+        expect(foreign_keys).to have_attributes(length: 1)
+        expect(foreign_key).to have_attributes(
+          column_name: "user_id",
+          table_name: "comments"
+        )
+      end
+    end
+  end
+
   describe "#reload" do
     it "reloads the data on the table" do
       test_table.reload
