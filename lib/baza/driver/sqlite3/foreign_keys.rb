@@ -5,7 +5,7 @@ class Baza::Driver::Sqlite3::ForeignKeys
     @db = db
   end
 
-  def create(name: nil, from:, to:)
+  def create(from:, to:, name: nil) # rubocop:disable Lint/UnusedMethodArgument
     raise "Only support doing create table in SQLite"
   end
 end

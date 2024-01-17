@@ -1,4 +1,4 @@
-class Baza::Driver::Sqlite3::Table < Baza::Table
+class Baza::Driver::Sqlite3::Table < Baza::Table # rubocop:disable Metrics/ClassLength
   attr_reader :name, :type
 
   def initialize(args)
