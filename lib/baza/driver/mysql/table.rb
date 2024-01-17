@@ -109,7 +109,7 @@ class Baza::Driver::Mysql::Table < Baza::Table
 
       WHERE
         REFERENCED_TABLE_SCHEMA = #{@db.quote_value(@db.current_database_name)} AND
-        TABLE_NAME = #{@db.quote_value(name)}
+        REFERENCED_TABLE_NAME = #{@db.quote_value(name)}
     "
 
     sql << " AND CONSTRAINT_NAME = #{@db.quote_value(args.fetch(:name))}" if args[:name]

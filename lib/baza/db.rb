@@ -371,7 +371,7 @@ class Baza::Db
   end
 
   # Defines all the driver methods: tables, columns and so on
-  DRIVER_PARTS = [:databases, :tables, :commands, :columns, :indexes, :users, :sqlspecs].freeze
+  DRIVER_PARTS = [:databases, :foreign_keys, :tables, :commands, :columns, :indexes, :users, :sqlspecs].freeze
   DRIVER_PARTS.each do |driver_part|
     define_method(driver_part) do
       if instance_variable_defined?(:"@#{driver_part}")
