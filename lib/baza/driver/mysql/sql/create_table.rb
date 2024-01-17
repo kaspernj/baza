@@ -15,7 +15,10 @@ class Baza::Driver::Mysql::Sql::CreateTable
     @columns.each do |col_data|
       sql << ", " unless first
       first = false if first
+
+      col_data = col_data.clone
       col_data.delete(:after) if col_data[:after]
+      col_data.delete(:foreign_key)
 
       sql << Baza::Driver::Mysql::Sql::Column.new(col_data).sql.first
     end

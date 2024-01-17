@@ -111,8 +111,6 @@ class Baza::Driver::Sqlite3::Tables < Baza::Tables
       end
     end
 
-    puts sql
-
     if return_sql
       return ret
     else

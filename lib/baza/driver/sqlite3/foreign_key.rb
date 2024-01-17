@@ -4,7 +4,7 @@ class Baza::Driver::Sqlite3::ForeignKey < Baza::ForeignKey
     @column_name = data.fetch(:from)
     @name = data.fetch(:id)
     @table_name = data.fetch(:table)
-    @referenced_table_name = data.fetch(:table)
+    @referenced_table_name = data.fetch(:referenced_table)
     @referenced_column_name = data.fetch(:to)
   end
 

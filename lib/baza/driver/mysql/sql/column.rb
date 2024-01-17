@@ -22,6 +22,7 @@ class Baza::Driver::Mysql::Sql::Column
     sql << " PRIMARY KEY" if data[:primarykey]
     sql << " AUTO_INCREMENT" if data[:autoincr]
     sql << " NOT NULL" if data.key?(:null) && !data[:null]
+    sql << " REFERENCES #{data.fetch(:foreign_key).fetch(:to).fetch(0)}(#{data.fetch(:foreign_key).fetch(:to).fetch(1)})" if data[:foreign_key]
 
     if data.key?(:default_func)
       sql << " DEFAULT #{data[:default_func]}"

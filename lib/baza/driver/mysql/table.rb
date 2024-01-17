@@ -108,8 +108,9 @@ class Baza::Driver::Mysql::Table < Baza::Table
         INFORMATION_SCHEMA.KEY_COLUMN_USAGE
 
       WHERE
-        REFERENCED_TABLE_SCHEMA = (SELECT DATABASE()) AND
-        REFERENCED_TABLE_NAME = #{@db.quote_value(name)}
+        TABLE_SCHEMA = (SELECT DATABASE()) AND
+        CONSTRAINT_NAME != 'PRIMARY' AND
+        TABLE_NAME = #{@db.quote_value(name)}
     "
 
     sql << " AND CONSTRAINT_NAME = #{@db.quote_value(args.fetch(:name))}" if args[:name]
