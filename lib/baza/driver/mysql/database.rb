@@ -14,46 +14,14 @@ class Baza::Driver::Mysql::Database < Baza::Database
   def create_table(name, columns:, indexes: nil, return_sql: false, temp: false)
     raise "No columns was given for '#{name}'." if !columns || columns.empty?
 
-    sql = "CREATE"
-    sql << " TEMPORARY" if temp
-    sql << " TABLE #{@db.quote_table(name)} ("
-
-    first = true
-    columns.each do |col_data|
-      sql << ", " unless first
-      first = false if first
-      col_data.delete(:after) if col_data[:after]
-      sql << @db.columns.data_sql(col_data)
-    end
-
-    if indexes && !indexes.empty?
-      sql << ", "
-      sql << Baza::Driver::Mysql::Table.create_indexes(
-        indexes,
-        db: @db,
-        return_sql: true,
-        create: false,
-        on_table: false,
-        table_name: name
+    sql = Baza::Driver::Mysql::Sql::CreateTable
+      .new(
+        columns: columns,
+        indexes: indexes,
+        name: name,
+        temporary: temp
       )
-    end
-
-    columns.each do |col_data|
-      next unless col_data.key?(:foreign_key)
-
-      sql << ", CONSTRAINT #{SecureRandom.hex(5)} FOREIGN KEY (#{col_data.fetch(:name)}) REFERENCES #{col_data.fetch(:foreign_key).fetch(:to).fetch(0)}(#{col_data.fetch(:foreign_key).fetch(:to).fetch(1)})"
-    end
-
-    sql << ")"
-
-    puts "SQL: #{sql}"
-
-    sql = Baza::Driver::Mysql::Sql::CreateTable.new(
-      columns: columns,
-      indexes: indexes,
-      name: name,
-      temporary: temp
-    ).sql
+      .sql
 
     return sql if return_sql
 
