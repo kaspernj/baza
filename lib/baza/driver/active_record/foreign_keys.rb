@@ -8,6 +8,6 @@ class Baza::Driver::ActiveRecord::ForeignKeys
   end
 
   def respond_to_missing?(method_name)
-    @proxy.respond_to?(method_name)
+    @proxy.respond_to?(method_name) || super
   end
 end
