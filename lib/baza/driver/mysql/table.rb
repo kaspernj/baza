@@ -108,8 +108,47 @@ class Baza::Driver::Mysql::Table < Baza::Table
         INFORMATION_SCHEMA.KEY_COLUMN_USAGE
 
       WHERE
-        REFERENCED_TABLE_SCHEMA = #{@db.quote_value(@db.current_database_name)} AND
+        TABLE_SCHEMA = (SELECT DATABASE()) AND
+        CONSTRAINT_NAME != 'PRIMARY' AND
         TABLE_NAME = #{@db.quote_value(name)}
+    "
+
+    sql << " AND CONSTRAINT_NAME = #{@db.quote_value(args.fetch(:name))}" if args[:name]
+
+    result = [] unless block_given?
+
+    @db.query(sql) do |data|
+      foreign_key = Baza::Driver::Mysql::ForeignKey.new(
+        db: @db,
+        data: data
+      )
+
+      if block_given?
+        yield foreign_key
+      else
+        result << foreign_key
+      end
+    end
+
+    result
+  end
+
+  def referenced_foreign_keys(args = {})
+    sql = "
+      SELECT
+        TABLE_NAME,
+        COLUMN_NAME,
+        CONSTRAINT_NAME,
+        REFERENCED_TABLE_NAME,
+        REFERENCED_COLUMN_NAME
+
+      FROM
+        INFORMATION_SCHEMA.KEY_COLUMN_USAGE
+
+      WHERE
+        TABLE_SCHEMA = (SELECT DATABASE()) AND
+        CONSTRAINT_NAME != 'PRIMARY' AND
+        REFERENCED_TABLE_NAME = #{@db.quote_value(name)}
     "
 
     sql << " AND CONSTRAINT_NAME = #{@db.quote_value(args.fetch(:name))}" if args[:name]

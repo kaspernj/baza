@@ -15,7 +15,10 @@ class Baza::Driver::Mysql::Sql::CreateTable
     @columns.each do |col_data|
       sql << ", " unless first
       first = false if first
+
+      col_data = col_data.clone
       col_data.delete(:after) if col_data[:after]
+      col_data.delete(:foreign_key)
 
       sql << Baza::Driver::Mysql::Sql::Column.new(col_data).sql.first
     end
@@ -28,6 +31,14 @@ class Baza::Driver::Mysql::Sql::CreateTable
         on_table: false,
         table_name: @name
       ).sql.first
+    end
+
+    @columns.each do |col_data|
+      next unless col_data.key?(:foreign_key)
+
+      sql << ","
+      sql << " CONSTRAINT `#{col_data.fetch(:foreign_key).fetch(:name)}`" if col_data.fetch(:foreign_key)[:name]
+      sql << " FOREIGN KEY (`#{col_data.fetch(:name)}`) REFERENCES `#{col_data.fetch(:foreign_key).fetch(:to).fetch(0)}` (`#{col_data.fetch(:foreign_key).fetch(:to).fetch(1)}`)"
     end
 
     sql << ")"

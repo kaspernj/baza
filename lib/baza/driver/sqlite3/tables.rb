@@ -87,6 +87,12 @@ class Baza::Driver::Sqlite3::Tables < Baza::Tables
       sql << @db.columns.data_sql(col_data)
     end
 
+    columns.each do |col_data| # rubocop:disable Style/CombinableLoops
+      next unless col_data.key?(:foreign_key)
+
+      sql << ", FOREIGN KEY (#{col_data.fetch(:name)}) REFERENCES #{col_data.fetch(:foreign_key).fetch(:to).fetch(0)}(#{col_data.fetch(:foreign_key).fetch(:to).fetch(1)})"
+    end
+
     sql << ")"
 
     if return_sql

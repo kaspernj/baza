@@ -56,6 +56,15 @@ class Baza::Driver::Pg::Tables < Baza::Tables
       create_table_sql << db.columns.data_sql(col_data)
     end
 
+    columns.each do |col_data| # rubocop :disable Style/CombinableLoops
+      next unless col_data.key?(:foreign_key)
+
+      create_table_sql << ","
+      create_table_sql << " CONSTRAINT #{col_data.fetch(:foreign_key).fetch(:name)}" if col_data.fetch(:foreign_key)[:name]
+      create_table_sql << " FOREIGN KEY (#{col_data.fetch(:name)}) " \
+        "REFERENCES #{col_data.fetch(:foreign_key).fetch(:to).fetch(0)} (#{col_data.fetch(:foreign_key).fetch(:to).fetch(1)})"
+    end
+
     create_table_sql << ")"
 
     sqls = [create_table_sql]

@@ -17,6 +17,9 @@ Layout/AccessModifierIndentation:
 Layout/EmptyLines:
   Enabled: false
 
+Layout/LineEndStringConcatenationIndentation:
+  Enabled: false
+
 Layout/MultilineMethodCallIndentation:
   EnforcedStyle: indented
 

@@ -7,6 +7,8 @@ class Baza::Driver::Mysql::ForeignKey < Baza::ForeignKey
     @column_name = data.fetch(:COLUMN_NAME)
     @name = data.fetch(:CONSTRAINT_NAME)
     @table_name = data.fetch(:TABLE_NAME)
+    @referenced_table_name = data.fetch(:REFERENCED_TABLE_NAME)
+    @referenced_column_name = data.fetch(:REFERENCED_COLUMN_NAME)
   end
 
   def drop

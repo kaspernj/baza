@@ -1,4 +1,4 @@
-class Baza::Driver::Sqlite3::Table < Baza::Table
+class Baza::Driver::Sqlite3::Table < Baza::Table # rubocop:disable Metrics/ClassLength
   attr_reader :name, :type
 
   def initialize(args)
@@ -10,6 +10,41 @@ class Baza::Driver::Sqlite3::Table < Baza::Table
 
     @list = Wref::Map.new
     @indexes_list = Wref::Map.new
+  end
+
+  def foreign_keys
+    db.query("PRAGMA foreign_key_list('#{name}')").map do |foreign_key_data|
+      data = foreign_key_data.clone
+      data[:referenced_table] = data.fetch(:table)
+      data[:table] = name
+
+      Baza::Driver::Sqlite3::ForeignKey.new(db: db, data: data)
+    end
+  end
+
+  def referenced_foreign_keys
+    sql = "
+      SELECT
+        sqlite_master.name,
+        pragma_join.*
+
+      FROM
+        sqlite_master
+
+      JOIN pragma_foreign_key_list(sqlite_master.name) pragma_join ON
+        pragma_join.\"table\" != sqlite_master.name
+
+      WHERE sqlite_master.type = 'table'
+      ORDER BY sqlite_master.name
+    "
+
+    db.query(sql).map do |foreign_key_data|
+      data = foreign_key_data.clone
+      data[:referenced_table] = data.fetch(:table)
+      data[:table] = data.fetch(:name)
+
+      Baza::Driver::Sqlite3::ForeignKey.new(db: db, data: data)
+    end
   end
 
   def maxlength

@@ -3,7 +3,7 @@ class Baza::Driver::Mysql::Columns
     @db = args.fetch(:db)
   end
 
-  DATA_SQL_ALLOWED_KEYS = [:type, :maxlength, :name, :primarykey, :autoincr, :default, :comment, :after, :first, :storage, :null, :renames].freeze
+  DATA_SQL_ALLOWED_KEYS = %i[foreign_key type maxlength name primarykey autoincr default comment after first storage null renames].freeze
   def data_sql(data)
     data.each_key do |key|
       raise "Invalid key: '#{key}' (#{key.class.name})." unless DATA_SQL_ALLOWED_KEYS.include?(key)
