@@ -196,7 +196,7 @@ class Baza::Db
           col_args = nil
 
           if table_args && table_args[:columns]
-            d_rows.each do |col_name, _col_data|
+            d_rows.each_key do |col_name|
               col_args = table_args[:columns][col_name] if table_args && table_args[:columns]
               d_rows[col_name] = "" if col_args && col_args[:empty]
             end

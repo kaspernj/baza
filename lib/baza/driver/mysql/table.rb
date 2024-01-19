@@ -292,11 +292,11 @@ class Baza::Driver::Mysql::Table < Baza::Table
     @name = newname
     @tables.__send__(:add_to_list, self)
 
-    @list.each do |_name, column|
+    @list.each_value do |column|
       column.args[:table_name] = newname
     end
 
-    @indexes_list.each do |_name, index|
+    @indexes_list.each_value do |index|
       index.table_name = newname
     end
   end

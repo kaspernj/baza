@@ -160,7 +160,7 @@ private
       end
 
       @inserts.each do |table, datas|
-        datas.each do |data_key, datas_arr|
+        datas.each_value do |datas_arr|
           until datas_arr.empty?
             datas_chunk_arr = datas_arr.shift(1000)
             @db.insert_multi(table, datas_chunk_arr)

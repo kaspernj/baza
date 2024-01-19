@@ -22,5 +22,5 @@ Gem::Specification.new do |s|
   s.add_dependency("event_handler", ">= 0.0.0")
   s.add_dependency("simple_delegate", ">= 0.0.2")
   s.add_dependency("string-cases", ">= 0.0.4")
-  s.add_dependency("wref", ">= 0.0.8")
+  s.add_dependency("wref", ">= 0.0.9")
 end

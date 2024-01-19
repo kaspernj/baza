@@ -62,7 +62,7 @@ class Baza::MysqlBaseDriver < Baza::BaseSqlDriver
           sql << @db.quote_value(val)
         end
       else
-        hash.each do |_key, val|
+        hash.each_value do |val|
           if first_key
             first_key = false
           else

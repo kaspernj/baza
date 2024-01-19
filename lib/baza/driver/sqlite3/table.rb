@@ -92,11 +92,11 @@ class Baza::Driver::Sqlite3::Table < Baza::Table # rubocop:disable Metrics/Class
     @tables.add_to_list(self)
 
     # Rename table on all columns and indexes.
-    @list.each do |_name, column|
+    @list.each_value do |column|
       column.args[:table_name] = newname
     end
 
-    @indexes_list.each do |_name, index|
+    @indexes_list.each_value do |index|
       index.args[:table_name] = newname
     end
   end
@@ -184,7 +184,7 @@ class Baza::Driver::Sqlite3::Table < Baza::Table # rubocop:disable Metrics/Class
 
     sql = "INSERT INTO `#{self.name}` SELECT "
     first = true
-    cols_cur.each do |name, _col|
+    cols_cur.each_key do |name|
       sql << ", " unless first
       first = false if first
 
