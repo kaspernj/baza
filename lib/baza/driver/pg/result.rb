@@ -54,9 +54,12 @@ class Baza::Driver::Pg::Result
   end
 
   def to_a
-    map do |result|
-      result
+    array = []
+    each do |result| # rubocop:disable Style/MapIntoArray
+      array << result
     end
+
+    array
   end
 
 private
