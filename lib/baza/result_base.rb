@@ -15,11 +15,8 @@ class Baza::ResultBase
   end
 
   def to_a
-    array = []
-    each do |row_data|
-      array << row_data
+    map do |row_data|
+      row_data
     end
-
-    array
   end
 end

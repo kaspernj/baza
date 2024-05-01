@@ -6,12 +6,9 @@ class Baza::Driver::Pg::CreateIndexSqlCreator
   end
 
   def sqls
-    sqls = []
-    @indexes.each do |index_data|
-      sqls << create_sql(index_data, @create_args)
+    @indexes.map do |index_data|
+      create_sql(index_data, @create_args)
     end
-
-    sqls
   end
 
   def name_from_table_and_columns(table_name, column_names)
