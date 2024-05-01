@@ -54,12 +54,9 @@ class Baza::Driver::Pg::Result
   end
 
   def to_a
-    array = []
-    each do |result|
-      array << result
+    map do |result|
+      result
     end
-
-    array
   end
 
 private
