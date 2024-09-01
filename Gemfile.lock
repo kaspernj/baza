@@ -134,8 +134,8 @@ GEM
     tzinfo (2.0.6)
       concurrent-ruby (~> 1.0)
     unicode-display_width (2.5.0)
-    weakling (0.0.3)
-    wref (0.0.9)
+    weakling (0.0.4-java)
+    wref (0.0.10)
       ref
       weakling
 
