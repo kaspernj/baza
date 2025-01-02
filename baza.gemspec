@@ -1,12 +1,12 @@
 Gem::Specification.new do |s|
   s.name = "baza".freeze
-  s.version = "0.0.38"
+  s.version = File.read("VERSION")
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0".freeze) if s.respond_to? :required_rubygems_version=
   s.require_paths = ["lib".freeze]
   s.authors = ["Kasper Stöckel".freeze]
   s.description = "A database abstraction layer, model framework and database framework.".freeze
-  s.email = "kj@gfish.com".freeze
+  s.email = "kasper@diestoeckels.de".freeze
   s.extra_rdoc_files = [
     "LICENSE.txt",
     "README.md"

@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    baza (0.0.38)
+    baza (0.0.39)
       array_enumerator (>= 0.0.10)
       auto_autoloader (>= 0.0.5)
       datet (>= 0.0.25)
@@ -90,6 +90,7 @@ GEM
     rake (13.2.1)
     rdoc (6.10.0)
       psych (>= 4.0.0)
+    ref (2.0.0)
     regexp_parser (2.10.0)
     rspec (3.13.0)
       rspec-core (~> 3.13.0)
@@ -139,6 +140,7 @@ GEM
       unicode-emoji (~> 4.0, >= 4.0.4)
     unicode-emoji (4.0.4)
     wref (0.0.11)
+      ref
 
 PLATFORMS
   java
