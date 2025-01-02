@@ -63,7 +63,7 @@ GEM
     language_server-protocol (3.17.0.3)
     logger (1.6.4)
     method_source (1.1.0)
-    mini_portile2 (2.8.5)
+    mini_portile2 (2.8.8)
     minitest (5.25.4)
     mysql2 (0.5.6)
     parallel (1.26.3)
@@ -129,7 +129,7 @@ GEM
     simple_delegate (0.0.4)
     spoon (0.0.6)
       ffi
-    sqlite3 (1.6.7)
+    sqlite3 (2.5.0)
       mini_portile2 (~> 2.8.0)
     string-cases (0.0.4)
     stringio (3.1.2)
