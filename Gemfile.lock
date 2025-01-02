@@ -8,7 +8,7 @@ PATH
       event_handler
       simple_delegate (>= 0.0.2)
       string-cases (>= 0.0.4)
-      wref (>= 0.0.9)
+      wref (>= 0.0.11)
 
 GEM
   remote: http://rubygems.org/
@@ -134,10 +134,8 @@ GEM
     tzinfo (2.0.6)
       concurrent-ruby (~> 1.0)
     unicode-display_width (2.5.0)
-    weakling (0.0.4-java)
-    wref (0.0.10)
+    wref (0.0.11)
       ref
-      weakling
 
 PLATFORMS
   java
