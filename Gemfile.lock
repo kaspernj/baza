@@ -65,7 +65,8 @@ GEM
     method_source (1.1.0)
     mini_portile2 (2.8.5)
     minitest (5.25.4)
-    mysql2 (0.5.6)
+    mysql2 (0.5.7)
+      bigdecimal
     parallel (1.26.3)
     parser (3.3.7.0)
       ast (~> 2.4.1)
