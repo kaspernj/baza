@@ -34,36 +34,45 @@ services:
     restart_policy: on-failure
 builds:
   build_1:
+    paths:
+      - "**/*"
+      - "!docs/**"
     environment:
       RUBY_VERSION: 2.7.8
     name: Ruby 2.7.8
     script:
       - bundle exec rspec --tag ~@mysql
   build_2:
+    paths:
+      - "**/*"
+      - "!docs/**"
     environment:
       RUBY_VERSION: 3.0.5
     name: Ruby 3.0.5
     script:
       - bundle exec rspec --tag ~@mysql
   build_3:
+    paths:
+      - "**/*"
+      - "!docs/**"
     environment:
       RUBY_VERSION: 3.1.4
     name: Ruby 3.1.4
     script:
       - bundle exec rspec --tag ~@mysql
   build_4:
+    paths:
+      - "**/*"
+      - "!docs/**"
     environment:
       RUBY_VERSION: 3.2.2
     name: Ruby 3.2.2
     script:
       - bundle exec rspec --tag ~@mysql
   build_5:
-    environment:
-      RUBY_VERSION: jruby-head
-    name: JRuby head
-    script:
-      - bundle exec rspec --tag ~@mysql
-  build_5:
+    paths:
+      - "**/*"
+      - "!docs/**"
     name: Linters
     script:
       - bundle exec rake best_practice_project:run
